@@ -30,15 +30,19 @@ func handleMsgUnjail(ctx sdk.Context, msg MsgUnjail, k Keeper) sdk.Result {
 		return ErrNoValidatorForAddress(k.codespace).Result()
 	}
 
-	// cannot be unjailed if no self-delegation exists
-	selfDel := k.sk.Delegation(ctx, sdk.AccAddress(msg.ValidatorAddr), msg.ValidatorAddr)
-	if selfDel == nil {
+	if validator.GetMinSelfDelegation().IsZero() {
 		return ErrMissingSelfDelegation(k.codespace).Result()
 	}
 
-	if validator.TokensFromShares(selfDel.GetShares()).TruncateInt().LT(validator.GetMinSelfDelegation()) {
-		return ErrSelfDelegationTooLowToUnjail(k.codespace).Result()
-	}
+	// cannot be unjailed if no self-delegation exists
+	//selfDel := k.sk.Delegation(ctx, sdk.AccAddress(msg.ValidatorAddr), msg.ValidatorAddr)
+	//if selfDel == nil {
+	//	return ErrMissingSelfDelegation(k.codespace).Result()
+	//}
+
+	//if validator.TokensFromShares(selfDel.GetShares()).TruncateInt().LT(validator.GetMinSelfDelegation()) {
+	//	return ErrSelfDelegationTooLowToUnjail(k.codespace).Result()
+	//}
 
 	// cannot be unjailed if not jailed
 	if !validator.IsJailed() {

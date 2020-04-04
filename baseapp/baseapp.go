@@ -92,6 +92,10 @@ type BaseApp struct {
 
 	// application's version string
 	appVersion string
+
+	ProtocolVersion int32
+
+	PostEndBlocker sdk.PostEndBlockHandler
 }
 
 var _ abci.Application = (*BaseApp)(nil)
@@ -362,6 +366,7 @@ func (app *BaseApp) Info(req abci.RequestInfo) abci.ResponseInfo {
 	lastCommitID := app.cms.LastCommitID()
 
 	return abci.ResponseInfo{
+		AppVersion:       uint64(app.ProtocolVersion),
 		Data:             app.name,
 		LastBlockHeight:  lastCommitID.Version,
 		LastBlockAppHash: lastCommitID.Hash,
@@ -733,6 +738,10 @@ func validateBasicTxMsgs(msgs []sdk.Msg) sdk.Error {
 		return sdk.ErrUnknownRequest("Tx.GetMsgs() must return at least one message in list")
 	}
 
+	if len(msgs) != 1 {
+		return sdk.ErrUnknownRequest("Tx.GetMsgs() must return one message in a tx")
+	}
+
 	for _, msg := range msgs {
 		// Validate the Msg.
 		err := msg.ValidateBasic()
@@ -799,6 +808,8 @@ func (app *BaseApp) runMsgs(ctx sdk.Context, msgs []sdk.Msg, mode runTxMode) (re
 
 		events = events.AppendEvents(msgEvents)
 
+		// TODO  temporary modification: hide the log.event
+		msgEvents = sdk.EmptyEvents()
 		// stop execution and return on first failed message
 		if !msgResult.IsOK() {
 			msgLogs = append(msgLogs, sdk.NewABCIMessageLog(uint16(i), false, msgResult.Log, msgEvents))
@@ -919,6 +930,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk
 		return err.Result()
 	}
 
+	var anteResult sdk.Result
 	if app.anteHandler != nil {
 		var anteCtx sdk.Context
 		var msCache sdk.CacheMultiStore
@@ -945,7 +957,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk
 		}
 
 		gasWanted = result.GasWanted
-
+		anteResult = result
 		if abort {
 			return result
 		}
@@ -964,6 +976,17 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk
 		return result
 	}
 
+	//set fee tags, no for genesis block
+	eventI, attrI, sysFee := getFeeFromTags(ctx, anteResult)
+	i, j, busFee := getFeeFromTags(ctx, result)
+	//fmt.Println("sysFee:", sysFee, "busFee:", busFee, "sum=", sysFee.Add(busFee).String())
+	if i >= 0 && j >= 0 { //modify fee event
+		result.Events[i].Attributes[j].Value = []byte(decCoins2String(sysFee.Add(busFee)))
+	} else { //add new event for fee
+		result.Events = result.Events.AppendEvent(sdk.NewEvent(sdk.EventTypeMessage, sdk.NewAttribute(sdk.AttributeKeyFee, sysFee.String())))
+	}
+
+	result.Events = result.Events.AppendEvents(removeFeeTags(anteResult, eventI, attrI).Events)
 	// only update state if all messages pass
 	if result.IsOK() {
 		msCache.Write()
@@ -980,6 +1003,10 @@ func (app *BaseApp) EndBlock(req abci.RequestEndBlock) (res abci.ResponseEndBloc
 
 	if app.endBlocker != nil {
 		res = app.endBlocker(app.deliverState.ctx, req)
+	}
+
+	if app.PostEndBlocker != nil {
+		app.PostEndBlocker(&res)
 	}
 
 	return

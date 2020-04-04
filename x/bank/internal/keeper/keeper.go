@@ -70,7 +70,7 @@ func (keeper BaseKeeper) DelegateCoins(ctx sdk.Context, delegatorAddr, moduleAcc
 	_, hasNeg := oldCoins.SafeSub(amt)
 	if hasNeg {
 		return sdk.ErrInsufficientCoins(
-			fmt.Sprintf("insufficient account funds; %s < %s", oldCoins, amt),
+			fmt.Sprintf("insufficient account funds; %s is less than %s", oldCoins, amt),
 		)
 	}
 
@@ -147,6 +147,11 @@ type SendKeeper interface {
 	SetSendEnabled(ctx sdk.Context, enabled bool)
 
 	BlacklistedAddr(addr sdk.AccAddress) bool
+
+	SendDecCoins(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.DecCoins) sdk.Error
+	SubtractDecCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.DecCoins) (sdk.DecCoins, sdk.Error)
+	AddDecCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.DecCoins) (sdk.DecCoins, sdk.Error)
+	SetDecCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.DecCoins) sdk.Error
 }
 
 var _ SendKeeper = (*BaseSendKeeper)(nil)
@@ -184,7 +189,7 @@ func (keeper BaseSendKeeper) InputOutputCoins(ctx sdk.Context, inputs []types.In
 	}
 
 	for _, in := range inputs {
-		_, err :=  keeper.SubtractCoins(ctx, in.Address, in.Coins)
+		_, err := keeper.SubtractCoins(ctx, in.Address, in.Coins)
 		if err != nil {
 			return err
 		}
@@ -258,13 +263,12 @@ func (keeper BaseSendKeeper) SubtractCoins(ctx sdk.Context, addr sdk.AccAddress,
 		oldCoins = acc.GetCoins()
 		spendableCoins = acc.SpendableCoins(ctx.BlockHeader().Time)
 	}
-
 	// For non-vesting accounts, spendable coins will simply be the original coins.
 	// So the check here is sufficient instead of subtracting from oldCoins.
 	_, hasNeg := spendableCoins.SafeSub(amt)
 	if hasNeg {
 		return amt, sdk.ErrInsufficientCoins(
-			fmt.Sprintf("insufficient account funds; %s < %s", spendableCoins, amt),
+			fmt.Sprintf("insufficient account funds; %s is less than %s", spendableCoins, amt),
 		)
 	}
 
@@ -286,7 +290,7 @@ func (keeper BaseSendKeeper) AddCoins(ctx sdk.Context, addr sdk.AccAddress, amt 
 
 	if newCoins.IsAnyNegative() {
 		return amt, sdk.ErrInsufficientCoins(
-			fmt.Sprintf("insufficient account funds; %s < %s", oldCoins, amt),
+			fmt.Sprintf("insufficient account funds; %s is less than %s", oldCoins, amt),
 		)
 	}
 
@@ -339,6 +343,7 @@ var _ ViewKeeper = (*BaseViewKeeper)(nil)
 // ViewKeeper defines a module interface that facilitates read only access to
 // account balances.
 type ViewKeeper interface {
+	GetDecCoins(ctx sdk.Context, addr sdk.AccAddress) sdk.DecCoins
 	GetCoins(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
 	HasCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins) bool
 
@@ -402,4 +407,33 @@ func trackUndelegation(acc exported.Account, amt sdk.Coins) error {
 	}
 
 	return acc.SetCoins(acc.GetCoins().Add(amt))
+}
+
+func (k BaseSendKeeper) SendDecCoins(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.DecCoins) sdk.Error {
+	return k.SendCoins(ctx, fromAddr, toAddr, amt)
+}
+
+func (k BaseSendKeeper) SubtractDecCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.DecCoins) (sdk.DecCoins, sdk.Error) {
+	coins, err := k.SubtractCoins(ctx, addr, amt)
+	if err != nil {
+		return nil, err
+	}
+	return coins, err
+}
+
+func (k BaseSendKeeper) AddDecCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.DecCoins) (sdk.DecCoins, sdk.Error) {
+	coins, err := k.AddCoins(ctx, addr, amt)
+	if err != nil {
+		return nil, err
+	}
+	return coins, err
+}
+
+func (k BaseSendKeeper) SetDecCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.DecCoins) sdk.Error {
+	return k.SetCoins(ctx, addr, amt)
+}
+
+// GetCoins returns the coins at the addr.
+func (keeper BaseViewKeeper) GetDecCoins(ctx sdk.Context, addr sdk.AccAddress) sdk.DecCoins {
+	return keeper.GetCoins(ctx, addr)
 }

@@ -56,7 +56,7 @@ func GetAccountCmd(cdc *codec.Codec) *cobra.Command {
 
 			key, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
-				return err
+				return sdk.ErrInvalidAddress(fmt.Sprintf("invalid address：%s",args[0]))
 			}
 
 			if err := accGetter.EnsureExists(key); err != nil {

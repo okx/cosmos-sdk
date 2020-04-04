@@ -37,6 +37,9 @@ func (k Keeper) AfterValidatorRemoved(ctx sdk.Context, address sdk.ConsAddress) 
 	k.deleteAddrPubkeyRelation(ctx, crypto.Address(address))
 }
 
+func (k Keeper) AfterValidatorDestroyed(ctx sdk.Context,  valAddr sdk.ValAddress){
+	k.setValidatorTombstoned(ctx,valAddr,true)
+}
 //_________________________________________________________________________________________
 
 // Hooks wrapper struct for slashing keeper
@@ -64,6 +67,11 @@ func (h Hooks) AfterValidatorRemoved(ctx sdk.Context, consAddr sdk.ConsAddress, 
 // Implements sdk.ValidatorHooks
 func (h Hooks) AfterValidatorCreated(ctx sdk.Context, valAddr sdk.ValAddress) {
 	h.k.AfterValidatorCreated(ctx, valAddr)
+}
+
+// Implements when validator destroyed
+func (h Hooks) AfterValidatorDestroyed(ctx sdk.Context, _ sdk.ConsAddress, valAddr sdk.ValAddress) {
+	h.k.AfterValidatorDestroyed(ctx,valAddr)
 }
 
 // nolint - unused hooks
