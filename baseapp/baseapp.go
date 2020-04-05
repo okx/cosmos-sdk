@@ -734,12 +734,8 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) (res abci.ResponseDeliv
 
 // validateBasicTxMsgs executes basic validator calls for messages.
 func validateBasicTxMsgs(msgs []sdk.Msg) sdk.Error {
-	if msgs == nil || len(msgs) == 0 {
-		return sdk.ErrUnknownRequest("Tx.GetMsgs() must return at least one message in list")
-	}
-
-	if len(msgs) != 1 {
-		return sdk.ErrUnknownRequest("Tx.GetMsgs() must return one message in a tx")
+	if msgs == nil || len(msgs) != 1 {
+		return sdk.ErrUnknownRequest("Tx.GetMsgs() must return only one message")
 	}
 
 	for _, msg := range msgs {
@@ -976,18 +972,19 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk
 		return result
 	}
 
-	//set fee tags, no for genesis block
+	// Set fee tags, no for genesis block
 	eventI, attrI, sysFee := getFeeFromTags(ctx, anteResult)
 	i, j, busFee := getFeeFromTags(ctx, result)
-	//fmt.Println("sysFee:", sysFee, "busFee:", busFee, "sum=", sysFee.Add(busFee).String())
 	if i >= 0 && j >= 0 { //modify fee event
-		result.Events[i].Attributes[j].Value = []byte(decCoins2String(sysFee.Add(busFee)))
-	} else { //add new event for fee
+		result.Events[i].Attributes[j].Value = []byte(sysFee.Add(busFee).String())
+	} else {
+		// Add new event for fee
 		result.Events = result.Events.AppendEvent(sdk.NewEvent(sdk.EventTypeMessage, sdk.NewAttribute(sdk.AttributeKeyFee, sysFee.String())))
 	}
 
 	result.Events = result.Events.AppendEvents(removeFeeTags(anteResult, eventI, attrI).Events)
-	// only update state if all messages pass
+
+	// update state only if all messages are OK
 	if result.IsOK() {
 		msCache.Write()
 	}

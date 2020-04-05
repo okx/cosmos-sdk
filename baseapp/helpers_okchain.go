@@ -21,7 +21,7 @@ var (
 	feeKeyBytes = []byte(sdk.AttributeKeyFee)
 )
 
-//getFeeFromTags get actual system_fee from Result
+// getFeeFromTags get actual system_fee from Result
 func getFeeFromTags(ctx sdk.Context, res sdk.Result) (eventI, attrI int, fee sdk.DecCoins) {
 	if ctx.BlockHeight() < 1 {
 		return -1, -1, sdk.DecCoins{}
@@ -30,7 +30,6 @@ func getFeeFromTags(ctx sdk.Context, res sdk.Result) (eventI, attrI int, fee sdk
 		if event.Type == sdk.EventTypeMessage {
 			for j, attr := range event.Attributes {
 				if bytes.EqualFold(attr.GetKey(), feeKeyBytes) {
-					//if fee=0okb
 					if string(attr.Value) == "0"+sdk.DefaultBondDenom || string(attr.Value) == "0.00000000"+sdk.DefaultBondDenom {
 						return i, j, sdk.DecCoins{}
 					}
@@ -61,25 +60,6 @@ func removeFeeTags(res sdk.Result, eventI, attrI int) sdk.Result {
 	}
 
 	return res
-}
-
-// String implements the Stringer interface for DecCoins. It returns a
-// human-readable representation of decimal coins.
-func decCoins2String(coins sdk.DecCoins) string {
-	if len(coins) == 0 {
-		return "0"
-	}
-
-	out := ""
-	for _, coin := range coins {
-		out += fmt.Sprintf("%v,", decCoin2String(coin))
-	}
-
-	return out[:len(out)-1]
-}
-
-func decCoin2String(coin sdk.DecCoin) string {
-	return fmt.Sprintf("%v %v", coin.Amount, coin.Denom)
 }
 
 //-------------------------------------------------------

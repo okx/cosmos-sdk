@@ -2,9 +2,10 @@ package flags
 
 import (
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/types"
 	"os"
 	"strconv"
+
+	"github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -90,8 +91,8 @@ func PostCommands(cmds ...*cobra.Command) []*cobra.Command {
 		c.Flags().Uint64P(FlagAccountNumber, "a", 0, "The account number of the signing account (offline mode only)")
 		c.Flags().Uint64(FlagSequence, 0, "The sequence number of the signing account (offline mode only)")
 		c.Flags().String(FlagMemo, "", "Memo to send along with transaction")
-		c.Flags().String(FlagFees, "", "Fees to pay along with transaction; eg: 1" + types.DefaultBondDenom)
-		c.Flags().String(FlagGasPrices, "", "Gas prices to determine the transaction fee (e.g. 1okb)")
+		c.Flags().String(FlagFees, "", "Fees to pay along with transaction; eg: 1"+types.DefaultBondDenom)
+		c.Flags().String(FlagGasPrices, "", "Gas prices to determine the transaction fee (e.g. 1"+types.DefaultBondDenom+")")
 		c.Flags().String(FlagNode, "tcp://localhost:26657", "<host>:<port> to tendermint rpc interface for this chain")
 		c.Flags().Bool(FlagUseLedger, false, "Use a connected Ledger device")
 		c.Flags().Float64(FlagGasAdjustment, DefaultGasAdjustment, "adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored ")
