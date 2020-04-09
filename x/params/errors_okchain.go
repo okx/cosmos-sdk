@@ -7,7 +7,6 @@ import (
 )
 
 const (
-
 	CodeInvalidMinDepositDenom  sdk.CodeType = 100
 	CodeInvalidMinDepositAmount sdk.CodeType = 101
 	CodeInvalidDepositPeriod    sdk.CodeType = 102
@@ -16,7 +15,7 @@ const (
 	CodeInvalidVeto             sdk.CodeType = 105
 	CodeInvalidMaxProposalNum   sdk.CodeType = 106
 	CodeInvalidKey              sdk.CodeType = 107
-	CodeInvalidString sdk.CodeType = 108
+	CodeInvalidString           sdk.CodeType = 108
 )
 
 func ErrInvalidString(valuestr string) sdk.Error {

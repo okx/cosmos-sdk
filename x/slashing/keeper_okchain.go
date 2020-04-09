@@ -2,23 +2,14 @@ package slashing
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/slashing/types"
 )
 
-func (k Keeper) setValidatorTombstoned(ctx sdk.Context, valAddr sdk.ValAddress, Tombstoned bool) {
-	//hook just a callback, so just ignore return
-	validator := k.sk.Validator(ctx, valAddr)
-	if validator == nil {
-		return
+func (k Keeper) modifyValidatorStatus(ctx sdk.Context, consAddress sdk.ConsAddress, status types.ValStatus) {
+	signingInfo, found := k.getValidatorSigningInfo(ctx, consAddress)
+	if found {
+		//update validator status to Created
+		signingInfo.ValidatorStatus = status
+		k.SetValidatorSigningInfo(ctx, consAddress, signingInfo)
 	}
-
-	consAddr := sdk.ConsAddress(validator.GetConsPubKey().Address())
-
-	info, found := k.getValidatorSigningInfo(ctx, consAddr)
-	if !found {
-		return
-	}
-
-	//update Tombstoned
-	info.Tombstoned = Tombstoned
-	k.SetValidatorSigningInfo(ctx, consAddr, info)
 }

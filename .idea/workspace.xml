@@ -1,0 +1,575 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="38ce9fd6-7d96-40ff-b3ed-ab3998d74609" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/x/staking/keeper/delegation_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/x/staking/keeper/delegation_test.go" afterDir="false" />
+    </list>
+    <ignored path="$PROJECT_DIR$/.idea/" />
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileEditorManager">
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/x/supply/exported/exported.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="114">
+              <caret line="10" column="17" selection-start-line="10" selection-start-column="17" selection-end-line="10" selection-end-column="17" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/x/auth/exported/exported.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="38">
+              <caret line="2" selection-start-line="2" selection-end-line="2" />
+              <folding>
+                <element signature="e#18#123#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/x/bank/internal/types/expected_keepers.go">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/x/bank/internal/keeper/keeper.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="6270">
+              <caret line="340" column="45" selection-start-line="340" selection-start-column="45" selection-end-line="340" selection-end-column="45" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/x/auth/client/cli/query.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="209">
+              <caret line="29" selection-start-line="29" selection-end-line="29" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/x/auth/ante.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="380">
+              <caret line="34" selection-start-line="34" selection-end-line="43" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/x/staking/genesis_test.go">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/x/staking/keeper/delegation_test.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="339">
+              <caret line="347" selection-start-line="347" selection-end-line="347" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/.golangci.yml">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/x/slashing/client/cli/tx.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="703">
+              <caret line="47" column="34" selection-start-line="47" selection-start-column="34" selection-end-line="47" selection-end-column="34" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>stake</find>
+      <find>create-validator</find>
+      <find>transaction must include some information to modify</find>
+      <find>ValidateBasic()</find>
+      <find>decoding Bech32 address failed: must provide an address</find>
+      <find>decoding Bech32 address failed: must provide an address!!!</find>
+      <find>GetFromBech32</find>
+      <find>addr_book_strict</find>
+      <find>cmdpos</find>
+      <find>rest.laddr</find>
+      <find>account_number</find>
+      <find>!pubKey.VerifyBytes</find>
+      <find>FzsXl36e59WXmmR3tNxQRNOcYaCybVySK+4VBRjCG20=</find>
+      <find>module_permissions</find>
+      <find>var PowerReduction = NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(9), nil))</find>
+      <find>COSMOS_TOP</find>
+      <find>distribution</find>
+      <find>CHAIN_NODE</find>
+      <find>stop okchaind gracefully</find>
+      <find>signature verification failed; verify correct account sequence and chain-id</find>
+      <find>eva</find>
+      <find>neva</find>
+      <find>startRestServer</find>
+      <find>signature verification failed</find>
+      <find>cosmos-sdk/MsgUnjail</find>
+      <find>evavalcons1k7jruhj0ys5mpakv94ggllnd7g47ru5l9zmq5p</find>
+      <find>GetTotal()</find>
+      <find>NewDecCoins</find>
+      <find>types/dec_coin.go</find>
+      <find>DeductFees</find>
+    </findStrings>
+    <replaceStrings>
+      <replace>EVA_VALIDATOR_URL</replace>
+      <replace>$SAMPLE_DURATION</replace>
+      <replace>${CLIENT_NAME}</replace>
+      <replace>MsgSetRecommendAddress</replace>
+      <replace>cosmos</replace>
+      <replace>$distribution</replace>
+    </replaceStrings>
+  </component>
+  <component name="GOROOT" path="/usr/local/go" />
+  <component name="Git.Settings">
+    <option name="ROOT_SYNC" value="DONT_SYNC" />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="v0.37.8_patched_tmp" />
+      </map>
+    </option>
+    <favorite-branches>
+      <branch-storage>
+        <map>
+          <entry type="LOCAL">
+            <value>
+              <list>
+                <branch-info repo="$PROJECT_DIR$" source="v0.37.4_patched" />
+              </list>
+            </value>
+          </entry>
+        </map>
+      </branch-storage>
+    </favorite-branches>
+  </component>
+  <component name="GoLibraries">
+    <option name="indexEntireGoPath" value="false" />
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/dev/query6.sh" />
+        <option value="$PROJECT_DIR$/dev/query2.sh" />
+        <option value="$PROJECT_DIR$/x/distribution/types/msg.go" />
+        <option value="$PROJECT_DIR$/x/distribution/alias.go" />
+        <option value="$PROJECT_DIR$/x/distribution/handler.go" />
+        <option value="$PROJECT_DIR$/x/distribution/types/codec.go" />
+        <option value="$PROJECT_DIR$/x/distribution/client/module_client.go" />
+        <option value="$PROJECT_DIR$/x/distribution/client/cli/tx.go" />
+        <option value="$PROJECT_DIR$/dev/q1.sh" />
+        <option value="$PROJECT_DIR$/README.md" />
+        <option value="$PROJECT_DIR$/server/export.go" />
+        <option value="$PROJECT_DIR$/go.mod" />
+        <option value="$PROJECT_DIR$/dev/query.sh" />
+        <option value="$PROJECT_DIR$/x/staking/types/params.go" />
+        <option value="$PROJECT_DIR$/dev/testnet/nohup.out" />
+        <option value="$PROJECT_DIR$/dev/testnet/addaccount.sh" />
+        <option value="$PROJECT_DIR$/dev/testnet/unbond.sh" />
+        <option value="$PROJECT_DIR$/x/mint/abci_app.go" />
+        <option value="$PROJECT_DIR$/dev/testnet/README.md" />
+        <option value="$PROJECT_DIR$/dev/testnet/cache/node0/gaiad/config/priv_validator_key.json" />
+        <option value="$PROJECT_DIR$/dev/start.sh" />
+        <option value="$PROJECT_DIR$/dev/testnet/create-validator.sh" />
+        <option value="$PROJECT_DIR$/dev/testnet/run.sh" />
+        <option value="$PROJECT_DIR$/dev/testnet/testnet.sh" />
+        <option value="$PROJECT_DIR$/dev/testnet/env.profile" />
+        <option value="$PROJECT_DIR$/dev/testnet/newvalidator.sh" />
+        <option value="$PROJECT_DIR$/x/staking/client/cli/tx.go" />
+        <option value="$PROJECT_DIR$/types/address.go" />
+        <option value="$PROJECT_DIR$/dev/testnet/nv.sh" />
+        <option value="$PROJECT_DIR$/vendor/github.com/tendermint/tendermint/p2p/transport.go" />
+        <option value="$PROJECT_DIR$/dev/qvalidators.sh" />
+        <option value="$PROJECT_DIR$/Makefile" />
+        <option value="$PROJECT_DIR$/dev/testnet/37testnet.sh" />
+        <option value="$PROJECT_DIR$/dev/testnet/37env.profile" />
+        <option value="$PROJECT_DIR$/dev/testnet/qvalidators.sh" />
+        <option value="$PROJECT_DIR$/dev/testnet/qrewards.sh" />
+        <option value="$PROJECT_DIR$/.gitignore" />
+        <option value="$PROJECT_DIR$/types/staking.go" />
+        <option value="$PROJECT_DIR$/x/staking/types/validator.go" />
+        <option value="$PROJECT_DIR$/x/staking/types/msg.go" />
+        <option value="$PROJECT_DIR$/dev/testnet/export.sh" />
+        <option value="$PROJECT_DIR$/dev/testnet/addnode.sh" />
+        <option value="$PROJECT_DIR$/cmd/gaia/init/testnet.go" />
+        <option value="$PROJECT_DIR$/dev/testnet/qaccount.sh" />
+        <option value="$PROJECT_DIR$/x/auth/ante.go" />
+        <option value="$PROJECT_DIR$/x/slashing/msg.go" />
+        <option value="$PROJECT_DIR$/dev/testnet/eva35.json" />
+        <option value="$PROJECT_DIR$/types/dec_coin.go" />
+        <option value="$PROJECT_DIR$/0001-v0.10.0-patched.patch" />
+        <option value="$PROJECT_DIR$/x/auth/client/cli/query.go" />
+        <option value="$PROJECT_DIR$/x/staking/keeper/delegation_test.go" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectFrameBounds">
+    <option name="x" value="40" />
+    <option name="y" value="23" />
+    <option name="width" value="1640" />
+    <option name="height" value="1027" />
+  </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectView">
+    <navigator proportions="" version="1">
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="Scope" />
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="cosmos-sdk" type="b2602c69:ProjectViewProjectNode" />
+              <item name="cosmos-sdk" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="cosmos-sdk" type="b2602c69:ProjectViewProjectNode" />
+              <item name="cosmos-sdk" type="462c0819:PsiDirectoryNode" />
+              <item name="x" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="cosmos-sdk" type="b2602c69:ProjectViewProjectNode" />
+              <item name="cosmos-sdk" type="462c0819:PsiDirectoryNode" />
+              <item name="x" type="462c0819:PsiDirectoryNode" />
+              <item name="staking" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="cosmos-sdk" type="b2602c69:ProjectViewProjectNode" />
+              <item name="cosmos-sdk" type="462c0819:PsiDirectoryNode" />
+              <item name="x" type="462c0819:PsiDirectoryNode" />
+              <item name="staking" type="462c0819:PsiDirectoryNode" />
+              <item name="keeper" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="Git.Branch.Popup.ShowAllRemotes" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="go.gopath.indexing.explicitly.defined" value="true" />
+    <property name="go.import.settings.migrated" value="true" />
+    <property name="go.sdk.automatically.set" value="true" />
+    <property name="go.vendoring.notification.had.been.shown" value="true" />
+    <property name="last_opened_file_path" value="$USER_HOME$" />
+    <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
+    <property name="nodejs_npm_path_reset_for_default_project" value="true" />
+    <property name="nodejs_package_manager_path" value="npm" />
+    <property name="settings.editor.selected.configurable" value="go" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/dev/testnet" />
+      <recent name="$PROJECT_DIR$/dev" />
+      <recent name="$PROJECT_DIR$" />
+    </key>
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="RunManager" selected="Go Build.go build github.com/cosmos/cosmos-sdk/cmd/gaia/cmd/gaiad">
+    <configuration name="go build github.com/cosmos/cosmos-sdk/cmd/gaia/cmd/gaiad" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
+      <module name="cosmos-sdk" />
+      <working_directory value="$PROJECT_DIR$" />
+      <parameters value="export --home  dev/cache/node0/gaiad" />
+      <kind value="PACKAGE" />
+      <filePath value="$PROJECT_DIR$/cmd/gaia/cmd/gaiad/main.go" />
+      <package value="github.com/cosmos/cosmos-sdk/cmd/gaia/cmd/gaiad" />
+      <directory value="$PROJECT_DIR$/" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestMsgWithdrawValidatorCommission in github.com/cosmos/cosmos-sdk/x/distribution/types" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="cosmos-sdk" />
+      <working_directory value="$PROJECT_DIR$/x/distribution/types" />
+      <framework value="gotest" />
+      <kind value="PACKAGE" />
+      <package value="github.com/cosmos/cosmos-sdk/x/distribution/types" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/" />
+      <pattern value="^TestMsgWithdrawValidatorCommission$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestWithdrawDelegationRewardsBasic in github.com/cosmos/cosmos-sdk/x/distribution/keeper" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="cosmos-sdk" />
+      <working_directory value="$PROJECT_DIR$/x/distribution/keeper" />
+      <framework value="gotest" />
+      <kind value="PACKAGE" />
+      <package value="github.com/cosmos/cosmos-sdk/x/distribution/keeper" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/" />
+      <pattern value="^TestWithdrawDelegationRewardsBasic$" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Go Build.go build github.com/cosmos/cosmos-sdk/cmd/gaia/cmd/gaiad" />
+      <item itemvalue="Go Test.TestMsgWithdrawValidatorCommission in github.com/cosmos/cosmos-sdk/x/distribution/types" />
+      <item itemvalue="Go Test.TestWithdrawDelegationRewardsBasic in github.com/cosmos/cosmos-sdk/x/distribution/keeper" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Go Test.TestWithdrawDelegationRewardsBasic in github.com/cosmos/cosmos-sdk/x/distribution/keeper" />
+        <item itemvalue="Go Test.TestMsgWithdrawValidatorCommission in github.com/cosmos/cosmos-sdk/x/distribution/types" />
+        <item itemvalue="Go Build.go build github.com/cosmos/cosmos-sdk/cmd/gaia/cmd/gaiad" />
+        <item itemvalue="Go Test.TestWithdrawDelegationRewardsBasic in github.com/cosmos/cosmos-sdk/x/distribution/keeper" />
+        <item itemvalue="Go Test.TestMsgWithdrawValidatorCommission in github.com/cosmos/cosmos-sdk/x/distribution/types" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="TestHistory">
+    <history-entry file="TestMsgWithdrawValidatorCommission_in_github_com_cosmos_cosmos-sdk_x_distribution_types - 2019.10.18 at 23h 36m 26s.xml">
+      <configuration name="TestMsgWithdrawValidatorCommission in github.com/cosmos/cosmos-sdk/x/distribution/types" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="40" y="23" width="1640" height="1027" extended-state="6" />
+    <layout>
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.0" visible="true" weight="0.18022528" />
+      <window_info id="Structure" order="1" sideWeight="1.0" side_tool="true" weight="0.306875" />
+      <window_info id="Query Editor" order="2" />
+      <window_info id="Favorites" order="3" side_tool="true" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.45775402" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.31657755" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.6096257" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="bottom" id="SFDX" order="7" />
+      <window_info anchor="bottom" id="Docker" order="8" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Version Control" order="9" />
+      <window_info anchor="bottom" id="DB Execution Console" order="10" />
+      <window_info anchor="bottom" id="Database Changes" order="11" />
+      <window_info anchor="bottom" id="Salesforce" order="12" />
+      <window_info anchor="bottom" id="Log Manager" order="13" />
+      <window_info anchor="bottom" id="Execute Anonymous" order="14" />
+      <window_info active="true" anchor="bottom" id="Terminal" order="15" visible="true" weight="0.39251336" />
+      <window_info anchor="bottom" id="Event Log" order="16" side_tool="true" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="right" id="PlantUML" order="3" />
+      <window_info anchor="right" id="Database" order="4" />
+      <window_info anchor="right" id="make" order="5" />
+    </layout>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="VgoProject">
+    <integration-enabled>true</integration-enabled>
+    <proxy>direct</proxy>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/cmd/gaia/app/export.go</url>
+          <line>41</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/cmd/gaia/app/export.go</url>
+          <line>53</line>
+          <option name="timeStamp" value="2" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/types/address.go</url>
+          <line>716</line>
+          <option name="timeStamp" value="5" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/server/root.go" />
+    <entry file="file://$PROJECT_DIR$/dev/testnet/cache/gaiad.1.log" />
+    <entry file="file://$PROJECT_DIR$/dev/testnet/export.sh" />
+    <entry file="file://$PROJECT_DIR$/dev/testnet/cache/gaiad.2.log" />
+    <entry file="file://$PROJECT_DIR$/dev/testnet/35_h10.json" />
+    <entry file="file://$PROJECT_DIR$/dev/testnet/cache/node4/gaiad/config/priv_validator_key.json" />
+    <entry file="file://$PROJECT_DIR$/dev/testnet/cache/node4/gaiad/config/genesis.json" />
+    <entry file="file://$PROJECT_DIR$/dev/testnet/cache/node4/gaiad/data/priv_validator_state.json" />
+    <entry file="file://$PROJECT_DIR$/dev/testnet/cache/node4/gaiad/config/node_key.json" />
+    <entry file="file://$PROJECT_DIR$/dev/testnet/cache/node1/gaiacli/key_seed.json" />
+    <entry file="file://$PROJECT_DIR$/dev/testnet/testnet.sh" />
+    <entry file="file://$PROJECT_DIR$/server/init.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="16">
+          <caret line="27" column="5" selection-start-line="27" selection-start-column="5" selection-end-line="27" selection-end-column="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cmd/gaia/init/utils.go" />
+    <entry file="file://$PROJECT_DIR$/cmd/gaia/init/testnet.go" />
+    <entry file="file://$PROJECT_DIR$/dev/testnet/cache/gaiad.3.log" />
+    <entry file="file://$PROJECT_DIR$/dev/testnet/cache/gaiad.node5.log" />
+    <entry file="file://$PROJECT_DIR$/dev/testnet/addnode.sh" />
+    <entry file="file://$PROJECT_DIR$/dev/testnet/qaccount.sh" />
+    <entry file="file://$PROJECT_DIR$/dev/testnet/cache/gaiad.node4.log" />
+    <entry file="file://$PROJECT_DIR$/dev/testnet/qvalidators.sh" />
+    <entry file="file://$PROJECT_DIR$/cmd/gaia/cmd/gaiad/main.go" />
+    <entry file="file://$PROJECT_DIR$/cmd/gaia/app/app.go" />
+    <entry file="file://$PROJECT_DIR$/cmd/gaia/app/export.go" />
+    <entry file="file://$PROJECT_DIR$/x/slashing/msg.go" />
+    <entry file="file://$PROJECT_DIR$/x/slashing/codec.go" />
+    <entry file="file://$PROJECT_DIR$/cmd/gaia/app/genesis.go" />
+    <entry file="file://$PROJECT_DIR$/dev/testnet/35.json" />
+    <entry file="file://$PROJECT_DIR$/dev/testnet/eva35.json" />
+    <entry file="file://$PROJECT_DIR$/CONTRIBUTING.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor />
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.dockerignore">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/x/bank/internal/keeper/keeper_test.go">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/x/supply/client/rest/query.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="228">
+          <caret line="21" column="8" selection-start-line="21" selection-start-column="8" selection-end-line="21" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/types/coin_okchain.go">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/types/dec_coin.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="836">
+          <caret line="44" selection-start-line="44" selection-end-line="44" />
+          <folding>
+            <element signature="e#15#77#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/0001-v0.10.0-patched.patch" />
+    <entry file="file://$PROJECT_DIR$/server/config/toml.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="494">
+          <caret line="31" selection-start-line="31" selection-end-line="31" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/types/coin.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="8991">
+          <caret line="684" column="17" lean-forward="true" selection-start-line="684" selection-start-column="17" selection-end-line="684" selection-end-column="17" />
+          <folding>
+            <element signature="e#15#59#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.gitattributes">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="19">
+          <caret line="1" selection-start-line="1" selection-end-line="1" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/x/upgrade/client/cli/tx.go" />
+    <entry file="file://$PROJECT_DIR$/x/upgrade/spec/01_concepts.md" />
+    <entry file="file://$PROJECT_DIR$/x/evidence/client/cli/tx.go" />
+    <entry file="file://$PROJECT_DIR$/x/supply/exported/exported.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="114">
+          <caret line="10" column="17" selection-start-line="10" selection-start-column="17" selection-end-line="10" selection-end-column="17" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/x/auth/exported/exported.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="38">
+          <caret line="2" selection-start-line="2" selection-end-line="2" />
+          <folding>
+            <element signature="e#18#123#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/x/bank/internal/types/expected_keepers.go">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/x/bank/internal/keeper/keeper.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="6270">
+          <caret line="340" column="45" selection-start-line="340" selection-start-column="45" selection-end-line="340" selection-end-column="45" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/x/auth/client/cli/query.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="209">
+          <caret line="29" selection-start-line="29" selection-end-line="29" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/x/auth/ante.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="380">
+          <caret line="34" selection-start-line="34" selection-end-line="43" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/x/staking/genesis_test.go">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.golangci.yml">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/x/slashing/client/cli/tx.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="703">
+          <caret line="47" column="34" selection-start-line="47" selection-start-column="34" selection-end-line="47" selection-end-column="34" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/x/staking/keeper/delegation_test.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="339">
+          <caret line="347" selection-start-line="347" selection-end-line="347" />
+        </state>
+      </provider>
+    </entry>
+  </component>
+</project>

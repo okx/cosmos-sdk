@@ -1,6 +1,9 @@
 package types
 
-import "fmt"
+import (
+	"fmt"
+	"math/big"
+)
 
 //-----------------------------------------------------------------------------
 // Coin: alias to DecCoin
@@ -28,6 +31,12 @@ func (dec DecCoin) ToCoins() Coins {
 	return NewCoins(dec)
 }
 
+// Round a decimal with precision, perform bankers rounding (gaussian rounding)
+func (d Dec) RoundDecimal(precision int64) Dec {
+	precisionMul := NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(precision), nil))
+	return newDecFromInt(d.MulInt(precisionMul).RoundInt()).QuoInt(precisionMul)
+}
+
 func ValidateDenom(denom string) error {
 	return validateDenom(denom)
 }
@@ -52,14 +61,10 @@ func validate(denom string, amount Int) error {
 	return nil
 }
 
-//func (coin DecCoin) IsValid() bool {
-//	if err := validateDenom(coin.Denom); err != nil {
-//		return false
-//	}
-//
-//	if coin.Amount.LT(ZeroDec()) {
-//		return false
-//	}
-//
-//	return true
-//}
+func GetSystemFee() Coin {
+	return NewDecCoinFromDec(DefaultBondDenom, NewDecWithPrec(125, 4))
+}
+
+func ZeroFee() Coin {
+	return NewCoin(DefaultBondDenom, ZeroInt())
+}

@@ -56,6 +56,11 @@ func handleMsgUnjail(ctx sdk.Context, msg MsgUnjail, k Keeper) sdk.Result {
 		return ErrNoValidatorForAddress(k.codespace).Result()
 	}
 
+	if info.ValidatorStatus == types.Destroying{
+		//cannot be unjailed while target validator was destroying
+		return ErrValidatorJailed(k.codespace).Result()
+	}
+
 	// cannot be unjailed if tombstoned
 	if info.Tombstoned {
 		return ErrValidatorJailed(k.codespace).Result()

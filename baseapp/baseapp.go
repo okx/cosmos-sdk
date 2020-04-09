@@ -28,15 +28,15 @@ import (
 var mainConsensusParamsKey = []byte("consensus_params")
 
 // Enum mode for app.runTx
-type runTxMode uint8
+type RunTxMode uint8
 
 const (
 	// Check a transaction
-	runTxModeCheck runTxMode = iota
+	runTxModeCheck RunTxMode = iota
 	// Simulate a transaction
-	runTxModeSimulate runTxMode = iota
+	runTxModeSimulate RunTxMode = iota
 	// Deliver a transaction
-	runTxModeDeliver runTxMode = iota
+	runTxModeDeliver RunTxMode = iota
 
 	// MainStoreKey is the string representation of the main store
 	MainStoreKey = "main"
@@ -69,8 +69,8 @@ type BaseApp struct {
 	// checkState is set on initialization and reset on Commit.
 	// deliverState is set in InitChain and BeginBlock and cleared on Commit.
 	// See methods setCheckState and setDeliverState.
-	checkState   *state          // for CheckTx
-	deliverState *state          // for DeliverTx
+	checkState   *State          // for CheckTx
+	deliverState *State          // for DeliverTx
 	voteInfos    []abci.VoteInfo // absent validators from begin block
 
 	// consensus params
@@ -304,7 +304,7 @@ func (app *BaseApp) IsSealed() bool { return app.sealed }
 // It is called by InitChain() and Commit()
 func (app *BaseApp) setCheckState(header abci.Header) {
 	ms := app.cms.CacheMultiStore()
-	app.checkState = &state{
+	app.checkState = &State{
 		ms:  ms,
 		ctx: sdk.NewContext(ms, header, true, app.logger).WithMinGasPrices(app.minGasPrices),
 	}
@@ -316,7 +316,7 @@ func (app *BaseApp) setCheckState(header abci.Header) {
 // and deliverState is set nil on Commit().
 func (app *BaseApp) setDeliverState(header abci.Header) {
 	ms := app.cms.CacheMultiStore()
-	app.deliverState = &state{
+	app.deliverState = &State{
 		ms:  ms,
 		ctx: sdk.NewContext(ms, header, false, app.logger),
 	}
@@ -750,7 +750,7 @@ func validateBasicTxMsgs(msgs []sdk.Msg) sdk.Error {
 }
 
 // retrieve the context for the tx w/ txBytes and other memoized values.
-func (app *BaseApp) getContextForTx(mode runTxMode, txBytes []byte) (ctx sdk.Context) {
+func (app *BaseApp) getContextForTx(mode RunTxMode, txBytes []byte) (ctx sdk.Context) {
 	ctx = app.getState(mode).ctx.
 		WithTxBytes(txBytes).
 		WithVoteInfos(app.voteInfos).
@@ -764,7 +764,7 @@ func (app *BaseApp) getContextForTx(mode runTxMode, txBytes []byte) (ctx sdk.Con
 }
 
 /// runMsgs iterates through all the messages and executes them.
-func (app *BaseApp) runMsgs(ctx sdk.Context, msgs []sdk.Msg, mode runTxMode) (result sdk.Result) {
+func (app *BaseApp) runMsgs(ctx sdk.Context, msgs []sdk.Msg, mode RunTxMode) (result sdk.Result) {
 	msgLogs := make(sdk.ABCIMessageLogs, 0, len(msgs))
 
 	data := make([]byte, 0, len(msgs))
@@ -832,7 +832,7 @@ func (app *BaseApp) runMsgs(ctx sdk.Context, msgs []sdk.Msg, mode runTxMode) (re
 
 // Returns the applications's deliverState if app is in runTxModeDeliver,
 // otherwise it returns the application's checkstate.
-func (app *BaseApp) getState(mode runTxMode) *state {
+func (app *BaseApp) getState(mode RunTxMode) *State {
 	if mode == runTxModeCheck || mode == runTxModeSimulate {
 		return app.checkState
 	}
@@ -865,7 +865,7 @@ func (app *BaseApp) cacheTxContext(ctx sdk.Context, txBytes []byte) (
 // anteHandler. The provided txBytes may be nil in some cases, eg. in tests. For
 // further details on transaction execution, reference the BaseApp SDK
 // documentation.
-func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk.Result) {
+func (app *BaseApp) runTx(mode RunTxMode, txBytes []byte, tx sdk.Tx) (result sdk.Result) {
 	// NOTE: GasWanted should be returned by the AnteHandler. GasUsed is
 	// determined by the GasMeter. We need access to the context to get the gas
 	// meter so we initialize upfront.
@@ -1083,15 +1083,15 @@ func (app *BaseApp) halt() {
 // ----------------------------------------------------------------------------
 // State
 
-type state struct {
+type State struct {
 	ms  sdk.CacheMultiStore
 	ctx sdk.Context
 }
 
-func (st *state) CacheMultiStore() sdk.CacheMultiStore {
+func (st *State) CacheMultiStore() sdk.CacheMultiStore {
 	return st.ms.CacheMultiStore()
 }
 
-func (st *state) Context() sdk.Context {
+func (st *State) Context() sdk.Context {
 	return st.ctx
 }

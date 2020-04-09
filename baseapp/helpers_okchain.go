@@ -7,14 +7,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-func RunTxModeDeliver() runTxMode {
+func RunTxModeDeliver() RunTxMode {
 	return runTxModeDeliver
-}
-func RunTxModeCheck() runTxMode {
-	return runTxModeCheck
-}
-func RunTxModeSimulate() runTxMode {
-	return runTxModeSimulate
 }
 
 var (
@@ -54,7 +48,7 @@ func removeFeeTags(res sdk.Result, eventI, attrI int) sdk.Result {
 
 	attrs := res.Events[eventI].Attributes
 	if attrI < len(attrs)-1 {
-		res.Events[eventI].Attributes = append(attrs[:attrI], attrs[attrI+1:]...)
+		res.Events[eventI].Attributes = append(res.Events[eventI].Attributes, attrs[attrI+1:]...)
 	} else {
 		res.Events[eventI].Attributes = attrs[:attrI]
 	}
@@ -68,7 +62,7 @@ func removeFeeTags(res sdk.Result, eventI, attrI int) sdk.Result {
 
 // Returns the applications's deliverState if app is in RunTxModeDeliver,
 // otherwise it returns the application's checkstate.
-func (app *BaseApp) GetState(mode runTxMode) *state {
+func (app *BaseApp) GetState(mode RunTxMode) *State {
 	if mode == runTxModeCheck || mode == runTxModeSimulate {
 		return app.checkState
 	}

@@ -25,7 +25,7 @@ const (
 	// plugin flags
 	FlagBackendEnableBackend       = "backend.enable_backend"
 	FlagBackendEnableMktCompute    = "backend.enable_mkt_compute"
-	FlagBackendLogSql              = "backend.log_sql"
+	FlagBackendLogSQL              = "backend.log_sql"
 	FlagBackendCleanUpsTime        = "backend.clean_ups_time"
 	FlagBacekendOrmEngineType      = "backend.orm_engine.engine_type"
 	FlagBackendOrmEngineConnectStr = "backend.orm_engine.connect_str"
@@ -43,7 +43,7 @@ type serverHookTable struct {
 	hookTable map[string]interface{}
 }
 
-var gSrvHookTable = serverHookTable{make(map[string]interface{}, 0)}
+var gSrvHookTable = serverHookTable{make(map[string]interface{})}
 
 func InstallHookEx(flag string, hooker fnHookstartInProcess) {
 	gSrvHookTable.hookTable[flag] = hooker
@@ -60,10 +60,7 @@ func callHooker(flag string, args ...interface{}) error {
 			if !ok {
 				return nil
 			}
-			for _, argv := range args {
-				params = append(params, argv)
-			}
-
+			params = append(params, args...)
 			if len(params) != 1 {
 				return errors.New("too many or less parameter called, want 1")
 			}
@@ -78,7 +75,6 @@ func callHooker(flag string, args ...interface{}) error {
 			caller := function.(fnHookstartInProcess)
 			return caller(p1)
 		}
-		break
 	default:
 		break
 	}
@@ -95,7 +91,10 @@ func setPID(ctx *Context) {
 	}
 	defer f.Close()
 	writer := bufio.NewWriter(f)
-	writer.WriteString(strconv.Itoa(pid))
+	_, err = writer.WriteString(strconv.Itoa(pid))
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 	writer.Flush()
 }
 
@@ -157,7 +156,7 @@ func registerRestServerFlags(cmd *cobra.Command) *cobra.Command {
 func registerOkchainPluginFlags(cmd *cobra.Command) *cobra.Command {
 	cmd.Flags().Bool(FlagBackendEnableBackend, backendConf.EnableBackend, "Enable the node's backend plugin")
 	cmd.Flags().Bool(FlagBackendEnableMktCompute, backendConf.EnableMktCompute, "Enable kline and ticker calculating")
-	cmd.Flags().Bool(FlagBackendLogSql, backendConf.LogSQL, "Enable backend plugin logging sql feature")
+	cmd.Flags().Bool(FlagBackendLogSQL, backendConf.LogSQL, "Enable backend plugin logging sql feature")
 	cmd.Flags().String(FlagBackendCleanUpsTime, backendConf.CleanUpsTime, "Backend plugin`s time of cleaning up kline data")
 	cmd.Flags().String(FlagBacekendOrmEngineType, backendConf.OrmEngine.EngineType, "Backend plugin`s db (mysql or sqlite3)")
 	cmd.Flags().String(FlagBackendOrmEngineConnectStr, backendConf.OrmEngine.ConnectStr, "Backend plugin`s db connect address")

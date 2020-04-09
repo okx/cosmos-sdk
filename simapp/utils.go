@@ -294,7 +294,7 @@ func GenGovGenesisState(cdc *codec.Codec, r *rand.Rand, ap simulation.AppParams,
 // GenMintGenesisState generates a random GenesisState for mint
 func GenMintGenesisState(cdc *codec.Codec, r *rand.Rand, ap simulation.AppParams, genesisState map[string]json.RawMessage) {
 	mintGenesis := mint.NewGenesisState(
-		mint.InitialMinter(
+		mint.InitialMinterCustom(
 			func(r *rand.Rand) sdk.Dec {
 				var v sdk.Dec
 				ap.GetOrGenerate(cdc, simulation.Inflation, &v, r,

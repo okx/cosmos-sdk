@@ -141,7 +141,6 @@ func (k Keeper) SetMinterCustom(ctx sdk.Context, minter types.MinterCustom) {
 }
 
 func (k Keeper) UpdateMinterCustom(ctx sdk.Context, minter *types.MinterCustom, params types.Params) {
-	//
 	totalStakingSupply := k.StakingTokenSupply(ctx)
 	annualProvisions := params.InflationRate.Mul(totalStakingSupply)
 	provisionAmtPerBlock := annualProvisions.Quo(sdk.NewDec(int64(params.BlocksPerYear)))

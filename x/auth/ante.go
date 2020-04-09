@@ -122,7 +122,7 @@ func NewAnteHandler(ak AccountKeeper, supplyKeeper types.SupplyKeeper,
 		// deduct the fees
 		msgs := stdTx.GetMsgs()
 		if isSystemFreeHandler != nil && !isSystemFreeHandler(ctx, msgs) {
-			res = DeductFees(supplyKeeper, newCtx, signerAccs[0], GetSysFeeCoins())
+			res = DeductFees(supplyKeeper, newCtx, signerAccs[0], sdk.GetSystemFee().ToCoins())
 			if !res.IsOK() {
 				return newCtx, res, true
 			}
@@ -166,9 +166,9 @@ func NewAnteHandler(ak AccountKeeper, supplyKeeper types.SupplyKeeper,
 		}
 
 		//stat actual system fee
-		var actualSysFee sdk.Coin = GetSystemFee()
+		actualSysFee := sdk.GetSystemFee()
 		if isSystemFreeHandler != nil && isSystemFreeHandler(ctx, msgs) {
-			actualSysFee = ZeroFee()
+			actualSysFee = sdk.ZeroFee()
 		}
 
 		//fire systemFee event

@@ -26,9 +26,11 @@ func (c *Cache) Flush() {
 
 // GetAllAccounts returns all accounts in the accountKeeper.
 func (ak AccountKeeper) GetUpdatedAccAddress(ctx sdk.Context) (accs []sdk.AccAddress) {
-	for acc, _ := range ak.cache.updatedAccAddress {
-		addr, _ := sdk.AccAddressFromBech32(acc)
-		accs = append(accs, addr)
+	for acc := range ak.cache.updatedAccAddress {
+		addr, err := sdk.AccAddressFromBech32(acc)
+		if err == nil {
+			accs = append(accs, addr)
+		}
 	}
 
 	ak.cache.Flush()

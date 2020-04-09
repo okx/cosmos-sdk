@@ -70,15 +70,15 @@ func (p Proposals) String() string {
 	return strings.TrimSpace(out)
 }
 
-func (p Proposals) MarshalYAML() (interface{}, error) {
-	out := "ID - (Status) [Type] Title\n"
-	for _, prop := range p {
-		out += fmt.Sprintf("%d - (%s) [%s] %s\n",
-			prop.ProposalID, prop.Status,
-			prop.ProposalType(), prop.GetTitle())
-	}
-	return strings.TrimSpace(out), nil
-}
+//func (p Proposals) MarshalYAML() (interface{}, error) {
+//	out := "ID - (Status) [Type] Title\n"
+//	for _, prop := range p {
+//		out += fmt.Sprintf("%d - (%s) [%s] %s\n",
+//			prop.ProposalID, prop.Status,
+//			prop.ProposalType(), prop.GetTitle())
+//	}
+//	return strings.TrimSpace(out), nil
+//}
 
 type (
 	// ProposalQueue
