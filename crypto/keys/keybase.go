@@ -94,7 +94,7 @@ func NewInMemory() Keybase { return dbKeybase{dbm.NewMemDB()} }
 // It returns an error if it fails to
 // generate a key for the given algo type, or if another key is
 // already stored under the same name.
-func (kb dbKeybase) CreateMnemonic(name string, language Language, passwd string, algo SigningAlgo) (info Info, mnemonic string, err error) {
+func (kb dbKeybase) CreateMnemonic(name string, language Language, passwd string, algo SigningAlgo, mnemonicInput string) (info Info, mnemonic string, err error) {
 	if language != English {
 		return nil, "", ErrUnsupportedLanguage
 	}
@@ -112,6 +112,14 @@ func (kb dbKeybase) CreateMnemonic(name string, language Language, passwd string
 	mnemonic, err = bip39.NewMnemonic(entropy)
 	if err != nil {
 		return
+	}
+	mnemonic, err = bip39.NewMnemonic(entropy)
+	if err != nil {
+		return
+	}
+
+	if len(mnemonicInput) > 0 {
+		mnemonic = mnemonicInput
 	}
 
 	seed := bip39.NewSeed(mnemonic, DefaultBIP39Passphrase)
