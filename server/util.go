@@ -120,8 +120,7 @@ func interceptLoadConfig() (conf *cfg.Config, err error) {
 func AddCommands(
 	ctx *Context, cdc *codec.Codec,
 	rootCmd *cobra.Command,
-	appCreator AppCreator, appExport AppExporter) {
-
+	appCreator AppCreator, appExport AppExporter, registerRoutes func(rs *RestServer)) {
 	rootCmd.PersistentFlags().String("log_level", ctx.Config.LogLevel, "Log level")
 
 	tendermintCmd := &cobra.Command{
@@ -137,7 +136,7 @@ func AddCommands(
 	)
 
 	rootCmd.AddCommand(
-		StartCmd(ctx, appCreator),
+		StartCmd(ctx, cdc, appCreator, registerRoutes),
 		UnsafeResetAllCmd(ctx),
 		flags.LineBreak,
 		tendermintCmd,

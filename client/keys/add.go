@@ -34,6 +34,8 @@ const (
 
 	// DefaultKeyPass contains the default key password for genesis transactions
 	DefaultKeyPass = "12345678"
+	flagMnemonic    = "mnemonic"
+
 )
 
 func addKeyCommand() *cobra.Command {
@@ -72,6 +74,8 @@ the flag --nosort is set.
 	cmd.Flags().Uint32(flagAccount, 0, "Account number for HD derivation")
 	cmd.Flags().Uint32(flagIndex, 0, "Address index number for HD derivation")
 	cmd.Flags().Bool(flags.FlagIndentResponse, false, "Add indent to JSON response")
+	cmd.Flags().BoolP(flagYes, "y", false, "Overwrite the existing account without confirmation") //cmdpos
+	cmd.Flags().StringP(flagMnemonic, "m", "", "Mnemonic words") //cmdpos
 	return cmd
 }
 

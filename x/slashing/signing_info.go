@@ -55,6 +55,30 @@ func (k Keeper) getValidatorMissedBlockBitArray(ctx sdk.Context, address sdk.Con
 	return
 }
 
+
+// Stored by *validator* address (not operator address)
+func (k Keeper) getValidatorMissedBlockBitArrayEva(ctx sdk.Context,
+	address sdk.ConsAddress, index int64, duration int64) (missed bool) {
+
+	if duration > index {
+		duration = index
+	}
+
+	for  {
+		missed = k.getValidatorMissedBlockBitArray(ctx, address, index)
+		//fmt.Printf("check index: %d, missed: %t\n", index, missed)
+		if !missed {
+			return
+		}
+		if duration <= 0 {
+			break
+		}
+		index--
+		duration--
+	}
+	return
+}
+
 // Stored by *validator* address (not operator address)
 func (k Keeper) IterateValidatorMissedBlockBitArray(ctx sdk.Context,
 	address sdk.ConsAddress, handler func(index int64, missed bool) (stop bool)) {

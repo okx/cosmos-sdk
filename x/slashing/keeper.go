@@ -168,7 +168,10 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 	// Update signed block bit array & counter
 	// This counter just tracks the sum of the bit array
 	// That way we avoid needing to read/write the whole array each time
-	previous := k.getValidatorMissedBlockBitArray(ctx, consAddr, index)
+
+	// 连续miss5个, 计数器加1
+	previous := k.getValidatorMissedBlockBitArrayEva(ctx, consAddr, index, 4)
+
 	missed := !signed
 	switch {
 	case !previous && missed:
@@ -199,6 +202,11 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 
 	minHeight := signInfo.StartHeight + k.SignedBlocksWindow(ctx)
 	maxMissed := k.SignedBlocksWindow(ctx) - k.MinSignedPerWindow(ctx)
+
+	//fmt.Printf("signInfo (%+v), minHeight %d, maxMissed %d, SignedBlocksWindow %d, MinSignedPerWindow %d\n",
+	//	signInfo,  minHeight, maxMissed,
+	//	k.SignedBlocksWindow(ctx),
+	//	k.MinSignedPerWindow(ctx))
 
 	// if we are past the minimum height and the validator has missed too many blocks, punish them
 	if height > minHeight && signInfo.MissedBlocksCounter > maxMissed {

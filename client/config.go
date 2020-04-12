@@ -21,7 +21,7 @@ const (
 var configDefaults = map[string]string{
 	"chain-id":       "",
 	"output":         "text",
-	"node":           "tcp://localhost:26657",
+	"node":           "tcp://localhost:20181",
 	"broadcast-mode": "sync",
 }
 
