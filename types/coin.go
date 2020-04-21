@@ -179,7 +179,7 @@ func removeZeroCoins(coins Coins) Coins {
 
 var (
 	// Denominations can be 3 ~ 16 characters long.
-	reDnmString = `[a-z][a-z0-9]{0,9}(\-[a-z0-9]{3})?`
+	reDnmString = `(oip3-)?[a-z][a-z0-9]{0,9}(\-[a-f0-9]{3})?`
 	reAmt       = `[[:digit:]]+`
 	reDecAmt    = `[[:digit:]]*\.?[[:digit:]]+`
 	reSpc       = `[[:space:]]*`
