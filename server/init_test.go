@@ -29,7 +29,7 @@ func TestGenerateSaveCoinKey(t *testing.T) {
 	// Remove the dir to that GenerateSaveCoinKey creates it automatically
 	os.RemoveAll(dir)
 
-	addr, mnemonic, err := server.GenerateSaveCoinKey(dir, "keyname", "012345678", false)
+	addr, mnemonic, err := server.GenerateSaveCoinKey(dir, "keyname", "012345678", false, "")
 	require.NoError(t, err)
 
 	// Test key was actually saved
@@ -53,15 +53,15 @@ func TestGenerateSaveCoinKeyOverwriteFlag(t *testing.T) {
 	os.RemoveAll(dir)
 
 	keyname := "justakey"
-	addr1, _, err := server.GenerateSaveCoinKey(dir, keyname, "012345678", false)
+	addr1, _, err := server.GenerateSaveCoinKey(dir, keyname, "012345678", false, "")
 	require.NoError(t, err)
 
 	// Test overwrite with overwrite=false
-	_, _, err = server.GenerateSaveCoinKey(dir, keyname, "012345678", false)
+	_, _, err = server.GenerateSaveCoinKey(dir, keyname, "012345678", false, "")
 	require.Error(t, err)
 
 	// Test overwrite with overwrite=true
-	addr2, _, err := server.GenerateSaveCoinKey(dir, keyname, "012345678", true)
+	addr2, _, err := server.GenerateSaveCoinKey(dir, keyname, "012345678", true, "")
 	require.NoError(t, err)
 
 	require.NotEqual(t, addr1, addr2)
