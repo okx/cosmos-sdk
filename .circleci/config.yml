@@ -46,9 +46,9 @@ jobs:
       - run:
           name: Cache go modules
           command: make go-mod-cache
-      - run:
-          name: Build
-          command: make build
+#      - run:
+#          name: Build
+#          command: make build
       - run:
           name: Git garbage collection
           command: git gc
@@ -123,20 +123,20 @@ jobs:
       - store_artifacts:
           path: /tmp/logs
 
-  check_statik:
-    executor: golang
-    steps:
-      - make:
-          target: update-swagger-docs
-          description: "Check if statik.go is up-to-date"
+#  check_statik:
+#    executor: golang
+#    steps:
+#      - make:
+#          target: update-swagger-docs
+#          description: "Check if statik.go is up-to-date"
 
 workflows:
   version: 2
   test-suite:
     jobs:
-      - check_statik:
-          requires:
-            - setup_dependencies
+#      - check_statik:
+#          requires:
+#            - setup_dependencies
       - setup_dependencies:
           # This filter enables the job for tags
           filters:
