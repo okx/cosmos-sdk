@@ -49,7 +49,7 @@ func TestHandleMsgVerifyInvariantWithNotEnoughSenderCoins(t *testing.T) {
 	ctx, crisisKeeper, accKeeper, _ := CreateTestInput(t)
 	sender := addrs[0]
 	coin := accKeeper.GetAccount(ctx, sender).GetCoins()[0]
-	excessCoins := sdk.NewCoin(coin.Denom, coin.Amount.AddRaw(1))
+	excessCoins := sdk.NewDecCoinFromDec(coin.Denom, coin.Amount.Add(sdk.NewDec(1)))
 	crisisKeeper.SetConstantFee(ctx, excessCoins)
 
 	h := crisis.NewHandler(crisisKeeper)
