@@ -32,10 +32,10 @@ func ExampleStringifyPathParams() {
 
 func TestStringifyFundraiserPathParams(t *testing.T) {
 	path := NewFundraiserParams(4, types.CoinType, 22)
-	require.Equal(t, "44'/118'/4'/0/22", path.String())
+	require.Equal(t, "44'/996'/4'/0/22", path.String())
 
 	path = NewFundraiserParams(4, types.CoinType, 57)
-	require.Equal(t, "44'/118'/4'/0/57", path.String())
+	require.Equal(t, "44'/996'/4'/0/57", path.String())
 
 	path = NewFundraiserParams(4, 12345, 57)
 	require.Equal(t, "44'/12345'/4'/0/57", path.String())
