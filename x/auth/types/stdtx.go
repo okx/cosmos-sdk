@@ -160,7 +160,7 @@ func (fee StdFee) GasPrices() sdk.DecCoins {
 type StdSignDoc struct {
 	AccountNumber uint64            `json:"account_number" yaml:"account_number"`
 	ChainID       string            `json:"chain_id" yaml:"chain_id"`
-	Fee           json.RawMessage   `json:"-" yaml:"fee"`
+	Fee           json.RawMessage   `json:"fee" yaml:"fee"`
 	Memo          string            `json:"memo" yaml:"memo"`
 	Msgs          []json.RawMessage `json:"msgs" yaml:"msgs"`
 	Sequence      uint64            `json:"sequence" yaml:"sequence"`
