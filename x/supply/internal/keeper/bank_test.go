@@ -33,7 +33,7 @@ func getCoinsByName(ctx sdk.Context, k Keeper, moduleName string) sdk.Coins {
 
 func TestSendCoins(t *testing.T) {
 	nAccs := int64(4)
-	ctx, ak, keeper := createTestInput(t, false, initialPower, nAccs)
+	_, ctx, ak, keeper := CreateTestInput(t, false, initialPower, nAccs)
 
 	baseAcc := ak.NewAccountWithAddress(ctx, types.NewModuleAddress("baseAcc"))
 
@@ -76,7 +76,7 @@ func TestSendCoins(t *testing.T) {
 
 func TestMintCoins(t *testing.T) {
 	nAccs := int64(4)
-	ctx, _, keeper := createTestInput(t, false, initialPower, nAccs)
+	_, ctx, _, keeper := CreateTestInput(t, false, initialPower, nAccs)
 
 	keeper.SetModuleAccount(ctx, burnerAcc)
 	keeper.SetModuleAccount(ctx, minterAcc)
@@ -87,7 +87,7 @@ func TestMintCoins(t *testing.T) {
 
 	require.Error(t, keeper.MintCoins(ctx, "", initCoins), "no module account")
 	require.Panics(t, func() { keeper.MintCoins(ctx, types.Burner, initCoins) }, "invalid permission")
-	require.Panics(t, func() { keeper.MintCoins(ctx, types.Minter, sdk.Coins{sdk.Coin{"denom", sdk.NewInt(-10)}}) }, "insufficient coins") //nolint
+	require.Panics(t, func() { keeper.MintCoins(ctx, types.Minter, sdk.Coins{sdk.Coin{"denom", sdk.NewDec(-10)}}) }, "insufficient coins") //nolint
 
 	require.Panics(t, func() { keeper.MintCoins(ctx, randomPerm, initCoins) })
 
@@ -109,7 +109,7 @@ func TestMintCoins(t *testing.T) {
 
 func TestBurnCoins(t *testing.T) {
 	nAccs := int64(4)
-	ctx, _, keeper := createTestInput(t, false, initialPower, nAccs)
+	_, ctx, _, keeper := CreateTestInput(t, false, initialPower, nAccs)
 
 	require.NoError(t, burnerAcc.SetCoins(initCoins))
 	keeper.SetModuleAccount(ctx, burnerAcc)

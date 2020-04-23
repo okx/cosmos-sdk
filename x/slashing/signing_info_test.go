@@ -7,10 +7,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/slashing/types"
 )
 
 func TestGetSetValidatorSigningInfo(t *testing.T) {
-	ctx, _, _, _, keeper := createTestInput(t, DefaultParams())
+	_, ctx, _, _, _, keeper := createTestInput(t, DefaultParams())
 	info, found := keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(addrs[0]))
 	require.False(t, found)
 	newInfo := NewValidatorSigningInfo(
@@ -20,6 +21,7 @@ func TestGetSetValidatorSigningInfo(t *testing.T) {
 		time.Unix(2, 0),
 		false,
 		int64(10),
+		types.Created,
 	)
 	keeper.SetValidatorSigningInfo(ctx, sdk.ConsAddress(addrs[0]), newInfo)
 	info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(addrs[0]))
@@ -31,7 +33,7 @@ func TestGetSetValidatorSigningInfo(t *testing.T) {
 }
 
 func TestGetSetValidatorMissedBlockBitArray(t *testing.T) {
-	ctx, _, _, _, keeper := createTestInput(t, DefaultParams())
+	_, ctx, _, _, _, keeper := createTestInput(t, DefaultParams())
 	missed := keeper.getValidatorMissedBlockBitArray(ctx, sdk.ConsAddress(addrs[0]), 0)
 	require.False(t, missed) // treat empty key as not missed
 	keeper.setValidatorMissedBlockBitArray(ctx, sdk.ConsAddress(addrs[0]), 0, true)

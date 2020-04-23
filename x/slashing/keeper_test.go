@@ -28,7 +28,7 @@ func keeperTestParams() types.Params {
 func TestHandleDoubleSign(t *testing.T) {
 
 	// initial setup
-	ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
+	_, ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
 	// validator added pre-genesis
 	ctx = ctx.WithBlockHeight(-1)
 	power := int64(100)
@@ -89,7 +89,7 @@ func TestHandleDoubleSign(t *testing.T) {
 func TestPastMaxEvidenceAge(t *testing.T) {
 
 	// initial setup
-	ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
+	_, ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
 	// validator added pre-genesis
 	ctx = ctx.WithBlockHeight(-1)
 	power := int64(100)
@@ -126,7 +126,7 @@ func TestPastMaxEvidenceAge(t *testing.T) {
 func TestHandleAbsentValidator(t *testing.T) {
 
 	// initial setup
-	ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
+	_, ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
 	power := int64(100)
 	amt := sdk.TokensFromConsensusPower(power)
 	addr, val := addrs[0], pks[0]
@@ -175,7 +175,7 @@ func TestHandleAbsentValidator(t *testing.T) {
 	validator, _ := sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
 	require.Equal(t, sdk.Bonded, validator.GetStatus())
 	bondPool := sk.GetBondedPool(ctx)
-	require.True(sdk.IntEq(t, amt, bondPool.GetCoins().AmountOf(sk.BondDenom(ctx))))
+	require.True(sdk.IntEq(t, amt, bondPool.GetCoins().AmountOf(sk.BondDenom(ctx)).RoundInt()))
 
 	// 501st block missed
 	ctx = ctx.WithBlockHeight(height)
@@ -277,7 +277,7 @@ func TestHandleAbsentValidator(t *testing.T) {
 // and that they are not immediately jailed
 func TestHandleNewValidator(t *testing.T) {
 	// initial setup
-	ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
+	_, ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
 	addr, val := addrs[0], pks[0]
 	amt := sdk.TokensFromConsensusPower(100)
 	sh := staking.NewHandler(sk)
@@ -321,7 +321,7 @@ func TestHandleNewValidator(t *testing.T) {
 func TestHandleAlreadyJailed(t *testing.T) {
 
 	// initial setup
-	ctx, _, sk, _, keeper := createTestInput(t, DefaultParams())
+	_, ctx, _, sk, _, keeper := createTestInput(t, DefaultParams())
 	power := int64(100)
 	amt := sdk.TokensFromConsensusPower(power)
 	addr, val := addrs[0], pks[0]
@@ -371,7 +371,7 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 
 	// initial setup
 	// keeperTestParams set the SignedBlocksWindow to 1000 and MaxMissedBlocksPerWindow to 500
-	ctx, _, sk, _, keeper := createTestInput(t, keeperTestParams())
+	_, ctx, _, sk, _, keeper := createTestInput(t, keeperTestParams())
 	params := sk.GetParams(ctx)
 	params.MaxValidators = 1
 	sk.SetParams(ctx, params)

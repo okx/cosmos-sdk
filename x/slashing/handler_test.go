@@ -9,12 +9,13 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 )
 
 func TestCannotUnjailUnlessJailed(t *testing.T) {
 	// initial setup
-	ctx, ck, sk, _, keeper := createTestInput(t, DefaultParams())
+	_, ctx, ck, sk, _, keeper := createTestInput(t, DefaultParams())
 	slh := NewHandler(keeper)
 	amt := sdk.TokensFromConsensusPower(100)
 	addr, val := addrs[0], pks[0]
@@ -38,7 +39,7 @@ func TestCannotUnjailUnlessJailed(t *testing.T) {
 
 func TestCannotUnjailUnlessMeetMinSelfDelegation(t *testing.T) {
 	// initial setup
-	ctx, ck, sk, _, keeper := createTestInput(t, DefaultParams())
+	_, ctx, ck, sk, _, keeper := createTestInput(t, DefaultParams())
 	slh := NewHandler(keeper)
 	amtInt := int64(100)
 	addr, val, amt := addrs[0], pks[0], sdk.TokensFromConsensusPower(amtInt)
@@ -67,7 +68,7 @@ func TestCannotUnjailUnlessMeetMinSelfDelegation(t *testing.T) {
 }
 
 func TestJailedValidatorDelegations(t *testing.T) {
-	ctx, _, stakingKeeper, _, slashingKeeper := createTestInput(t, DefaultParams())
+	_, ctx, _, stakingKeeper, _, slashingKeeper := createTestInput(t, DefaultParams())
 
 	stakingParams := stakingKeeper.GetParams(ctx)
 	stakingParams.UnbondingTime = 0
@@ -86,7 +87,7 @@ func TestJailedValidatorDelegations(t *testing.T) {
 	staking.EndBlocker(ctx, stakingKeeper)
 
 	// set dummy signing info
-	newInfo := NewValidatorSigningInfo(consAddr, 0, 0, time.Unix(0, 0), false, 0)
+	newInfo := NewValidatorSigningInfo(consAddr, 0, 0, time.Unix(0, 0), false, 0, types.Created)
 	slashingKeeper.SetValidatorSigningInfo(ctx, consAddr, newInfo)
 
 	// delegate tokens to the validator
