@@ -249,22 +249,14 @@ func TestHandleAbsentValidator(t *testing.T) {
 	validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
 	require.Equal(t, sdk.Bonded, validator.GetStatus())
 
-	// 500 signed blocks
-	nextHeight := height + keeper.MinSignedPerWindow(ctx) + 1
+	// maxmissed signed blocks
+	maxMissed := keeper.SignedBlocksWindow(ctx) - keeper.MinSignedPerWindow(ctx)
+	nextHeight := height + maxMissed + 1
 	for ; height < nextHeight; height++ {
 		ctx = ctx.WithBlockHeight(height)
 		keeper.HandleValidatorSignature(ctx, val.Address(), power, false)
 	}
 
-	// end block
-	staking.EndBlocker(ctx, sk)
-
-	// validator should be jailed again after 500 unsigned blocks
-	nextHeight = height + keeper.MinSignedPerWindow(ctx) + 1
-	for ; height <= nextHeight; height++ {
-		ctx = ctx.WithBlockHeight(height)
-		keeper.HandleValidatorSignature(ctx, val.Address(), power, false)
-	}
 
 	// end block
 	staking.EndBlocker(ctx, sk)
@@ -385,6 +377,7 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 	got := sh(ctx, NewTestMsgCreateValidator(addr, val, amt))
 	require.True(t, got.IsOK())
 	staking.EndBlocker(ctx, sk)
+	maxMissed := keeper.SignedBlocksWindow(ctx) - keeper.MinSignedPerWindow(ctx)
 
 	// 100 first blocks OK
 	height := int64(0)
@@ -426,7 +419,7 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 
 	// validator misses 500 more blocks, 501 total
 	latest := height
-	for ; height < latest+500; height++ {
+	for ; height < latest+maxMissed; height++ {
 		ctx = ctx.WithBlockHeight(height)
 		keeper.HandleValidatorSignature(ctx, val.Address(), newPower, false)
 	}
@@ -462,8 +455,9 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 	require.Equal(t, sdk.Bonded, validator.Status)
 
 	// validator misses 501 blocks
+
 	latest = height
-	for ; height < latest+501; height++ {
+	for ; height < latest+maxMissed+1; height++ {
 		ctx = ctx.WithBlockHeight(height)
 		keeper.HandleValidatorSignature(ctx, val.Address(), newPower, false)
 	}

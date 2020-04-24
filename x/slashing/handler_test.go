@@ -58,12 +58,19 @@ func TestCannotUnjailUnlessMeetMinSelfDelegation(t *testing.T) {
 	undelegateMsg := staking.NewMsgUndelegate(sdk.AccAddress(addr), addr, unbondAmt)
 	got = staking.NewHandler(sk)(ctx, undelegateMsg)
 
+
 	require.True(t, sk.Validator(ctx, addr).IsJailed())
+
+	validator, found := sk.GetValidator(ctx, addr)
+	if found{
+		validator.MinSelfDelegation = sdk.NewInt(0)
+		sk.SetValidator(ctx,validator)
+	}
 
 	// assert non-jailed validator can't be unjailed
 	got = slh(ctx, NewMsgUnjail(addr))
 	require.False(t, got.IsOK(), "allowed unjail of validator with less than MinSelfDelegation")
-	require.EqualValues(t, CodeValidatorNotJailed, got.Code)
+	require.EqualValues(t, CodeMissingSelfDelegation, got.Code)
 	require.EqualValues(t, DefaultCodespace, got.Codespace)
 }
 
@@ -110,6 +117,8 @@ func TestJailedValidatorDelegations(t *testing.T) {
 	validator, found := stakingKeeper.GetValidator(ctx, valAddr)
 	require.True(t, found)
 	require.True(t, validator.IsJailed())
+	validator.MinSelfDelegation = sdk.ZeroInt()
+	stakingKeeper.SetValidator(ctx,validator)
 
 	// verify the validator cannot unjail itself
 	got = NewHandler(slashingKeeper)(ctx, NewMsgUnjail(valAddr))
@@ -120,6 +129,8 @@ func TestJailedValidatorDelegations(t *testing.T) {
 	got = staking.NewHandler(stakingKeeper)(ctx, msgSelfDelegate)
 	require.True(t, got.IsOK(), "expected delegation to not be ok, got %v", got)
 
+	validator.MinSelfDelegation = sdk.NewInt(1)
+	stakingKeeper.SetValidator(ctx,validator)
 	// verify the validator can now unjail itself
 	got = NewHandler(slashingKeeper)(ctx, NewMsgUnjail(valAddr))
 	require.True(t, got.IsOK(), "expected jailed validator to be able to unjail, got: %v", got)
