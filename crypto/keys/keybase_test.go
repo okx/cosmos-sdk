@@ -64,7 +64,7 @@ func TestCreateLedger(t *testing.T) {
 	pubKey := ledger.GetPubKey()
 	pk, err := sdk.Bech32ifyAccPub(pubKey)
 	assert.NoError(t, err)
-	assert.Equal(t, "cosmospub1addwnpepqdszcr95mrqqs8lw099aa9h8h906zmet22pmwe9vquzcgvnm93eqygufdlv", pk)
+	assert.Equal(t, "okchainpub1addwnpepqg94y3n0sdcg5w0vhjqgp6e2ux20hxpm2sdy59nnlcny76uc729fyquy75e", pk)
 
 	// Check that restoring the key gets the same results
 	restoredKey, err := kb.Get("some_account")
@@ -73,11 +73,11 @@ func TestCreateLedger(t *testing.T) {
 	assert.Equal(t, TypeLedger, restoredKey.GetType())
 	pubKey = restoredKey.GetPubKey()
 	pk, err = sdk.Bech32ifyAccPub(pubKey)
-	assert.Equal(t, "cosmospub1addwnpepqdszcr95mrqqs8lw099aa9h8h906zmet22pmwe9vquzcgvnm93eqygufdlv", pk)
+	assert.Equal(t, "okchainpub1addwnpepqg94y3n0sdcg5w0vhjqgp6e2ux20hxpm2sdy59nnlcny76uc729fyquy75e", pk)
 
 	path, err := restoredKey.GetPath()
 	assert.NoError(t, err)
-	assert.Equal(t, "44'/118'/3'/0/1", path.String())
+	assert.Equal(t, "44'/996'/3'/0/1", path.String())
 }
 
 // TestKeyManagement makes sure we can manipulate these keys well

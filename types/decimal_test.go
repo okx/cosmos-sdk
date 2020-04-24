@@ -380,7 +380,7 @@ func TestStringOverflow(t *testing.T) {
 	require.NoError(t, err)
 	dec3 := dec1.Add(dec2)
 	require.Equal(t,
-		"19844653375691057515930281852116324640.000000000000000000",
+		"19844653375691057515930281852116324640.00000000",
 		dec3.String(),
 	)
 }
