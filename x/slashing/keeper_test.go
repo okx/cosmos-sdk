@@ -55,8 +55,9 @@ func TestHandleDoubleSign(t *testing.T) {
 	require.True(t, sk.Validator(ctx, operatorAddr).IsJailed())
 
 	// tokens should be decreased
+	// don't slashing tokens, just jail the validator
 	newTokens := sk.Validator(ctx, operatorAddr).GetTokens()
-	require.True(t, newTokens.LT(oldTokens))
+	require.True(t, newTokens.Equal(oldTokens))
 
 	// New evidence
 	keeper.HandleDoubleSign(ctx, val.Address(), 0, time.Unix(0, 0), power)
@@ -232,7 +233,7 @@ func TestHandleAbsentValidator(t *testing.T) {
 
 	// validator should have been slashed
 	bondPool = sk.GetBondedPool(ctx)
-	require.Equal(t, amt.Int64()-slashAmt, bondPool.GetCoins().AmountOf(sk.BondDenom(ctx)).Int64())
+	require.Equal(t, sdk.NewDec(amt.Int64()-slashAmt).Int64(), bondPool.GetCoins().AmountOf(sk.BondDenom(ctx)).Int64())
 
 	// Validator start height should not have been changed
 	info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
@@ -313,7 +314,7 @@ func TestHandleNewValidator(t *testing.T) {
 	require.Equal(t, sdk.Bonded, validator.GetStatus())
 	bondPool := sk.GetBondedPool(ctx)
 	expTokens := sdk.TokensFromConsensusPower(100)
-	require.Equal(t, expTokens.Int64(), bondPool.GetCoins().AmountOf(sk.BondDenom(ctx)).Int64())
+	require.Equal(t, sdk.NewDecFromBigInt(expTokens.BigInt()).Int64(), bondPool.GetCoins().AmountOf(sk.BondDenom(ctx)).Int64())
 }
 
 // Test a jailed validator being "down" twice
@@ -351,8 +352,9 @@ func TestHandleAlreadyJailed(t *testing.T) {
 	require.Equal(t, sdk.Unbonding, validator.GetStatus())
 
 	// validator should have been slashed
-	resultingTokens := amt.Sub(sdk.TokensFromConsensusPower(1))
-	require.Equal(t, resultingTokens, validator.GetTokens())
+	// only jailed
+	//resultingTokens := amt.Sub(sdk.TokensFromConsensusPower(1))
+	require.Equal(t, amt, validator.GetTokens())
 
 	// another block missed
 	ctx = ctx.WithBlockHeight(height)
@@ -360,7 +362,7 @@ func TestHandleAlreadyJailed(t *testing.T) {
 
 	// validator should not have been slashed twice
 	validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
-	require.Equal(t, resultingTokens, validator.GetTokens())
+	require.Equal(t, amt, validator.GetTokens())
 
 }
 
