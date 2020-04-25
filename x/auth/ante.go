@@ -72,7 +72,11 @@ func NewAnteHandler(ak AccountKeeper, supplyKeeper types.SupplyKeeper,
 			}
 		}
 
-		newCtx = SetGasMeter(simulate, ctx, stdTx.Fee.Gas)
+		if isFree {
+			newCtx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+		} else {
+			newCtx = SetGasMeter(simulate, ctx, stdTx.Fee.Gas)
+		}
 
 		// AnteHandlers must have their own defer/recover in order for the BaseApp
 		// to know how much gas was used! This is because the GasMeter is created in
