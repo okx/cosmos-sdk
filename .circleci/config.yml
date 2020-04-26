@@ -4,11 +4,6 @@ executors:
   golang:
     docker:
       - image: circleci/golang:1.13
-  docs:
-    docker:
-      - image: tendermintdev/docker-website-deployment
-    environment:
-      AWS_REGION: us-east-1
 
 commands:
   make:
@@ -35,7 +30,7 @@ commands:
             make << parameters.target >>
 
 jobs:
-  setup_dependencies:
+  test_unit:
     executor: golang
     steps:
       - checkout
@@ -49,6 +44,14 @@ jobs:
       - run:
           name: Git garbage collection
           command: git gc
+      - run:
+          name: Run tests
+          command: |
+            export VERSION="$(git describe --tags --long | sed 's/v\(.*\)/\1/')"
+            export GO111MODULE=on
+            for pkg in $(go list ./... | grep -v staking | grep  -v distribution | grep -v gov | grep -v params | circleci tests split); do
+              go test -mod=readonly -tags='ledger test_ledger_mock' "$pkg"
+            done
       - save_cache:
           name: "Save go modules cache"
           key: go-mod-v1-{{ checksum "go.sum" }}
@@ -59,42 +62,3 @@ jobs:
           key: go-src-v1-{{ .Revision }}
           paths:
             - ".git"
-
-  test_cover:
-    executor: golang
-    parallelism: 4
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - go-mod-v1-{{ checksum "go.sum" }}
-      - run:
-          name: Run tests
-          command: |
-            export VERSION="$(git describe --tags --long | sed 's/v\(.*\)/\1/')"
-            export GO111MODULE=on
-            mkdir -p /tmp/logs /tmp/workspace/profiles
-            for pkg in $(go list ./... | grep -v staking | grep  -v distribution | grep -v gov | grep -v params | circleci tests split); do
-              id=$(echo "$pkg" | sed 's|[/.]|_|g')
-              go test -mod=readonly -timeout 8m -race -coverprofile=/tmp/workspace/profiles/$id.out -covermode=atomic -tags='ledger test_ledger_mock' "$pkg" | tee "/tmp/logs/$id-$RANDOM.log"
-            done
-      - persist_to_workspace:
-          root: /tmp/workspace
-          paths:
-            - "profiles/*"
-      - store_artifacts:
-          path: /tmp/logs
-
-workflows:
-  version: 2
-  test-suite:
-    jobs:
-      - setup_dependencies:
-          # This filter enables the job for tags
-          filters:
-            tags:
-              only:
-                - /^v.*/
-      - test_cover:
-          requires:
-            - setup_dependencies
