@@ -25,7 +25,7 @@ commands:
             make << parameters.target >>
 
 jobs:
-  test_unit:
+  build:
     docker:
       - image: circleci/golang:1.13
     working_directory: /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}
