@@ -482,15 +482,17 @@ func (v Validator) RemoveDelShares(delShares sdk.Dec) (Validator, sdk.Int) {
 }
 
 // nolint - for ValidatorI
-func (v Validator) IsJailed() bool                { return v.Jailed }
-func (v Validator) GetMoniker() string            { return v.Description.Moniker }
-func (v Validator) GetStatus() sdk.BondStatus     { return v.Status }
-func (v Validator) GetOperator() sdk.ValAddress   { return v.OperatorAddress }
-func (v Validator) GetConsPubKey() crypto.PubKey  { return v.ConsPubKey }
-func (v Validator) GetConsAddr() sdk.ConsAddress  { return sdk.ConsAddress(v.ConsPubKey.Address()) }
-func (v Validator) GetTokens() sdk.Int            { return v.Tokens }
-func (v Validator) GetBondedTokens() sdk.Int      { return v.BondedTokens() }
-func (v Validator) GetConsensusPower() int64      { return v.ConsensusPower() }
-func (v Validator) GetCommission() sdk.Dec        { return v.Commission.Rate }
-func (v Validator) GetMinSelfDelegation() sdk.Dec { return sdk.ZeroDec() }
-func (v Validator) GetDelegatorShares() sdk.Dec   { return v.DelegatorShares }
+func (v Validator) IsJailed() bool               { return v.Jailed }
+func (v Validator) GetMoniker() string           { return v.Description.Moniker }
+func (v Validator) GetStatus() sdk.BondStatus    { return v.Status }
+func (v Validator) GetOperator() sdk.ValAddress  { return v.OperatorAddress }
+func (v Validator) GetConsPubKey() crypto.PubKey { return v.ConsPubKey }
+func (v Validator) GetConsAddr() sdk.ConsAddress { return sdk.ConsAddress(v.ConsPubKey.Address()) }
+func (v Validator) GetTokens() sdk.Int           { return v.Tokens }
+func (v Validator) GetBondedTokens() sdk.Int     { return v.BondedTokens() }
+func (v Validator) GetConsensusPower() int64     { return v.ConsensusPower() }
+func (v Validator) GetCommission() sdk.Dec       { return v.Commission.Rate }
+func (v Validator) GetMinSelfDelegation() sdk.Dec {
+	return sdk.NewDecFromBigInt(v.MinSelfDelegation.BigInt())
+}
+func (v Validator) GetDelegatorShares() sdk.Dec { return v.DelegatorShares }

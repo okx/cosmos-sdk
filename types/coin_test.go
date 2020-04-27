@@ -22,8 +22,8 @@ func TestCoin(t *testing.T) {
 	require.Panics(t, func() { NewCoin(testDenom1, NewInt(-1)) })
 	require.Panics(t, func() { NewInt64Coin(strings.ToUpper(testDenom1), 10) })
 	require.Panics(t, func() { NewCoin(strings.ToUpper(testDenom1), NewInt(10)) })
-	require.Equal(t, NewInt(5), NewInt64Coin(testDenom1, 5).Amount)
-	require.Equal(t, NewInt(5), NewCoin(testDenom1, NewInt(5)).Amount)
+	require.Equal(t, NewDec(5), NewInt64Coin(testDenom1, 5).Amount)
+	require.Equal(t, NewDec(5), NewCoin(testDenom1, NewInt(5)).Amount)
 }
 
 func TestIsEqualCoin(t *testing.T) {
@@ -53,14 +53,14 @@ func TestCoinIsValid(t *testing.T) {
 		coin       Coin
 		expectPass bool
 	}{
-		{Coin{testDenom1, NewInt(-1)}, false},
-		{Coin{testDenom1, NewInt(0)}, true},
-		{Coin{testDenom1, NewInt(1)}, true},
-		{Coin{"Atom", NewInt(1)}, false},
-		{Coin{"a", NewInt(1)}, false},
-		{Coin{"a very long coin denom", NewInt(1)}, false},
-		{Coin{"atOm", NewInt(1)}, false},
-		{Coin{"     ", NewInt(1)}, false},
+		{Coin{testDenom1, NewDec(-1)}, false},
+		{Coin{testDenom1, NewDec(0)}, true},
+		{Coin{testDenom1, NewDec(1)}, true},
+		{Coin{"Atom", NewDec(1)}, false},
+		{Coin{"a", NewDec(1)}, true},
+		{Coin{"a very long coin denom", NewDec(1)}, false},
+		{Coin{"atOm", NewDec(1)}, false},
+		{Coin{"     ", NewDec(1)}, false},
 	}
 
 	for i, tc := range cases {
@@ -227,9 +227,9 @@ func TestEqualCoins(t *testing.T) {
 }
 
 func TestAddCoins(t *testing.T) {
-	zero := NewInt(0)
-	one := NewInt(1)
-	two := NewInt(2)
+	zero := NewDec(0)
+	one := NewDec(1)
+	two := NewDec(2)
 
 	cases := []struct {
 		inputOne Coins
@@ -251,9 +251,9 @@ func TestAddCoins(t *testing.T) {
 }
 
 func TestSubCoins(t *testing.T) {
-	zero := NewInt(0)
-	one := NewInt(1)
-	two := NewInt(2)
+	zero := NewDec(0)
+	one := NewDec(1)
+	two := NewDec(2)
 
 	testCases := []struct {
 		inputOne    Coins
@@ -281,48 +281,48 @@ func TestSubCoins(t *testing.T) {
 
 func TestCoins(t *testing.T) {
 	good := Coins{
-		{"gas", NewInt(1)},
-		{"mineral", NewInt(1)},
-		{"tree", NewInt(1)},
+		{"gas", NewDec(1)},
+		{"mineral", NewDec(1)},
+		{"tree", NewDec(1)},
 	}
 	mixedCase1 := Coins{
-		{"gAs", NewInt(1)},
-		{"MineraL", NewInt(1)},
-		{"TREE", NewInt(1)},
+		{"gAs", NewDec(1)},
+		{"MineraL", NewDec(1)},
+		{"TREE", NewDec(1)},
 	}
 	mixedCase2 := Coins{
-		{"gAs", NewInt(1)},
-		{"mineral", NewInt(1)},
+		{"gAs", NewDec(1)},
+		{"mineral", NewDec(1)},
 	}
 	mixedCase3 := Coins{
-		{"gAs", NewInt(1)},
+		{"gAs", NewDec(1)},
 	}
 	empty := NewCoins()
 	badSort1 := Coins{
-		{"tree", NewInt(1)},
-		{"gas", NewInt(1)},
-		{"mineral", NewInt(1)},
+		{"tree", NewDec(1)},
+		{"gas", NewDec(1)},
+		{"mineral", NewDec(1)},
 	}
 
 	// both are after the first one, but the second and third are in the wrong order
 	badSort2 := Coins{
-		{"gas", NewInt(1)},
-		{"tree", NewInt(1)},
-		{"mineral", NewInt(1)},
+		{"gas", NewDec(1)},
+		{"tree", NewDec(1)},
+		{"mineral", NewDec(1)},
 	}
 	badAmt := Coins{
-		{"gas", NewInt(1)},
-		{"tree", NewInt(0)},
-		{"mineral", NewInt(1)},
+		{"gas", NewDec(1)},
+		{"tree", NewDec(0)},
+		{"mineral", NewDec(1)},
 	}
 	dup := Coins{
-		{"gas", NewInt(1)},
-		{"gas", NewInt(1)},
-		{"mineral", NewInt(1)},
+		{"gas", NewDec(1)},
+		{"gas", NewDec(1)},
+		{"mineral", NewDec(1)},
 	}
 	neg := Coins{
-		{"gas", NewInt(-1)},
-		{"mineral", NewInt(1)},
+		{"gas", NewDec(-1)},
+		{"mineral", NewDec(1)},
 	}
 
 	assert.True(t, good.IsValid(), "Coins are valid")
@@ -342,8 +342,8 @@ func TestCoins(t *testing.T) {
 }
 
 func TestCoinsGT(t *testing.T) {
-	one := NewInt(1)
-	two := NewInt(2)
+	one := NewDec(1)
+	two := NewDec(2)
 
 	assert.False(t, Coins{}.IsAllGT(Coins{}))
 	assert.True(t, Coins{{testDenom1, one}}.IsAllGT(Coins{}))
@@ -354,8 +354,8 @@ func TestCoinsGT(t *testing.T) {
 }
 
 func TestCoinsLT(t *testing.T) {
-	one := NewInt(1)
-	two := NewInt(2)
+	one := NewDec(1)
+	two := NewDec(2)
 
 	assert.False(t, Coins{}.IsAllLT(Coins{}))
 	assert.False(t, Coins{{testDenom1, one}}.IsAllLT(Coins{}))
@@ -369,8 +369,8 @@ func TestCoinsLT(t *testing.T) {
 }
 
 func TestCoinsLTE(t *testing.T) {
-	one := NewInt(1)
-	two := NewInt(2)
+	one := NewDec(1)
+	two := NewDec(2)
 
 	assert.True(t, Coins{}.IsAllLTE(Coins{}))
 	assert.False(t, Coins{{testDenom1, one}}.IsAllLTE(Coins{}))
@@ -384,7 +384,7 @@ func TestCoinsLTE(t *testing.T) {
 }
 
 func TestParse(t *testing.T) {
-	one := NewInt(1)
+	one := NewDec(1)
 
 	cases := []struct {
 		input    string
@@ -393,16 +393,16 @@ func TestParse(t *testing.T) {
 	}{
 		{"", true, nil},
 		{"1foo", true, Coins{{"foo", one}}},
-		{"10bar", true, Coins{{"bar", NewInt(10)}}},
-		{"99bar,1foo", true, Coins{{"bar", NewInt(99)}, {"foo", one}}},
-		{"98 bar , 1 foo  ", true, Coins{{"bar", NewInt(98)}, {"foo", one}}},
-		{"  55\t \t bling\n", true, Coins{{"bling", NewInt(55)}}},
-		{"2foo, 97 bar", true, Coins{{"bar", NewInt(97)}, {"foo", NewInt(2)}}},
-		{"5 mycoin,", false, nil},             // no empty coins in a list
-		{"2 3foo, 97 bar", false, nil},        // 3foo is invalid coin name
-		{"11me coin, 12you coin", false, nil}, // no spaces in coin names
-		{"1.2btc", false, nil},                // amount must be integer
-		{"5foo-bar", false, nil},              // once more, only letters in coin name
+		{"10bar", true, Coins{{"bar", NewDec(10)}}},
+		{"99bar,1foo", true, Coins{{"bar", NewDec(99)}, {"foo", one}}},
+		{"98 bar , 1 foo  ", true, Coins{{"bar", NewDec(98)}, {"foo", one}}},
+		{"  55\t \t bling\n", true, Coins{{"bling", NewDec(55)}}},
+		{"2foo, 97 bar", true, Coins{{"bar", NewDec(97)}, {"foo", NewDec(2)}}},
+		{"5 mycoin,", false, nil},                                  // no empty coins in a list
+		{"2 3foo, 97 bar", false, nil},                             // 3foo is invalid coin name
+		{"11me coin, 12you coin", false, nil},                      // no spaces in coin names
+		{"1.2btc", true, Coins{{"btc", MustNewDecFromStr("1.2")}}}, // amount must be integer
+		{"5foo-bar", true, Coins{{"foo-bar", NewDec(5)}}},          // once more, only letters in coin name
 	}
 
 	for tcIndex, tc := range cases {
@@ -498,17 +498,17 @@ func TestAmountOf(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		assert.Equal(t, NewInt(tc.amountOfGAS), tc.coins.AmountOf("gas"))
-		assert.Equal(t, NewInt(tc.amountOfMINERAL), tc.coins.AmountOf("mineral"))
-		assert.Equal(t, NewInt(tc.amountOfTREE), tc.coins.AmountOf("tree"))
+		assert.Equal(t, NewDec(tc.amountOfGAS), tc.coins.AmountOf("gas"))
+		assert.Equal(t, NewDec(tc.amountOfMINERAL), tc.coins.AmountOf("mineral"))
+		assert.Equal(t, NewDec(tc.amountOfTREE), tc.coins.AmountOf("tree"))
 	}
 
 	assert.Panics(t, func() { cases[0].coins.AmountOf("Invalid") })
 }
 
 func TestCoinsIsAnyGTE(t *testing.T) {
-	one := NewInt(1)
-	two := NewInt(2)
+	one := NewDec(1)
+	two := NewDec(2)
 
 	assert.False(t, Coins{}.IsAnyGTE(Coins{}))
 	assert.False(t, Coins{{testDenom1, one}}.IsAnyGTE(Coins{}))
@@ -527,8 +527,8 @@ func TestCoinsIsAnyGTE(t *testing.T) {
 }
 
 func TestCoinsIsAllGT(t *testing.T) {
-	one := NewInt(1)
-	two := NewInt(2)
+	one := NewDec(1)
+	two := NewDec(2)
 
 	assert.False(t, Coins{}.IsAllGT(Coins{}))
 	assert.True(t, Coins{{testDenom1, one}}.IsAllGT(Coins{}))
@@ -547,8 +547,8 @@ func TestCoinsIsAllGT(t *testing.T) {
 }
 
 func TestCoinsIsAllGTE(t *testing.T) {
-	one := NewInt(1)
-	two := NewInt(2)
+	one := NewDec(1)
+	two := NewDec(2)
 
 	assert.True(t, Coins{}.IsAllGTE(Coins{}))
 	assert.True(t, Coins{{testDenom1, one}}.IsAllGTE(Coins{}))
@@ -654,7 +654,7 @@ func TestMarshalJSONCoins(t *testing.T) {
 	}{
 		{"nil coins", nil, `[]`},
 		{"empty coins", Coins{}, `[]`},
-		{"non-empty coins", NewCoins(NewInt64Coin("foo", 50)), `[{"denom":"foo","amount":"50"}]`},
+		{"non-empty coins", NewCoins(NewInt64Coin("foo", 50)), `[{"denom":"foo","amount":"50.00000000"}]`},
 	}
 
 	for _, tc := range testCases {

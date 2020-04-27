@@ -28,7 +28,7 @@ func keeperTestParams() types.Params {
 func TestHandleDoubleSign(t *testing.T) {
 
 	// initial setup
-	ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
+	_, ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
 	// validator added pre-genesis
 	ctx = ctx.WithBlockHeight(-1)
 	power := int64(100)
@@ -55,8 +55,9 @@ func TestHandleDoubleSign(t *testing.T) {
 	require.True(t, sk.Validator(ctx, operatorAddr).IsJailed())
 
 	// tokens should be decreased
+	// don't slashing tokens, just jail the validator
 	newTokens := sk.Validator(ctx, operatorAddr).GetTokens()
-	require.True(t, newTokens.LT(oldTokens))
+	require.True(t, newTokens.Equal(oldTokens))
 
 	// New evidence
 	keeper.HandleDoubleSign(ctx, val.Address(), 0, time.Unix(0, 0), power)
@@ -89,7 +90,7 @@ func TestHandleDoubleSign(t *testing.T) {
 func TestPastMaxEvidenceAge(t *testing.T) {
 
 	// initial setup
-	ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
+	_, ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
 	// validator added pre-genesis
 	ctx = ctx.WithBlockHeight(-1)
 	power := int64(100)
@@ -126,7 +127,7 @@ func TestPastMaxEvidenceAge(t *testing.T) {
 func TestHandleAbsentValidator(t *testing.T) {
 
 	// initial setup
-	ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
+	_, ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
 	power := int64(100)
 	amt := sdk.TokensFromConsensusPower(power)
 	addr, val := addrs[0], pks[0]
@@ -175,7 +176,7 @@ func TestHandleAbsentValidator(t *testing.T) {
 	validator, _ := sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
 	require.Equal(t, sdk.Bonded, validator.GetStatus())
 	bondPool := sk.GetBondedPool(ctx)
-	require.True(sdk.IntEq(t, amt, bondPool.GetCoins().AmountOf(sk.BondDenom(ctx))))
+	require.True(sdk.IntEq(t, amt, bondPool.GetCoins().AmountOf(sk.BondDenom(ctx)).RoundInt()))
 
 	// 501st block missed
 	ctx = ctx.WithBlockHeight(height)
@@ -232,7 +233,7 @@ func TestHandleAbsentValidator(t *testing.T) {
 
 	// validator should have been slashed
 	bondPool = sk.GetBondedPool(ctx)
-	require.Equal(t, amt.Int64()-slashAmt, bondPool.GetCoins().AmountOf(sk.BondDenom(ctx)).Int64())
+	require.Equal(t, sdk.NewDec(amt.Int64()-slashAmt).Int64(), bondPool.GetCoins().AmountOf(sk.BondDenom(ctx)).Int64())
 
 	// Validator start height should not have been changed
 	info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
@@ -248,22 +249,14 @@ func TestHandleAbsentValidator(t *testing.T) {
 	validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
 	require.Equal(t, sdk.Bonded, validator.GetStatus())
 
-	// 500 signed blocks
-	nextHeight := height + keeper.MinSignedPerWindow(ctx) + 1
+	// maxmissed signed blocks
+	maxMissed := keeper.SignedBlocksWindow(ctx) - keeper.MinSignedPerWindow(ctx)
+	nextHeight := height + maxMissed + 1
 	for ; height < nextHeight; height++ {
 		ctx = ctx.WithBlockHeight(height)
 		keeper.HandleValidatorSignature(ctx, val.Address(), power, false)
 	}
 
-	// end block
-	staking.EndBlocker(ctx, sk)
-
-	// validator should be jailed again after 500 unsigned blocks
-	nextHeight = height + keeper.MinSignedPerWindow(ctx) + 1
-	for ; height <= nextHeight; height++ {
-		ctx = ctx.WithBlockHeight(height)
-		keeper.HandleValidatorSignature(ctx, val.Address(), power, false)
-	}
 
 	// end block
 	staking.EndBlocker(ctx, sk)
@@ -277,7 +270,7 @@ func TestHandleAbsentValidator(t *testing.T) {
 // and that they are not immediately jailed
 func TestHandleNewValidator(t *testing.T) {
 	// initial setup
-	ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
+	_, ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
 	addr, val := addrs[0], pks[0]
 	amt := sdk.TokensFromConsensusPower(100)
 	sh := staking.NewHandler(sk)
@@ -313,7 +306,7 @@ func TestHandleNewValidator(t *testing.T) {
 	require.Equal(t, sdk.Bonded, validator.GetStatus())
 	bondPool := sk.GetBondedPool(ctx)
 	expTokens := sdk.TokensFromConsensusPower(100)
-	require.Equal(t, expTokens.Int64(), bondPool.GetCoins().AmountOf(sk.BondDenom(ctx)).Int64())
+	require.Equal(t, sdk.NewDecFromBigInt(expTokens.BigInt()).Int64(), bondPool.GetCoins().AmountOf(sk.BondDenom(ctx)).Int64())
 }
 
 // Test a jailed validator being "down" twice
@@ -321,7 +314,7 @@ func TestHandleNewValidator(t *testing.T) {
 func TestHandleAlreadyJailed(t *testing.T) {
 
 	// initial setup
-	ctx, _, sk, _, keeper := createTestInput(t, DefaultParams())
+	_, ctx, _, sk, _, keeper := createTestInput(t, DefaultParams())
 	power := int64(100)
 	amt := sdk.TokensFromConsensusPower(power)
 	addr, val := addrs[0], pks[0]
@@ -351,8 +344,9 @@ func TestHandleAlreadyJailed(t *testing.T) {
 	require.Equal(t, sdk.Unbonding, validator.GetStatus())
 
 	// validator should have been slashed
-	resultingTokens := amt.Sub(sdk.TokensFromConsensusPower(1))
-	require.Equal(t, resultingTokens, validator.GetTokens())
+	// only jailed
+	//resultingTokens := amt.Sub(sdk.TokensFromConsensusPower(1))
+	require.Equal(t, amt, validator.GetTokens())
 
 	// another block missed
 	ctx = ctx.WithBlockHeight(height)
@@ -360,7 +354,7 @@ func TestHandleAlreadyJailed(t *testing.T) {
 
 	// validator should not have been slashed twice
 	validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
-	require.Equal(t, resultingTokens, validator.GetTokens())
+	require.Equal(t, amt, validator.GetTokens())
 
 }
 
@@ -371,7 +365,7 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 
 	// initial setup
 	// keeperTestParams set the SignedBlocksWindow to 1000 and MaxMissedBlocksPerWindow to 500
-	ctx, _, sk, _, keeper := createTestInput(t, keeperTestParams())
+	_, ctx, _, sk, _, keeper := createTestInput(t, keeperTestParams())
 	params := sk.GetParams(ctx)
 	params.MaxValidators = 1
 	sk.SetParams(ctx, params)
@@ -383,6 +377,7 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 	got := sh(ctx, NewTestMsgCreateValidator(addr, val, amt))
 	require.True(t, got.IsOK())
 	staking.EndBlocker(ctx, sk)
+	maxMissed := keeper.SignedBlocksWindow(ctx) - keeper.MinSignedPerWindow(ctx)
 
 	// 100 first blocks OK
 	height := int64(0)
@@ -424,7 +419,7 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 
 	// validator misses 500 more blocks, 501 total
 	latest := height
-	for ; height < latest+500; height++ {
+	for ; height < latest+maxMissed; height++ {
 		ctx = ctx.WithBlockHeight(height)
 		keeper.HandleValidatorSignature(ctx, val.Address(), newPower, false)
 	}
@@ -460,8 +455,9 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 	require.Equal(t, sdk.Bonded, validator.Status)
 
 	// validator misses 501 blocks
+
 	latest = height
-	for ; height < latest+501; height++ {
+	for ; height < latest+maxMissed+1; height++ {
 		ctx = ctx.WithBlockHeight(height)
 		keeper.HandleValidatorSignature(ctx, val.Address(), newPower, false)
 	}

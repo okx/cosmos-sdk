@@ -29,3 +29,8 @@ require (
 	github.com/tendermint/tm-db v0.2.0
 	gopkg.in/yaml.v2 v2.2.7
 )
+
+replace (
+	github.com/tendermint/iavl => github.com/okex/iavl v0.12.4-okchain
+	github.com/tendermint/tendermint => github.com/okex/tendermint v0.32.10-okchain
+)

@@ -16,8 +16,8 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 
 		switch msg := msg.(type) {
-		//case types.MsgVerifyInvariant:
-		//	return handleMsgVerifyInvariant(ctx, msg, k)
+		case types.MsgVerifyInvariant:
+			return handleMsgVerifyInvariant(ctx, msg, k)
 
 		default:
 			errMsg := fmt.Sprintf("unrecognized crisis message type: %T", msg)
@@ -31,6 +31,7 @@ func handleMsgVerifyInvariant(ctx sdk.Context, msg types.MsgVerifyInvariant, k k
 	constantFee := sdk.NewCoins(k.GetConstantFee(ctx))
 
 	if err := k.SendCoinsFromAccountToFeeCollector(ctx, msg.Sender, constantFee); err != nil {
+		fmt.Println(err)
 		return err.Result()
 	}
 

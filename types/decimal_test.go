@@ -22,7 +22,7 @@ func mustNewDecFromStr(t *testing.T, str string) (d Dec) {
 
 func TestPrecisionMultiplier(t *testing.T) {
 	res := precisionMultiplier(5)
-	exp := big.NewInt(10000000000000)
+	exp := big.NewInt(1000)
 	require.Equal(t, 0, res.Cmp(exp), "equality was incorrect, res %v, exp %v", res, exp)
 }
 
@@ -81,14 +81,14 @@ func TestDecString(t *testing.T) {
 		d    Dec
 		want string
 	}{
-		{NewDec(0), "0.000000000000000000"},
-		{NewDec(1), "1.000000000000000000"},
-		{NewDec(10), "10.000000000000000000"},
-		{NewDec(12340), "12340.000000000000000000"},
-		{NewDecWithPrec(12340, 4), "1.234000000000000000"},
-		{NewDecWithPrec(12340, 5), "0.123400000000000000"},
-		{NewDecWithPrec(12340, 8), "0.000123400000000000"},
-		{NewDecWithPrec(1009009009009009009, 17), "10.090090090090090090"},
+		{NewDec(0), "0.00000000"},
+		{NewDec(1), "1.00000000"},
+		{NewDec(10), "10.00000000"},
+		{NewDec(12340), "12340.00000000"},
+		{NewDecWithPrec(12340, 4), "1.23400000"},
+		{NewDecWithPrec(12340, 5), "0.12340000"},
+		{NewDecWithPrec(12340, 8), "0.00012340"},
+		{NewDecWithPrec(1009009009009009009, 8), "10090090090.09009009"},
 	}
 	for tcIndex, tc := range tests {
 		assert.Equal(t, tc.want, tc.d.String(), "bad String(), index: %v", tcIndex)
@@ -174,7 +174,7 @@ func TestArithmetic(t *testing.T) {
 		{NewDec(-1), NewDec(1), NewDec(-1), NewDec(-1), NewDec(-1), NewDec(-1), NewDec(-1), NewDec(0), NewDec(-2)},
 
 		{NewDec(3), NewDec(7), NewDec(21), NewDec(21),
-			NewDecWithPrec(428571428571428571, 18), NewDecWithPrec(428571428571428572, 18), NewDecWithPrec(428571428571428571, 18),
+			NewDecWithPrec(42857143, 8), NewDecWithPrec(42857143, 8), NewDecWithPrec(42857142, 8),
 			NewDec(10), NewDec(-4)},
 		{NewDec(2), NewDec(4), NewDec(8), NewDec(8), NewDecWithPrec(5, 1), NewDecWithPrec(5, 1), NewDecWithPrec(5, 1),
 			NewDec(6), NewDec(-2)},
@@ -184,7 +184,7 @@ func TestArithmetic(t *testing.T) {
 		{NewDecWithPrec(15, 1), NewDecWithPrec(15, 1), NewDecWithPrec(225, 2), NewDecWithPrec(225, 2),
 			NewDec(1), NewDec(1), NewDec(1), NewDec(3), NewDec(0)},
 		{NewDecWithPrec(3333, 4), NewDecWithPrec(333, 4), NewDecWithPrec(1109889, 8), NewDecWithPrec(1109889, 8),
-			MustNewDecFromStr("10.009009009009009009"), MustNewDecFromStr("10.009009009009009010"), MustNewDecFromStr("10.009009009009009009"),
+			MustNewDecFromStr("10.00900901"), MustNewDecFromStr("10.00900901"), MustNewDecFromStr("10.00900900"),
 			NewDecWithPrec(3666, 4), NewDecWithPrec(3, 1)},
 	}
 
@@ -281,14 +281,14 @@ func TestDecMarshalJSON(t *testing.T) {
 		want    string
 		wantErr bool // if wantErr = false, will also attempt unmarshaling
 	}{
-		{"zero", decimal(0), "\"0.000000000000000000\"", false},
-		{"one", decimal(1), "\"0.000000000000000001\"", false},
-		{"ten", decimal(10), "\"0.000000000000000010\"", false},
-		{"12340", decimal(12340), "\"0.000000000000012340\"", false},
-		{"zeroInt", NewDec(0), "\"0.000000000000000000\"", false},
-		{"oneInt", NewDec(1), "\"1.000000000000000000\"", false},
-		{"tenInt", NewDec(10), "\"10.000000000000000000\"", false},
-		{"12340Int", NewDec(12340), "\"12340.000000000000000000\"", false},
+		{"zero", decimal(0), "\"0.00000000\"", false},
+		{"one", decimal(1), "\"0.00000001\"", false},
+		{"ten", decimal(10), "\"0.00000010\"", false},
+		{"12340", decimal(12340), "\"0.00012340\"", false},
+		{"zeroInt", NewDec(0), "\"0.00000000\"", false},
+		{"oneInt", NewDec(1), "\"1.00000000\"", false},
+		{"tenInt", NewDec(10), "\"10.00000000\"", false},
+		{"12340Int", NewDec(12340), "\"12340.00000000\"", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -380,7 +380,7 @@ func TestStringOverflow(t *testing.T) {
 	require.NoError(t, err)
 	dec3 := dec1.Add(dec2)
 	require.Equal(t,
-		"19844653375691057515930281852116324640.000000000000000000",
+		"19844653375691057515930281852116324640.00000000",
 		dec3.String(),
 	)
 }
@@ -407,14 +407,14 @@ func TestDecCeil(t *testing.T) {
 		input    Dec
 		expected Dec
 	}{
-		{NewDecWithPrec(1000000000000000, Precision), NewDec(1)},  // 0.001 => 1.0
-		{NewDecWithPrec(-1000000000000000, Precision), ZeroDec()}, // -0.001 => 0.0
-		{ZeroDec(), ZeroDec()}, // 0.0 => 0.0
-		{NewDecWithPrec(900000000000000000, Precision), NewDec(1)},    // 0.9 => 1.0
-		{NewDecWithPrec(4001000000000000000, Precision), NewDec(5)},   // 4.001 => 5.0
-		{NewDecWithPrec(-4001000000000000000, Precision), NewDec(-4)}, // -4.001 => -4.0
-		{NewDecWithPrec(4700000000000000000, Precision), NewDec(5)},   // 4.7 => 5.0
-		{NewDecWithPrec(-4700000000000000000, Precision), NewDec(-4)}, // -4.7 => -4.0
+		{NewDecWithPrec(100000, Precision), NewDec(1)},      // 0.001 => 1.0
+		{NewDecWithPrec(-100000, Precision), ZeroDec()},     // -0.001 => 0.0
+		{ZeroDec(), ZeroDec()},                              // 0.0 => 0.0
+		{NewDecWithPrec(90000000, Precision), NewDec(1)},    // 0.9 => 1.0
+		{NewDecWithPrec(400100000, Precision), NewDec(5)},   // 4.001 => 5.0
+		{NewDecWithPrec(-400100000, Precision), NewDec(-4)}, // -4.001 => -4.0
+		{NewDecWithPrec(470000000, Precision), NewDec(5)},   // 4.7 => 5.0
+		{NewDecWithPrec(-470000000, Precision), NewDec(-4)}, // -4.7 => -4.0
 	}
 
 	for i, tc := range testCases {
@@ -428,17 +428,17 @@ func TestDecSortableBytes(t *testing.T) {
 		d    Dec
 		want []byte
 	}{
-		{NewDec(0), []byte("000000000000000000.000000000000000000")},
-		{NewDec(1), []byte("000000000000000001.000000000000000000")},
-		{NewDec(10), []byte("000000000000000010.000000000000000000")},
-		{NewDec(12340), []byte("000000000000012340.000000000000000000")},
-		{NewDecWithPrec(12340, 4), []byte("000000000000000001.234000000000000000")},
-		{NewDecWithPrec(12340, 5), []byte("000000000000000000.123400000000000000")},
-		{NewDecWithPrec(12340, 8), []byte("000000000000000000.000123400000000000")},
-		{NewDecWithPrec(1009009009009009009, 17), []byte("000000000000000010.090090090090090090")},
-		{NewDecWithPrec(-1009009009009009009, 17), []byte("-000000000000000010.090090090090090090")},
-		{NewDec(1000000000000000000), []byte("max")},
-		{NewDec(-1000000000000000000), []byte("--")},
+		{NewDec(0), []byte("00000000.00000000")},
+		{NewDec(1), []byte("00000001.00000000")},
+		{NewDec(10), []byte("00000010.00000000")},
+		{NewDec(12340), []byte("00012340.00000000")},
+		{NewDecWithPrec(12340, 4), []byte("00000001.23400000")},
+		{NewDecWithPrec(12340, 5), []byte("00000000.12340000")},
+		{NewDecWithPrec(12340, 8), []byte("00000000.00012340")},
+		{NewDecWithPrec(100909009, 7), []byte("00000010.09090090")},
+		{NewDecWithPrec(-100909009, 7), []byte("-00000010.09090090")},
+		{NewDec(100000000), []byte("max")},
+		{NewDec(-100000000), []byte("--")},
 	}
 	for tcIndex, tc := range tests {
 		assert.Equal(t, tc.want, SortableDecBytes(tc.d), "bad String(), index: %v", tcIndex)

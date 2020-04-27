@@ -26,7 +26,7 @@ func TestArmorUnarmorPubKey(t *testing.T) {
 	cstore := keys.NewInMemory()
 
 	// Add keys and see they return in alphabetical order
-	info, _, err := cstore.CreateMnemonic("Bob", keys.English, "passphrase", keys.Secp256k1)
+	info, _, err := cstore.CreateMnemonic("Bob", keys.English, "passphrase", keys.Secp256k1, "")
 	require.NoError(t, err)
 	armor := mintkey.ArmorPubKeyBytes(info.GetPubKey().Bytes())
 	pubBytes, err := mintkey.UnarmorPubKeyBytes(armor)

@@ -29,7 +29,7 @@ func CreateTestInput(t *testing.T) (sdk.Context, crisis.Keeper, auth.AccountKeep
 
 	paramSpace := paramsKeeper.Subspace(crisis.DefaultParamspace)
 	crisisKeeper := crisis.NewKeeper(paramSpace, 1, supplyKeeper, auth.FeeCollectorName)
-	constantFee := sdk.NewInt64Coin("stake", 10000000)
+	constantFee := sdk.NewInt64Coin("okt", 10000000)
 	crisisKeeper.SetConstantFee(ctx, constantFee)
 
 	crisisKeeper.RegisterRoute(testModuleName, dummyRouteWhichPasses.Route, dummyRouteWhichPasses.Invar)
@@ -49,7 +49,7 @@ func TestHandleMsgVerifyInvariantWithNotEnoughSenderCoins(t *testing.T) {
 	ctx, crisisKeeper, accKeeper, _ := CreateTestInput(t)
 	sender := addrs[0]
 	coin := accKeeper.GetAccount(ctx, sender).GetCoins()[0]
-	excessCoins := sdk.NewCoin(coin.Denom, coin.Amount.AddRaw(1))
+	excessCoins := sdk.NewDecCoinFromDec(coin.Denom, coin.Amount.Add(sdk.NewDec(1)))
 	crisisKeeper.SetConstantFee(ctx, excessCoins)
 
 	h := crisis.NewHandler(crisisKeeper)

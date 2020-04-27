@@ -49,7 +49,7 @@ func TestAnteHandlerSigErrors(t *testing.T) {
 	// setup
 	input := setupTestInput()
 	ctx := input.ctx
-	anteHandler := NewAnteHandler(input.ak, input.sk, DefaultSigVerificationGasConsumer)
+	anteHandler := NewAnteHandler(input.ak, input.sk, DefaultSigVerificationGasConsumer, nil, nil)
 
 	// keys and addresses
 	priv1, _, addr1 := types.KeyTestPubAddr()
@@ -97,7 +97,7 @@ func TestAnteHandlerSigErrors(t *testing.T) {
 func TestAnteHandlerAccountNumbers(t *testing.T) {
 	// setup
 	input := setupTestInput()
-	anteHandler := NewAnteHandler(input.ak, input.sk, DefaultSigVerificationGasConsumer)
+	anteHandler := NewAnteHandler(input.ak, input.sk, DefaultSigVerificationGasConsumer, nil, nil)
 	ctx := input.ctx.WithBlockHeight(1)
 
 	// keys and addresses
@@ -154,7 +154,7 @@ func TestAnteHandlerAccountNumbers(t *testing.T) {
 func TestAnteHandlerAccountNumbersAtBlockHeightZero(t *testing.T) {
 	// setup
 	input := setupTestInput()
-	anteHandler := NewAnteHandler(input.ak, input.sk, DefaultSigVerificationGasConsumer)
+	anteHandler := NewAnteHandler(input.ak, input.sk, DefaultSigVerificationGasConsumer, nil, nil)
 	ctx := input.ctx.WithBlockHeight(0)
 
 	// keys and addresses
@@ -210,7 +210,7 @@ func TestAnteHandlerAccountNumbersAtBlockHeightZero(t *testing.T) {
 func TestAnteHandlerSequences(t *testing.T) {
 	// setup
 	input := setupTestInput()
-	anteHandler := NewAnteHandler(input.ak, input.sk, DefaultSigVerificationGasConsumer)
+	anteHandler := NewAnteHandler(input.ak, input.sk, DefaultSigVerificationGasConsumer, nil, nil)
 	ctx := input.ctx.WithBlockHeight(1)
 
 	// keys and addresses
@@ -288,7 +288,7 @@ func TestAnteHandlerFees(t *testing.T) {
 	// setup
 	input := setupTestInput()
 	ctx := input.ctx
-	anteHandler := NewAnteHandler(input.ak, input.sk, DefaultSigVerificationGasConsumer)
+	anteHandler := NewAnteHandler(input.ak, input.sk, DefaultSigVerificationGasConsumer, nil, nil)
 
 	// keys and addresses
 	priv1, _, addr1 := types.KeyTestPubAddr()
@@ -313,21 +313,21 @@ func TestAnteHandlerFees(t *testing.T) {
 	checkInvalidTx(t, anteHandler, ctx, tx, false, sdk.CodeInsufficientFunds)
 
 	require.True(t, input.sk.GetModuleAccount(ctx, types.FeeCollectorName).GetCoins().Empty())
-	require.True(sdk.IntEq(t, input.ak.GetAccount(ctx, addr1).GetCoins().AmountOf("atom"), sdk.NewInt(149)))
+	require.True(sdk.DecEq(t, input.ak.GetAccount(ctx, addr1).GetCoins().AmountOf("atom"), sdk.NewDec(149)))
 
 	acc1.SetCoins(sdk.NewCoins(sdk.NewInt64Coin("atom", 150)))
 	input.ak.SetAccount(ctx, acc1)
 	checkValidTx(t, anteHandler, ctx, tx, false)
 
-	require.True(sdk.IntEq(t, input.sk.GetModuleAccount(ctx, types.FeeCollectorName).GetCoins().AmountOf("atom"), sdk.NewInt(150)))
-	require.True(sdk.IntEq(t, input.ak.GetAccount(ctx, addr1).GetCoins().AmountOf("atom"), sdk.NewInt(0)))
+	require.True(sdk.DecEq(t, input.sk.GetModuleAccount(ctx, types.FeeCollectorName).GetCoins().AmountOf("atom"), sdk.NewDec(150)))
+	require.True(sdk.DecEq(t, input.ak.GetAccount(ctx, addr1).GetCoins().AmountOf("atom"), sdk.NewDec(0)))
 }
 
 // Test logic around memo gas consumption.
 func TestAnteHandlerMemoGas(t *testing.T) {
 	// setup
 	input := setupTestInput()
-	anteHandler := NewAnteHandler(input.ak, input.sk, DefaultSigVerificationGasConsumer)
+	anteHandler := NewAnteHandler(input.ak, input.sk, DefaultSigVerificationGasConsumer, nil, nil)
 	ctx := input.ctx.WithBlockHeight(1)
 
 	// keys and addresses
@@ -367,7 +367,7 @@ func TestAnteHandlerMemoGas(t *testing.T) {
 func TestAnteHandlerMultiSigner(t *testing.T) {
 	// setup
 	input := setupTestInput()
-	anteHandler := NewAnteHandler(input.ak, input.sk, DefaultSigVerificationGasConsumer)
+	anteHandler := NewAnteHandler(input.ak, input.sk, DefaultSigVerificationGasConsumer, nil, nil)
 	ctx := input.ctx.WithBlockHeight(1)
 
 	// keys and addresses
@@ -417,7 +417,7 @@ func TestAnteHandlerMultiSigner(t *testing.T) {
 func TestAnteHandlerBadSignBytes(t *testing.T) {
 	// setup
 	input := setupTestInput()
-	anteHandler := NewAnteHandler(input.ak, input.sk, DefaultSigVerificationGasConsumer)
+	anteHandler := NewAnteHandler(input.ak, input.sk, DefaultSigVerificationGasConsumer, nil, nil)
 	ctx := input.ctx.WithBlockHeight(1)
 
 	// keys and addresses
@@ -441,7 +441,7 @@ func TestAnteHandlerBadSignBytes(t *testing.T) {
 	fee2 := types.NewTestStdFee()
 	fee2.Gas += 100
 	fee3 := types.NewTestStdFee()
-	fee3.Amount[0].Amount = fee3.Amount[0].Amount.AddRaw(100)
+	fee3.Amount[0].Amount = fee3.Amount[0].Amount.Add(sdk.NewDec(100))
 
 	// test good tx and signBytes
 	privs, accnums, seqs := []crypto.PrivKey{priv1}, []uint64{0}, []uint64{0}
@@ -494,7 +494,7 @@ func TestAnteHandlerBadSignBytes(t *testing.T) {
 func TestAnteHandlerSetPubKey(t *testing.T) {
 	// setup
 	input := setupTestInput()
-	anteHandler := NewAnteHandler(input.ak, input.sk, DefaultSigVerificationGasConsumer)
+	anteHandler := NewAnteHandler(input.ak, input.sk, DefaultSigVerificationGasConsumer, nil, nil)
 	ctx := input.ctx.WithBlockHeight(1)
 
 	// keys and addresses
@@ -690,7 +690,7 @@ func TestCountSubkeys(t *testing.T) {
 func TestAnteHandlerSigLimitExceeded(t *testing.T) {
 	// setup
 	input := setupTestInput()
-	anteHandler := NewAnteHandler(input.ak, input.sk, DefaultSigVerificationGasConsumer)
+	anteHandler := NewAnteHandler(input.ak, input.sk, DefaultSigVerificationGasConsumer, nil, nil)
 	ctx := input.ctx.WithBlockHeight(1)
 
 	// keys and addresses
@@ -729,8 +729,8 @@ func TestEnsureSufficientMempoolFees(t *testing.T) {
 	input := setupTestInput()
 	ctx := input.ctx.WithMinGasPrices(
 		sdk.DecCoins{
-			sdk.NewDecCoinFromDec("photino", sdk.NewDecWithPrec(50000000000000, sdk.Precision)), // 0.0001photino
-			sdk.NewDecCoinFromDec("stake", sdk.NewDecWithPrec(10000000000000, sdk.Precision)),   // 0.000001stake
+			sdk.NewDecCoinFromDec("photino", sdk.NewDecWithPrec(5000, sdk.Precision)), // 0.0001photino
+			sdk.NewDecCoinFromDec("stake", sdk.NewDecWithPrec(1000, sdk.Precision)),   // 0.000001stake
 		},
 	)
 
@@ -788,7 +788,7 @@ func TestCustomSignatureVerificationGasConsumer(t *testing.T) {
 		default:
 			return sdk.ErrInvalidPubKey(fmt.Sprintf("unrecognized public key type: %T", pubkey)).Result()
 		}
-	})
+	}, nil, nil)
 	ctx := input.ctx.WithBlockHeight(1)
 
 	// verify that an secp256k1 account gets rejected
