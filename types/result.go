@@ -241,13 +241,13 @@ func (r TxResponse) String() string {
 		sb.WriteString(fmt.Sprintf("  Info: %s\n", r.Info))
 	}
 
-	if r.GasWanted != 0 {
-		sb.WriteString(fmt.Sprintf("  GasWanted: %d\n", r.GasWanted))
-	}
-
-	if r.GasUsed != 0 {
-		sb.WriteString(fmt.Sprintf("  GasUsed: %d\n", r.GasUsed))
-	}
+	//if r.GasWanted != 0 {
+	//	sb.WriteString(fmt.Sprintf("  GasWanted: %d\n", r.GasWanted))
+	//}
+	//
+	//if r.GasUsed != 0 {
+	//	sb.WriteString(fmt.Sprintf("  GasUsed: %d\n", r.GasUsed))
+	//}
 
 	if r.Codespace != "" {
 		sb.WriteString(fmt.Sprintf("  Codespace: %s\n", r.Codespace))

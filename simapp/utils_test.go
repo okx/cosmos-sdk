@@ -19,6 +19,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
+	"github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 
@@ -228,7 +229,7 @@ func TestDecodeStakingStore(t *testing.T) {
 func TestDecodeSlashingStore(t *testing.T) {
 	cdc := makeTestCodec()
 
-	info := slashing.NewValidatorSigningInfo(consAddr1, 0, 1, time.Now().UTC(), false, 0)
+	info := slashing.NewValidatorSigningInfo(consAddr1, 0, 1, time.Now().UTC(), false, 0, types.Created)
 	bechPK := sdk.MustBech32ifyAccPub(delPk1)
 	missed := true
 
@@ -266,7 +267,7 @@ func TestDecodeGovStore(t *testing.T) {
 	endTime := time.Now().UTC()
 
 	content := gov.ContentFromProposalType("test", "test", gov.ProposalTypeText)
-	proposal := gov.NewProposal(content, 1, endTime, endTime.Add(24*time.Hour))
+	proposal := gov.NewProposal(sdk.Context{}, sdk.OneDec(), content, 1, endTime, endTime.Add(24*time.Hour))
 	proposalIDBz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(proposalIDBz, 1)
 	deposit := gov.NewDeposit(1, delAddr1, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdk.OneInt())))

@@ -15,7 +15,7 @@ var basic034Gov = []byte(`
         {
           "proposal_id": "1",
           "deposit": {
-            "depositor": "cosmos1grgelyng2v6v3t8z87wu3sxgt9m5s03xvslewd",
+            "depositor": "okchain1grgelyng2v6v3t8z87wu3sxgt9m5s03xw29fcw",
             "proposal_id": "1",
             "amount": [
               {
@@ -30,7 +30,7 @@ var basic034Gov = []byte(`
         {
           "proposal_id": "1",
           "vote": {
-            "voter": "cosmos1lktjhnzkpkz3ehrg8psvmwhafg56kfss5597tg",
+            "voter": "okchain1lktjhnzkpkz3ehrg8psvmwhafg56kfsskwlwat",
             "proposal_id": "1",
             "option": "Yes"
           }
@@ -78,9 +78,9 @@ var basic034Gov = []byte(`
         "voting_period": "1209600000000000"
       },
       "tally_params": {
-        "quorum": "0.400000000000000000",
-        "threshold": "0.500000000000000000",
-        "veto": "0.334000000000000000"
+        "quorum": "0.4",
+        "threshold": "0.5",
+        "veto": "0.334"
       }
     }
 `)

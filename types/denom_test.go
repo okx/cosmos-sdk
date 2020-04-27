@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -41,7 +42,7 @@ func TestConvertCoins(t *testing.T) {
 	uatomUnit := NewDecWithPrec(1, 6) // 10^-6 (micro)
 	require.NoError(t, RegisterDenom(uatom, uatomUnit))
 
-	natomUnit := NewDecWithPrec(1, 9) // 10^-9 (nano)
+	natomUnit := NewDecWithPrec(1, 8) // 10^-8
 	require.NoError(t, RegisterDenom(natom, natomUnit))
 
 	testCases := []struct {
@@ -54,20 +55,20 @@ func TestConvertCoins(t *testing.T) {
 		{NewCoin(atom, ZeroInt()), "foo", Coin{}, true},
 		{NewCoin(atom, ZeroInt()), "FOO", Coin{}, true},
 
-		{NewCoin(atom, NewInt(5)), matom, NewCoin(matom, NewInt(5000)), false},       // atom => matom
-		{NewCoin(atom, NewInt(5)), uatom, NewCoin(uatom, NewInt(5000000)), false},    // atom => uatom
-		{NewCoin(atom, NewInt(5)), natom, NewCoin(natom, NewInt(5000000000)), false}, // atom => natom
+		{NewCoin(atom, NewInt(5)), matom, NewCoin(matom, NewInt(5000)), false},      // atom => matom
+		{NewCoin(atom, NewInt(5)), uatom, NewCoin(uatom, NewInt(5000000)), false},   // atom => uatom
+		{NewCoin(atom, NewInt(5)), natom, NewCoin(natom, NewInt(500000000)), false}, // atom => natom
 
-		{NewCoin(uatom, NewInt(5000000)), matom, NewCoin(matom, NewInt(5000)), false},       // uatom => matom
-		{NewCoin(uatom, NewInt(5000000)), natom, NewCoin(natom, NewInt(5000000000)), false}, // uatom => natom
-		{NewCoin(uatom, NewInt(5000000)), atom, NewCoin(atom, NewInt(5)), false},            // uatom => atom
+		{NewCoin(uatom, NewInt(5000000)), matom, NewCoin(matom, NewInt(5000)), false},      // uatom => matom
+		{NewCoin(uatom, NewInt(5000000)), natom, NewCoin(natom, NewInt(500000000)), false}, // uatom => natom
+		{NewCoin(uatom, NewInt(5000000)), atom, NewCoin(atom, NewInt(5)), false},           // uatom => atom
 
-		{NewCoin(matom, NewInt(5000)), natom, NewCoin(natom, NewInt(5000000000)), false}, // matom => natom
-		{NewCoin(matom, NewInt(5000)), uatom, NewCoin(uatom, NewInt(5000000)), false},    // matom => uatom
+		{NewCoin(matom, NewInt(5000)), natom, NewCoin(natom, NewInt(500000000)), false}, // matom => natom
+		{NewCoin(matom, NewInt(5000)), uatom, NewCoin(uatom, NewInt(5000000)), false},   // matom => uatom
 	}
 
 	for i, tc := range testCases {
-		res, err := ConvertCoin(tc.input, tc.denom)
+		res, err := convertCoin(tc.input, tc.denom)
 		require.Equal(
 			t, tc.expErr, err != nil,
 			"unexpected error; tc: #%d, input: %s, denom: %s", i+1, tc.input, tc.denom,
@@ -80,4 +81,26 @@ func TestConvertCoins(t *testing.T) {
 
 	// reset registration
 	denomUnits = map[string]Dec{}
+}
+
+func convertCoin(coin Coin, denom string) (Coin, error) {
+	if err := ValidateDenom(denom); err != nil {
+		return Coin{}, err
+	}
+
+	srcUnit, ok := GetDenomUnit(coin.Denom)
+	if !ok {
+		return Coin{}, fmt.Errorf("source denom not registered: %s", coin.Denom)
+	}
+
+	dstUnit, ok := GetDenomUnit(denom)
+	if !ok {
+		return Coin{}, fmt.Errorf("destination denom not registered: %s", denom)
+	}
+
+	if srcUnit.Equal(dstUnit) {
+		return NewDecCoinFromDec(denom, coin.Amount), nil
+	}
+
+	return NewCoin(denom, coin.Amount.Mul(srcUnit.Quo(dstUnit)).TruncateInt()), nil
 }

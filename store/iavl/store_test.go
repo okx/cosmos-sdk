@@ -31,7 +31,7 @@ var (
 
 // make a tree with data from above and save it
 func newAlohaTree(t *testing.T, db dbm.DB) (*iavl.MutableTree, types.CommitID) {
-	tree := iavl.NewMutableTree(db, cacheSize)
+	tree := iavl.NewMutableTree(db, cacheSize, 0)
 	for k, v := range treeData {
 		tree.Set([]byte(k), []byte(v))
 	}
@@ -205,7 +205,7 @@ func TestIAVLIterator(t *testing.T) {
 
 func TestIAVLReverseIterator(t *testing.T) {
 	db := dbm.NewMemDB()
-	tree := iavl.NewMutableTree(db, cacheSize)
+	tree := iavl.NewMutableTree(db, cacheSize, 0)
 	iavlStore := UnsafeNewStore(tree, numRecent, storeEvery)
 
 	iavlStore.Set([]byte{0x00}, []byte("0"))
@@ -236,7 +236,7 @@ func TestIAVLReverseIterator(t *testing.T) {
 
 func TestIAVLPrefixIterator(t *testing.T) {
 	db := dbm.NewMemDB()
-	tree := iavl.NewMutableTree(db, cacheSize)
+	tree := iavl.NewMutableTree(db, cacheSize, 0)
 	iavlStore := UnsafeNewStore(tree, numRecent, storeEvery)
 
 	iavlStore.Set([]byte("test1"), []byte("test1"))
@@ -298,7 +298,7 @@ func TestIAVLPrefixIterator(t *testing.T) {
 
 func TestIAVLReversePrefixIterator(t *testing.T) {
 	db := dbm.NewMemDB()
-	tree := iavl.NewMutableTree(db, cacheSize)
+	tree := iavl.NewMutableTree(db, cacheSize, 0)
 	iavlStore := UnsafeNewStore(tree, numRecent, storeEvery)
 
 	iavlStore.Set([]byte("test1"), []byte("test1"))
@@ -417,7 +417,7 @@ type pruneState struct {
 
 func testPruning(t *testing.T, numRecent int64, storeEvery int64, states []pruneState) {
 	db := dbm.NewMemDB()
-	tree := iavl.NewMutableTree(db, cacheSize)
+	tree := iavl.NewMutableTree(db, cacheSize, 0)
 	iavlStore := UnsafeNewStore(tree, numRecent, storeEvery)
 	for step, state := range states {
 		for _, ver := range state.stored {
@@ -436,7 +436,7 @@ func testPruning(t *testing.T, numRecent int64, storeEvery int64, states []prune
 
 func TestIAVLNoPrune(t *testing.T) {
 	db := dbm.NewMemDB()
-	tree := iavl.NewMutableTree(db, cacheSize)
+	tree := iavl.NewMutableTree(db, cacheSize, 0)
 	iavlStore := UnsafeNewStore(tree, numRecent, int64(1))
 	nextVersion(iavlStore)
 	for i := 1; i < 100; i++ {
@@ -451,7 +451,7 @@ func TestIAVLNoPrune(t *testing.T) {
 
 func TestIAVLPruneEverything(t *testing.T) {
 	db := dbm.NewMemDB()
-	tree := iavl.NewMutableTree(db, cacheSize)
+	tree := iavl.NewMutableTree(db, cacheSize, 0)
 	iavlStore := UnsafeNewStore(tree, int64(0), int64(0))
 	nextVersion(iavlStore)
 	for i := 1; i < 100; i++ {
@@ -469,7 +469,7 @@ func TestIAVLPruneEverything(t *testing.T) {
 
 func TestIAVLStoreQuery(t *testing.T) {
 	db := dbm.NewMemDB()
-	tree := iavl.NewMutableTree(db, cacheSize)
+	tree := iavl.NewMutableTree(db, cacheSize, 0)
 	iavlStore := UnsafeNewStore(tree, numRecent, storeEvery)
 
 	k1, v1 := []byte("key1"), []byte("val1")
@@ -560,7 +560,7 @@ func TestIAVLStoreQuery(t *testing.T) {
 func BenchmarkIAVLIteratorNext(b *testing.B) {
 	db := dbm.NewMemDB()
 	treeSize := 1000
-	tree := iavl.NewMutableTree(db, cacheSize)
+	tree := iavl.NewMutableTree(db, cacheSize, 0)
 	for i := 0; i < treeSize; i++ {
 		key := cmn.RandBytes(4)
 		value := cmn.RandBytes(50)

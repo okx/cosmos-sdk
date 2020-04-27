@@ -58,7 +58,7 @@ func TestMsgSendGetSignBytes(t *testing.T) {
 	var msg = NewMsgSend(addr1, addr2, coins)
 	res := msg.GetSignBytes()
 
-	expected := `{"type":"cosmos-sdk/MsgSend","value":{"amount":[{"amount":"10","denom":"atom"}],"from_address":"cosmos1d9h8qat57ljhcm","to_address":"cosmos1da6hgur4wsmpnjyg"}}`
+	expected := `{"type":"cosmos-sdk/MsgSend","value":{"amount":[{"amount":"10.00000000","denom":"atom"}],"from_address":"okchain1d9h8qat5h0q7xg","to_address":"okchain1da6hgur4wss2fvsy"}}`
 	require.Equal(t, expected, string(res))
 }
 
@@ -224,7 +224,7 @@ func TestMsgMultiSendGetSignBytes(t *testing.T) {
 	}
 	res := msg.GetSignBytes()
 
-	expected := `{"type":"cosmos-sdk/MsgMultiSend","value":{"inputs":[{"address":"cosmos1d9h8qat57ljhcm","coins":[{"amount":"10","denom":"atom"}]}],"outputs":[{"address":"cosmos1da6hgur4wsmpnjyg","coins":[{"amount":"10","denom":"atom"}]}]}}`
+	expected := `{"type":"cosmos-sdk/MsgMultiSend","value":{"inputs":[{"address":"okchain1d9h8qat5h0q7xg","coins":[{"amount":"10.00000000","denom":"atom"}]}],"outputs":[{"address":"okchain1da6hgur4wss2fvsy","coins":[{"amount":"10.00000000","denom":"atom"}]}]}}`
 	require.Equal(t, expected, string(res))
 }
 

@@ -12,7 +12,7 @@ import (
 )
 
 func TestNewQuerier(t *testing.T) {
-	ctx, _, keeper := createTestInput(t, false, 1000, 2)
+	_, ctx, _, keeper := CreateTestInput(t, false, 1000, 2)
 
 	supplyCoins := sdk.NewCoins(
 		sdk.NewCoin(sdk.DefaultBondDenom, sdk.NewInt(100)),
@@ -56,7 +56,7 @@ func TestNewQuerier(t *testing.T) {
 }
 
 func TestQuerySupply(t *testing.T) {
-	ctx, _, keeper := createTestInput(t, false, 1000, 2)
+	_, ctx, _, keeper := CreateTestInput(t, false, 1000, 2)
 
 	supplyCoins := sdk.NewCoins(
 		sdk.NewCoin(sdk.DefaultBondDenom, sdk.NewInt(100)),
@@ -96,10 +96,10 @@ func TestQuerySupply(t *testing.T) {
 
 	res, err = querySupplyOf(ctx, query, keeper)
 	require.Nil(t, err)
-
-	var supply sdk.Int
+	fmt.Println(string(res))
+	var supply sdk.Dec
 	errRes = supply.UnmarshalJSON(res)
 	require.Nil(t, errRes)
-	require.True(sdk.IntEq(t, sdk.NewInt(100), supply))
+	require.True(sdk.DecEq(t, sdk.NewDec(100), supply))
 
 }

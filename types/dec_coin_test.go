@@ -39,16 +39,16 @@ func TestNewDecCoinFromDec(t *testing.T) {
 
 func TestNewDecCoinFromCoin(t *testing.T) {
 	require.NotPanics(t, func() {
-		NewDecCoinFromCoin(Coin{testDenom1, NewInt(5)})
+		NewDecCoinFromCoin(Coin{testDenom1, NewDec(5)})
 	})
 	require.NotPanics(t, func() {
-		NewDecCoinFromCoin(Coin{testDenom1, NewInt(0)})
+		NewDecCoinFromCoin(Coin{testDenom1, NewDec(0)})
 	})
-	require.Panics(t, func() {
-		NewDecCoinFromCoin(Coin{strings.ToUpper(testDenom1), NewInt(5)})
+	require.NotPanics(t, func() {
+		NewDecCoinFromCoin(Coin{strings.ToUpper(testDenom1), NewDec(5)})
 	})
-	require.Panics(t, func() {
-		NewDecCoinFromCoin(Coin{testDenom1, NewInt(-5)})
+	require.NotPanics(t, func() {
+		NewDecCoinFromCoin(Coin{testDenom1, NewDec(-5)})
 	})
 }
 
@@ -279,20 +279,20 @@ func TestParseDecCoins(t *testing.T) {
 		expectedErr    bool
 	}{
 		{"", nil, false},
-		{"4stake", nil, true},
-		{"5.5atom,4stake", nil, true},
+		{"4stake", DecCoins{{"stake", NewDec(4)}}, false},
+		{"5.5atom,4stake", DecCoins{{"atom", mustNewDecFromStr(t, "5.5")}, {"stake", NewDec(4)}}, false},
 		{"0.0stake", nil, true},
 		{"0.004STAKE", nil, true},
 		{
 			"0.004stake",
-			DecCoins{NewDecCoinFromDec("stake", NewDecWithPrec(4000000000000000, Precision))},
+			DecCoins{{"stake", mustNewDecFromStr(t, "0.004")}},
 			false,
 		},
 		{
 			"5.04atom,0.004stake",
 			DecCoins{
-				NewDecCoinFromDec("atom", NewDecWithPrec(5040000000000000000, Precision)),
-				NewDecCoinFromDec("stake", NewDecWithPrec(4000000000000000, Precision)),
+				{"atom", mustNewDecFromStr(t, "5.04")},
+				{"stake", mustNewDecFromStr(t, "0.004")},
 			},
 			false,
 		},
@@ -320,7 +320,7 @@ func TestDecCoinsString(t *testing.T) {
 				NewDecCoinFromDec("atom", NewDecWithPrec(5040000000000000000, Precision)),
 				NewDecCoinFromDec("stake", NewDecWithPrec(4000000000000000, Precision)),
 			},
-			"5.040000000000000000atom,0.004000000000000000stake",
+			"50400000000.00000000atom,40000000.00000000stake",
 		},
 	}
 

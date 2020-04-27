@@ -21,7 +21,7 @@ func init() {
 
 func TestLanguage(t *testing.T) {
 	kb := NewInMemory()
-	_, _, err := kb.CreateMnemonic("something", Japanese, "no_pass", Secp256k1)
+	_, _, err := kb.CreateMnemonic("something", Japanese, "no_pass", Secp256k1, "")
 	assert.Error(t, err)
 	assert.Equal(t, "unsupported language: only english is supported", err.Error())
 }
@@ -64,7 +64,7 @@ func TestCreateLedger(t *testing.T) {
 	pubKey := ledger.GetPubKey()
 	pk, err := sdk.Bech32ifyAccPub(pubKey)
 	assert.NoError(t, err)
-	assert.Equal(t, "cosmospub1addwnpepqdszcr95mrqqs8lw099aa9h8h906zmet22pmwe9vquzcgvnm93eqygufdlv", pk)
+	assert.Equal(t, "okchainpub1addwnpepqg94y3n0sdcg5w0vhjqgp6e2ux20hxpm2sdy59nnlcny76uc729fyquy75e", pk)
 
 	// Check that restoring the key gets the same results
 	restoredKey, err := kb.Get("some_account")
@@ -73,11 +73,11 @@ func TestCreateLedger(t *testing.T) {
 	assert.Equal(t, TypeLedger, restoredKey.GetType())
 	pubKey = restoredKey.GetPubKey()
 	pk, err = sdk.Bech32ifyAccPub(pubKey)
-	assert.Equal(t, "cosmospub1addwnpepqdszcr95mrqqs8lw099aa9h8h906zmet22pmwe9vquzcgvnm93eqygufdlv", pk)
+	assert.Equal(t, "okchainpub1addwnpepqg94y3n0sdcg5w0vhjqgp6e2ux20hxpm2sdy59nnlcny76uc729fyquy75e", pk)
 
 	path, err := restoredKey.GetPath()
 	assert.NoError(t, err)
-	assert.Equal(t, "44'/118'/3'/0/1", path.String())
+	assert.Equal(t, "44'/996'/3'/0/1", path.String())
 }
 
 // TestKeyManagement makes sure we can manipulate these keys well
@@ -94,17 +94,17 @@ func TestKeyManagement(t *testing.T) {
 	require.Nil(t, err)
 	assert.Empty(t, l)
 
-	_, _, err = cstore.CreateMnemonic(n1, English, p1, Ed25519)
+	_, _, err = cstore.CreateMnemonic(n1, English, p1, Ed25519, "")
 	require.Error(t, err, "ed25519 keys are currently not supported by keybase")
 
 	// create some keys
 	_, err = cstore.Get(n1)
 	require.Error(t, err)
-	i, _, err := cstore.CreateMnemonic(n1, English, p1, algo)
+	i, _, err := cstore.CreateMnemonic(n1, English, p1, algo, "")
 
 	require.NoError(t, err)
 	require.Equal(t, n1, i.GetName())
-	_, _, err = cstore.CreateMnemonic(n2, English, p2, algo)
+	_, _, err = cstore.CreateMnemonic(n2, English, p2, algo, "")
 	require.NoError(t, err)
 
 	// we can get these keys
@@ -114,7 +114,7 @@ func TestKeyManagement(t *testing.T) {
 	require.NotNil(t, err)
 	_, err = cstore.GetByAddress(accAddr(i2))
 	require.NoError(t, err)
-	addr, err := sdk.AccAddressFromBech32("cosmos1yq8lgssgxlx9smjhes6ryjasmqmd3ts2559g0t")
+	addr, err := sdk.AccAddressFromBech32("okchain1yq8lgssgxlx9smjhes6ryjasmqmd3ts2kwlceg")
 	require.NoError(t, err)
 	_, err = cstore.GetByAddress(addr)
 	require.NotNil(t, err)
@@ -173,10 +173,10 @@ func TestSignVerify(t *testing.T) {
 	p1, p2, p3 := "1234", "foobar", "foobar"
 
 	// create two users and get their info
-	i1, _, err := cstore.CreateMnemonic(n1, English, p1, algo)
+	i1, _, err := cstore.CreateMnemonic(n1, English, p1, algo, "")
 	require.Nil(t, err)
 
-	i2, _, err := cstore.CreateMnemonic(n2, English, p2, algo)
+	i2, _, err := cstore.CreateMnemonic(n2, English, p2, algo, "")
 	require.Nil(t, err)
 
 	// Import a public key
@@ -251,7 +251,7 @@ func TestExportImport(t *testing.T) {
 	// make the storage with reasonable defaults
 	cstore := NewInMemory()
 
-	info, _, err := cstore.CreateMnemonic("john", English, "secretcpw", Secp256k1)
+	info, _, err := cstore.CreateMnemonic("john", English, "secretcpw", Secp256k1, "")
 	require.NoError(t, err)
 	require.Equal(t, info.GetName(), "john")
 
@@ -281,7 +281,7 @@ func TestExportImportPubKey(t *testing.T) {
 
 	// CreateMnemonic a private-public key pair and ensure consistency
 	notPasswd := "n9y25ah7"
-	info, _, err := cstore.CreateMnemonic("john", English, notPasswd, Secp256k1)
+	info, _, err := cstore.CreateMnemonic("john", English, notPasswd, Secp256k1, "")
 	require.Nil(t, err)
 	require.NotEqual(t, info, "")
 	require.Equal(t, info.GetName(), "john")
@@ -323,7 +323,7 @@ func TestAdvancedKeyManagement(t *testing.T) {
 	p1, p2 := "1234", "foobar"
 
 	// make sure key works with initial password
-	_, _, err := cstore.CreateMnemonic(n1, English, p1, algo)
+	_, _, err := cstore.CreateMnemonic(n1, English, p1, algo, "")
 	require.Nil(t, err, "%+v", err)
 	assertPassword(t, cstore, n1, p1, p2)
 
@@ -371,7 +371,7 @@ func TestSeedPhrase(t *testing.T) {
 	p1, p2 := "1234", "foobar"
 
 	// make sure key works with initial password
-	info, mnemonic, err := cstore.CreateMnemonic(n1, English, p1, algo)
+	info, mnemonic, err := cstore.CreateMnemonic(n1, English, p1, algo, "")
 	require.Nil(t, err, "%+v", err)
 	require.Equal(t, n1, info.GetName())
 	assert.NotEmpty(t, mnemonic)
@@ -398,7 +398,7 @@ func ExampleNew() {
 	sec := Secp256k1
 
 	// Add keys and see they return in alphabetical order
-	bob, _, err := cstore.CreateMnemonic("Bob", English, "friend", sec)
+	bob, _, err := cstore.CreateMnemonic("Bob", English, "friend", sec, "")
 	if err != nil {
 		// this should never happen
 		fmt.Println(err)
@@ -406,8 +406,8 @@ func ExampleNew() {
 		// return info here just like in List
 		fmt.Println(bob.GetName())
 	}
-	_, _, _ = cstore.CreateMnemonic("Alice", English, "secret", sec)
-	_, _, _ = cstore.CreateMnemonic("Carl", English, "mitm", sec)
+	_, _, _ = cstore.CreateMnemonic("Alice", English, "secret", sec, "")
+	_, _, _ = cstore.CreateMnemonic("Carl", English, "mitm", sec, "")
 	info, _ := cstore.List()
 	for _, i := range info {
 		fmt.Println(i.GetName())

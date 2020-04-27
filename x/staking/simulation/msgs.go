@@ -34,15 +34,15 @@ func SimulateMsgCreateValidator(m auth.AccountKeeper, k staking.Keeper) simulati
 		acc := simulation.RandomAcc(r, accs)
 		address := sdk.ValAddress(acc.Address)
 		amount := m.GetAccount(ctx, acc.Address).GetCoins().AmountOf(denom)
-		if amount.GT(sdk.ZeroInt()) {
-			amount = simulation.RandomAmount(r, amount)
+		if amount.GT(sdk.ZeroDec()) {
+			amount = simulation.RandomAmount(r, amount.RoundInt()).ToDec()
 		}
 
-		if amount.Equal(sdk.ZeroInt()) {
+		if amount.Equal(sdk.ZeroDec()) {
 			return simulation.NoOpMsg(staking.ModuleName), nil, nil
 		}
 
-		selfDelegation := sdk.NewCoin(denom, amount)
+		selfDelegation := sdk.NewDecCoinFromDec(denom, amount)
 		msg := staking.NewMsgCreateValidator(address, acc.PubKey,
 			selfDelegation, description, commission, sdk.OneInt())
 
@@ -111,15 +111,15 @@ func SimulateMsgDelegate(m auth.AccountKeeper, k staking.Keeper) simulation.Oper
 		delegatorAcc := simulation.RandomAcc(r, accs)
 		delegatorAddress := delegatorAcc.Address
 		amount := m.GetAccount(ctx, delegatorAddress).GetCoins().AmountOf(denom)
-		if amount.GT(sdk.ZeroInt()) {
-			amount = simulation.RandomAmount(r, amount)
+		if amount.GT(sdk.ZeroDec()) {
+			amount = simulation.RandomAmount(r, amount.RoundInt()).ToDec()
 		}
-		if amount.Equal(sdk.ZeroInt()) {
+		if amount.Equal(sdk.ZeroDec()) {
 			return simulation.NoOpMsg(staking.ModuleName), nil, nil
 		}
 
 		msg := staking.NewMsgDelegate(
-			delegatorAddress, validatorAddress, sdk.NewCoin(denom, amount))
+			delegatorAddress, validatorAddress, sdk.NewDecCoinFromDec(denom, amount))
 
 		if msg.ValidateBasic() != nil {
 			return simulation.NoOpMsg(staking.ModuleName), nil, fmt.Errorf("expected msg to pass ValidateBasic: %s", msg.GetSignBytes())
@@ -196,15 +196,15 @@ func SimulateMsgBeginRedelegate(m auth.AccountKeeper, k staking.Keeper) simulati
 		delegatorAddress := delegatorAcc.Address
 		// TODO
 		amount := m.GetAccount(ctx, delegatorAddress).GetCoins().AmountOf(denom)
-		if amount.GT(sdk.ZeroInt()) {
-			amount = simulation.RandomAmount(r, amount)
+		if amount.GT(sdk.ZeroDec()) {
+			amount = simulation.RandomAmount(r, amount.RoundInt()).ToDec()
 		}
-		if amount.Equal(sdk.ZeroInt()) {
+		if amount.Equal(sdk.ZeroDec()) {
 			return simulation.NoOpMsg(staking.ModuleName), nil, nil
 		}
 
 		msg := staking.NewMsgBeginRedelegate(
-			delegatorAddress, srcValidatorAddress, destValidatorAddress, sdk.NewCoin(denom, amount),
+			delegatorAddress, srcValidatorAddress, destValidatorAddress, sdk.NewDecCoinFromDec(denom, amount),
 		)
 		if msg.ValidateBasic() != nil {
 			return simulation.NoOpMsg(staking.ModuleName), nil, fmt.Errorf("expected msg to pass ValidateBasic: %s", msg.GetSignBytes())

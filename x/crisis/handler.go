@@ -31,6 +31,7 @@ func handleMsgVerifyInvariant(ctx sdk.Context, msg types.MsgVerifyInvariant, k k
 	constantFee := sdk.NewCoins(k.GetConstantFee(ctx))
 
 	if err := k.SendCoinsFromAccountToFeeCollector(ctx, msg.Sender, constantFee); err != nil {
+		fmt.Println(err)
 		return err.Result()
 	}
 

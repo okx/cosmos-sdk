@@ -36,7 +36,7 @@ func SimulateDeductFee(ak auth.AccountKeeper, supplyKeeper types.SupplyKeeper) s
 		denomIndex := r.Intn(len(initCoins))
 		randCoin := initCoins[denomIndex]
 
-		amt, err := randPositiveInt(r, randCoin.Amount)
+		amt, err := randPositiveInt(r, randCoin.Amount.RoundInt())
 		if err != nil {
 			return opMsg, nil, nil
 		}
