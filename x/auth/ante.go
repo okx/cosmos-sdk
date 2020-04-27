@@ -57,17 +57,26 @@ func NewAnteHandler(ak AccountKeeper, supplyKeeper types.SupplyKeeper,
 
 		params := ak.GetParams(ctx)
 
+		isFree := false
+		if isSystemFreeHandler != nil {
+			isFree = isSystemFreeHandler(ctx, stdTx.GetMsgs())
+		}
+
 		// Ensure that the provided fees meet a minimum threshold for the validator,
 		// if this is a CheckTx. This is only for local mempool purposes, and thus
 		// is only ran on check tx.
-		if ctx.IsCheckTx() && !simulate {
+		if ctx.IsCheckTx() && !simulate && !isFree {
 			res := EnsureSufficientMempoolFees(ctx, stdTx.Fee)
 			if !res.IsOK() {
 				return newCtx, res, true
 			}
 		}
 
-		newCtx = SetGasMeter(simulate, ctx, stdTx.Fee.Gas)
+		if isFree {
+			newCtx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+		} else {
+			newCtx = SetGasMeter(simulate, ctx, stdTx.Fee.Gas)
+		}
 
 		// AnteHandlers must have their own defer/recover in order for the BaseApp
 		// to know how much gas was used! This is because the GasMeter is created in
@@ -117,12 +126,6 @@ func NewAnteHandler(ak AccountKeeper, supplyKeeper types.SupplyKeeper,
 		if !res.IsOK() {
 			return newCtx, res, true
 		}
-
-		isFree := false
-		if isSystemFreeHandler != nil {
-			isFree = isSystemFreeHandler(ctx, stdTx.GetMsgs())
-		}
-
 
 		// deduct the fees
 		if !stdTx.Fee.Amount.IsZero() && !isFree {
