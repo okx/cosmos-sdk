@@ -39,7 +39,7 @@ clean_ups_kept_days = "{{ .BackendConfig.CleanUpsKeptDays }}"
 clean_ups_time = "{{ .BackendConfig.CleanUpsTime }}"
 [backend.orm_engine]
 engine_type = "{{ .BackendConfig.OrmEngine.EngineType }}"
-connect_str = "{{ .BackendConfig.OrmEngine.ConnectStr }}"
+connect_str = "{{ js .BackendConfig.OrmEngine.ConnectStr }}"
 `
 
 var configTemplate *template.Template
