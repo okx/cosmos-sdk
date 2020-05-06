@@ -37,7 +37,6 @@ var (
 	BuildTags  = ""
 	CosmosSDK  = ""
 	Tendermint = ""
-	GoSumHash  = ""
 )
 
 // Info defines the application version information.
