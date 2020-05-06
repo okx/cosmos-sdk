@@ -34,55 +34,42 @@ var (
 	// commit
 	Commit = ""
 	// build tags
-	BuildTags     = ""
-	CosmosSDK     = ""
-	Tendermint    = ""
-	VendorDirHash = ""
+	BuildTags  = ""
+	CosmosSDK  = ""
+	Tendermint = ""
 )
 
 // Info defines the application version information.
 type Info struct {
-	Name          string `json:"name" yaml:"name"`
-	ServerName    string `json:"server_name" yaml:"server_name"`
-	ClientName    string `json:"client_name" yaml:"client_name"`
-	Version       string `json:"version" yaml:"version"`
-	GitCommit     string `json:"commit" yaml:"commit"`
-	BuildTags     string `json:"build_tags" yaml:"build_tags"`
-	GoVersion     string `json:"go" yaml:"go"`
-	CosmosSDK     string `json:"cosmos_sdk"`
-	Tendermint    string `json:"tendermint"`
-	VendorDirHash string `json:"vendor_hash"`
+	Name       string `json:"name" yaml:"name"`
+	ServerName string `json:"server_name" yaml:"server_name"`
+	ClientName string `json:"client_name" yaml:"client_name"`
+	Version    string `json:"version" yaml:"version"`
+	GitCommit  string `json:"commit" yaml:"commit"`
+	BuildTags  string `json:"build_tags" yaml:"build_tags"`
+	GoVersion  string `json:"go" yaml:"go"`
+	CosmosSDK  string `json:"cosmos_sdk" yaml:"cosmos_sdk"`
+	Tendermint string `json:"tendermint" yaml:"tendermint"`
 }
 
-//func NewInfo() Info {
-//	return Info{
-//		Name:       Name,
-//		ServerName: ServerName,
-//		ClientName: ClientName,
-//		Version:    Version,
-//		GitCommit:  Commit,
-//		BuildTags:  BuildTags,
-//		GoVersion:  fmt.Sprintf("go version %s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH),
-//	}
-//}
-
 func (v Info) String() string {
-	return fmt.Sprintf(`version: %s
+	return fmt.Sprintf(`%s: %s
 git commit: %s
-vendor hash: %s
 build tags: %s
 cosmos-sdk: %s
 tendermint: %s
-%s`, v.Version, v.GitCommit, v.VendorDirHash, v.BuildTags, v.CosmosSDK, v.Tendermint, v.GoVersion)
+%s`,v.Name, v.Version, v.GitCommit, v.BuildTags, v.CosmosSDK, v.Tendermint, v.GoVersion)
 }
 
 func NewInfo() Info {
 	return Info{
-		Version:       Version,
-		CosmosSDK:     CosmosSDK,
-		Tendermint:    Tendermint,
-		GitCommit:     Commit,
-		VendorDirHash: VendorDirHash,
-		BuildTags:     BuildTags,
-		GoVersion:     fmt.Sprintf("go version %s %s/%s\n", runtime.Version(), runtime.GOOS, runtime.GOARCH)}
+		Name:       Name,
+		ServerName: ServerName,
+		ClientName: ClientName,
+		Version:    Version,
+		CosmosSDK:  CosmosSDK,
+		Tendermint: Tendermint,
+		GitCommit:  Commit,
+		BuildTags:  BuildTags,
+		GoVersion:  fmt.Sprintf("go version %s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH)}
 }
