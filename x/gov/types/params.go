@@ -21,7 +21,6 @@ func ParamKeyTable() params.KeyTable {
 		ParamStoreKeyDepositParams, DepositParams{},
 		ParamStoreKeyVotingParams, VotingParams{},
 		ParamStoreKeyTallyParams, TallyParams{},
-		ParamStoreKeyTendermintParams, TendermintParams{},
 	)
 }
 
@@ -97,21 +96,18 @@ type Params struct {
 	VotingParams  VotingParams  `json:"voting_params" yaml:"voting_params"`
 	TallyParams   TallyParams   `json:"tally_params" yaml:"tally_params"`
 	DepositParams DepositParams `json:"deposit_params" yaml:"deposit_parmas"`
-	TendermintParams TendermintParams `json:"tendermint_params" yaml:"tendermint_params"`
 }
 
 func (gp Params) String() string {
 	return gp.VotingParams.String() + "\n" +
 		gp.TallyParams.String() + "\n" +
-		gp.DepositParams.String() + "\n" +
-		gp.TendermintParams.String()
+		gp.DepositParams.String()
 }
 
-func NewParams(vp VotingParams, tp TallyParams, dp DepositParams, tmp TendermintParams) Params {
+func NewParams(vp VotingParams, tp TallyParams, dp DepositParams) Params {
 	return Params{
 		VotingParams:     vp,
 		DepositParams:    dp,
 		TallyParams:      tp,
-		TendermintParams: tmp,
 	}
 }

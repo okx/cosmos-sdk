@@ -495,10 +495,6 @@ $ %s query gov params
 			if err != nil {
 				return err
 			}
-			tmp, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/params/tendermint", queryRoute), nil)
-			if err != nil {
-				return err
-			}
 
 			var tallyParams types.TallyParams
 			cdc.MustUnmarshalJSON(tp, &tallyParams)
@@ -506,11 +502,8 @@ $ %s query gov params
 			cdc.MustUnmarshalJSON(dp, &depositParams)
 			var votingParams types.VotingParams
 			cdc.MustUnmarshalJSON(vp, &votingParams)
-			var maxTxNum int
-			cdc.MustUnmarshalJSON(tmp, &maxTxNum)
-			tendermintParams := types.TendermintParams{maxTxNum}
 
-			return cliCtx.PrintOutput(types.NewParams(votingParams, tallyParams, depositParams, tendermintParams))
+			return cliCtx.PrintOutput(types.NewParams(votingParams, tallyParams, depositParams))
 		},
 	}
 }
