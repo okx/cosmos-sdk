@@ -32,5 +32,5 @@ require (
 
 replace (
 	github.com/tendermint/iavl => github.com/okex/iavl v0.12.4-okchain
-	github.com/tendermint/tendermint => github.com/okex/tendermint v0.32.10-okchain
+	github.com/tendermint/tendermint => github.com/okex/tendermint v0.32.10-okchain.0.20200507031215-59b7dc8e77a4
 )
