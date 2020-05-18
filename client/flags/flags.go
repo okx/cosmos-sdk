@@ -18,7 +18,7 @@ const (
 	// DefaultGasAdjustment is applied to gas estimates to avoid tx execution
 	// failures due to state changes that might occur between the tx simulation
 	// and the actual run.
-	DefaultGasAdjustment = 1.2
+	DefaultGasAdjustment = 1.0
 	DefaultGasLimit      = 200000
 	GasFlagAuto          = "auto"
 
@@ -167,7 +167,8 @@ func ParseGas(gasStr string) (simulateAndExecute bool, gas uint64, err error) {
 	default:
 		gas, err = strconv.ParseUint(gasStr, 10, 64)
 		if err != nil {
-			err = fmt.Errorf("gas must be either integer or %q", GasFlagAuto)
+			//err = fmt.Errorf("gas must be either integer or %q", GasFlagAuto)
+			err = fmt.Errorf("gas must only be integer")
 			return
 		}
 	}
