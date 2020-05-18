@@ -18,7 +18,7 @@ const (
 	// DefaultGasAdjustment is applied to gas estimates to avoid tx execution
 	// failures due to state changes that might occur between the tx simulation
 	// and the actual run.
-	DefaultGasAdjustment = 1.0
+	DefaultGasAdjustment = 1.2
 	DefaultGasLimit      = 200000
 	GasFlagAuto          = "auto"
 
@@ -103,8 +103,13 @@ func PostCommands(cmds ...*cobra.Command) []*cobra.Command {
 		c.Flags().BoolP(FlagSkipConfirmation, "y", false, "Skip tx broadcasting prompt confirmation")
 
 		// --gas can accept integers and "simulate"
+		//c.Flags().Var(&GasFlagVar, "gas", fmt.Sprintf(
+		//	"gas limit to set per-transaction; set to %q to calculate required gas automatically (default %d)",
+		//	GasFlagAuto, DefaultGasLimit,
+		//))
+
 		c.Flags().Var(&GasFlagVar, "gas", fmt.Sprintf(
-			"gas limit to set per-transaction; set to %q to calculate required gas automatically (default %d)",
+			"gas limit to set per-transaction; (set to %q to calculate required gas automatically is disabled) (default %d)",
 			GasFlagAuto, DefaultGasLimit,
 		))
 
@@ -157,8 +162,8 @@ func ParseGas(gasStr string) (simulateAndExecute bool, gas uint64, err error) {
 	switch gasStr {
 	case "":
 		gas = DefaultGasLimit
-	case GasFlagAuto:
-		simulateAndExecute = true
+	//case GasFlagAuto:
+	//	simulateAndExecute = true
 	default:
 		gas, err = strconv.ParseUint(gasStr, 10, 64)
 		if err != nil {

@@ -790,7 +790,7 @@ func (app *BaseApp) runMsgs(ctx sdk.Context, msgs []sdk.Msg, mode RunTxMode) (re
 		var msgResult sdk.Result
 
 		// skip actual execution for CheckTx mode
-		if mode != runTxModeCheck {
+		if mode != runTxModeCheck && mode != runTxModeSimulate {
 			msgResult = handler(ctx, msg)
 		}
 
