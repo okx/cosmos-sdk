@@ -25,9 +25,6 @@ type AccountKeeper struct {
 	// The codec codec for binary encoding/decoding of accounts.
 	cdc *codec.Codec
 
-	//The cache is used to record account which is dirty.
-	cache *Cache
-
 	paramSubspace subspace.Subspace
 }
 
@@ -43,7 +40,6 @@ func NewAccountKeeper(
 		proto:         proto,
 		cdc:           cdc,
 		paramSubspace: paramstore.WithKeyTable(types.ParamKeyTable()),
-		cache: NewCache(),
 	}
 }
 
@@ -107,8 +103,6 @@ func (ak AccountKeeper) SetAccount(ctx sdk.Context, acc exported.Account) {
 		panic(err)
 	}
 	store.Set(types.AddressStoreKey(addr), bz)
-
-	ak.cache.AddUpdatedAccount(acc)
 }
 
 // RemoveAccount removes an account for the account mapper store.
