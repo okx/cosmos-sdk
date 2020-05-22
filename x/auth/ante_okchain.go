@@ -13,6 +13,6 @@ type ObserverI interface {
 	OnAccountUpdated(acc Account)
 }
 
-func (k AccountKeeper) SetObserverKeeper(observer ObserverI) {
+func (k *AccountKeeper) SetObserverKeeper(observer ObserverI) {
 	k.observer = observer
 }
