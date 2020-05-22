@@ -25,10 +25,9 @@ type AccountKeeper struct {
 	// The codec codec for binary encoding/decoding of accounts.
 	cdc *codec.Codec
 
-	//The cache is used to record account which is dirty.
-	cache *Cache
-
 	paramSubspace subspace.Subspace
+
+	observer ObserverI
 }
 
 // NewAccountKeeper returns a new sdk.AccountKeeper that uses go-amino to
@@ -43,7 +42,6 @@ func NewAccountKeeper(
 		proto:         proto,
 		cdc:           cdc,
 		paramSubspace: paramstore.WithKeyTable(types.ParamKeyTable()),
-		cache: NewCache(),
 	}
 }
 
@@ -108,7 +106,9 @@ func (ak AccountKeeper) SetAccount(ctx sdk.Context, acc exported.Account) {
 	}
 	store.Set(types.AddressStoreKey(addr), bz)
 
-	ak.cache.AddUpdatedAccount(acc)
+	if ak.observer != nil {
+		ak.observer.OnAccountUpdated(acc)
+	}
 }
 
 // RemoveAccount removes an account for the account mapper store.
