@@ -402,7 +402,8 @@ func TestParse(t *testing.T) {
 		{"2 3foo, 97 bar", false, nil},                             // 3foo is invalid coin name
 		{"11me coin, 12you coin", false, nil},                      // no spaces in coin names
 		{"1.2btc", true, Coins{{"btc", MustNewDecFromStr("1.2")}}}, // amount must be integer
-		{"5foo-bar", true, Coins{{"foo-bar", NewDec(5)}}},          // once more, only letters in coin name
+		{"5foo-bar", false, nil},                                   // hex a~f0~9
+		{"5foo-baf", true, Coins{{"foo-baf", NewDec(5)}}},          // once more, only letters in coin name
 	}
 
 	for tcIndex, tc := range cases {
