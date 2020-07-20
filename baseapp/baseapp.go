@@ -942,7 +942,7 @@ func (app *BaseApp) runTx(mode RunTxMode, txBytes []byte, tx sdk.Tx) (result sdk
 		// writes do not happen if aborted/failed.  This may have some
 		// performance benefits, but it'll be more difficult to get right.
 		anteCtx, msCache = app.cacheTxContext(ctx, txBytes)
-
+		anteCtx = anteCtx.WithEventManager(sdk.NewEventManager())
 		newCtx, result, abort := app.anteHandler(anteCtx, tx, mode == runTxModeSimulate)
 		if !newCtx.IsZero() {
 			// At this point, newCtx.MultiStore() is cache-wrapped, or something else
