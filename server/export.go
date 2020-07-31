@@ -62,7 +62,7 @@ func ExportCmd(ctx *Context, cdc *codec.Codec, appExporter AppExporter) *cobra.C
 			forZeroHeight := viper.GetBool(flagForZeroHeight)
 			jailWhiteList := viper.GetStringSlice(flagJailWhitelist)
 
-			appState, validators, err := appExporter(ctx.Logger, db, traceWriter, height, forZeroHeight, jailWhiteList)
+			appState, validators, cp, err := appExporter(ctx.Logger, db, traceWriter, height, forZeroHeight, jailWhiteList)
 			if err != nil {
 				return fmt.Errorf("error exporting state: %v", err)
 			}
@@ -74,6 +74,18 @@ func ExportCmd(ctx *Context, cdc *codec.Codec, appExporter AppExporter) *cobra.C
 
 			doc.AppState = appState
 			doc.Validators = validators
+			doc.ConsensusParams = &tmtypes.ConsensusParams{
+				Block: tmtypes.BlockParams{
+					MaxBytes: cp.Block.MaxBytes,
+					MaxGas:   cp.Block.MaxGas,
+				},
+				Evidence: tmtypes.EvidenceParams{
+					MaxAge: cp.Evidence.MaxAge,
+				},
+				Validator: tmtypes.ValidatorParams{
+					PubKeyTypes: cp.Validator.PubKeyTypes,
+				},
+			}
 
 			encoded, err := codec.MarshalJSONIndent(cdc, doc)
 			if err != nil {
