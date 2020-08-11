@@ -60,7 +60,37 @@ func DefaultBackendConfig() *BackendConfig {
 	c.CleanUpsKeptDays["kline_m5"] = 120
 
 	c.OrmEngine.EngineType = BackendOrmEngineTypeSqlite
-	c.OrmEngine.ConnectStr = filepath.Join(GetNodeHome(), "data", c.OrmEngine.EngineType, "backend.sqlite3") 
+	c.OrmEngine.ConnectStr = filepath.Join(GetNodeHome(), "data", c.OrmEngine.EngineType, "backend.sqlite3")
 
 	return &c
+}
+
+// StreamConfig - config for okchain stream module
+type StreamConfig struct {
+	Engine                        string `json:"engine" mapstructure:"engine"`
+	KlineQueryConnect             string `json:"klines_query_connect" mapstructure:"klines_query_connect"`
+	WorkerId                      string `json:"worker_id" mapstructure:"worker_id"`
+	RedisScheduler                string `json:"redis_scheduler" mapstructure:"redis_scheduler"`
+	RedisLock                     string `json:"redis_lock" mapstructure:"redis_lock"`
+	LocalLockDir                  string `json:"local_lock_dir" mapstructure:"local_lock_dir"`
+	MarketServiceEnable           bool   `json:"market_service_enable" mapstructure:"market_service_enable"`
+	CacheQueueCapacity            int    `json:"cache_queue_capacity" mapstructure:"cache_queue_capacity"`
+	MarketPulsarTopic             string `json:"market_pulsar_topic" mapstructure:"market_pulsar_topic"`
+	MarketPulsarPartition         int    `json:"market_pulsar_partition" mapstructure:"market_pulsar_partition"`
+	MarketQuotationsEurekaName    string `json:"market_quotations_eureka_name" mapstructure:"market_quotations_eureka_name"`
+	EurekaServerUrl               string `json:"eureka_server_url" mapstructure:"eureka_server_url"`
+	RestApplicationName           string `json:"rest_application_name" mapstructure:"rest_application_name"`
+	NacosServerUrl                string `json:"nacos_server_url" mapstructure:"nacos_server_url"`
+	NacosNamespaceId              string `json:"nacos_namespace_id" mapstructure:"nacos_namespace_id"`
+	PushservicePulsarPublicTopic  string `json:"pushservice_pulsar_public_topic" mapstructure:"pushservice_pulsar_public_topic"`
+	PushservicePulsarPrivateTopic string `json:"pushservice_pulsar_private_topic" mapstructure:"pushservice_pulsar_private_topic"`
+	PushservicePulsarDepthTopic   string `json:"pushservice_pulsar_depth_topic" mapstructure:"pushservice_pulsar_depth_topic"`
+	RedisRequirePass              string `json:"redis_require_pass" mapstructure:"redis_require_pass"`
+}
+
+// DefaultStreamConfig returns default config for okchain stream module
+func DefaultStreamConfig() *StreamConfig {
+	return &StreamConfig{
+		Engine: "",
+	}
 }
