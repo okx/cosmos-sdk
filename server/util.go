@@ -59,7 +59,7 @@ func PersistentPreRunEFn(context *Context) func(*cobra.Command, []string) error 
 		if err != nil {
 			return err
 		}
-		// okchain
+		// okexchain
 		output := os.Stdout
 		if !config.LogStdout {
 			output, err = os.OpenFile(config.LogFile, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
@@ -115,13 +115,13 @@ func interceptLoadConfig() (conf *cfg.Config, err error) {
 	}
 
 	config.SetNodeHome(rootDir)
-	appConfigFilePath := filepath.Join(rootDir, "config/okchaind.toml")
+	appConfigFilePath := filepath.Join(rootDir, "config/okexchaind.toml")
 	if _, err := os.Stat(appConfigFilePath); os.IsNotExist(err) {
 		appConf, _ := config.ParseConfig()
 		config.WriteConfigFile(appConfigFilePath, appConf)
 	}
 
-	viper.SetConfigName("okchaind")
+	viper.SetConfigName("okexchaind")
 	err = viper.MergeInConfig()
 
 	return
