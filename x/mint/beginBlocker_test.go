@@ -1,7 +1,6 @@
 package mint
 
 import (
-	"fmt"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -50,7 +49,6 @@ func TestBeginBlocker(t *testing.T) {
 
 	minter = mapp.mintKeeper.GetMinterCustom(ctx)
 	ratePerBlock1 := minter.MintedPerBlock.AmountOf(sdk.DefaultBondDenom)
-	fmt.Println(ratePerBlock1)
 	assert.EqualValues(t, ratePerBlock1, mintParams.DeflationRate.Mul(mintParams.InitTokensPerBlock))
 
 	// annual mint test
