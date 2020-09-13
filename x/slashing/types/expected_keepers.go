@@ -36,6 +36,6 @@ type StakingHooks interface {
 	AfterValidatorRemoved(ctx sdk.Context, consAddr sdk.ConsAddress, valAddr sdk.ValAddress) // Must be called when a validator is deleted
 
 	AfterValidatorBonded(ctx sdk.Context, consAddr sdk.ConsAddress, valAddr sdk.ValAddress) // Must be called when a validator is bonded
-	/* required by okchain */
+	/* required by okexchain */
 	AfterValidatorDestroyed(ctx sdk.Context, consAddr sdk.ConsAddress, valAddr sdk.ValAddress)	// Must be called when a validator is destroyed by tx
 }

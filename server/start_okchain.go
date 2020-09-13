@@ -14,7 +14,7 @@ import (
 	cmn "github.com/tendermint/tendermint/libs/common"
 )
 
-// okchain full-node start flags
+// okexchain full-node start flags
 const (
 	FlagListenAddr         = "rest.laddr"
 	FlagExternalListenAddr = "rest.external_laddr"
@@ -107,7 +107,7 @@ func StopCmd(ctx *Context) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f, err := os.Open(filepath.Join(ctx.Config.RootDir, "config", "pid"))
 			if err != nil {
-				errStr := fmt.Sprintf("%s Please finish the process of okchaind through kill -2 pid to stop gracefully", err.Error())
+				errStr := fmt.Sprintf("%s Please finish the process of okexchaind through kill -2 pid to stop gracefully", err.Error())
 				cmn.Exit(errStr)
 			}
 			defer f.Close()
@@ -115,7 +115,7 @@ func StopCmd(ctx *Context) *cobra.Command {
 			in.Scan()
 			pid, err := strconv.Atoi(in.Text())
 			if err != nil {
-				errStr := fmt.Sprintf("%s Please finish the process of okchaind through kill -2 pid to stop gracefully", err.Error())
+				errStr := fmt.Sprintf("%s Please finish the process of okexchaind through kill -2 pid to stop gracefully", err.Error())
 				cmn.Exit(errStr)
 			}
 			process, err := os.FindProcess(pid)
@@ -152,8 +152,8 @@ func registerRestServerFlags(cmd *cobra.Command) *cobra.Command {
 	return cmd
 }
 
-// registerOkchainPluginFlags registers the flags required for rest server
-func registerOkchainPluginFlags(cmd *cobra.Command) *cobra.Command {
+// registerokexchainPluginFlags registers the flags required for rest server
+func registerokexchainPluginFlags(cmd *cobra.Command) *cobra.Command {
 	cmd.Flags().Bool(FlagBackendEnableBackend, backendConf.EnableBackend, "Enable the node's backend plugin")
 	cmd.Flags().Bool(FlagBackendEnableMktCompute, backendConf.EnableMktCompute, "Enable kline and ticker calculating")
 	cmd.Flags().Bool(FlagBackendLogSQL, backendConf.LogSQL, "Enable backend plugin logging sql feature")
