@@ -141,13 +141,15 @@ func (k Keeper) SetMinterCustom(ctx sdk.Context, minter types.MinterCustom) {
 }
 
 func (k Keeper) UpdateMinterCustom(ctx sdk.Context, minter *types.MinterCustom, params types.Params) {
-	totalStakingSupply := k.StakingTokenSupply(ctx)
-	annualProvisions := params.InflationRate.Mul(totalStakingSupply)
-	provisionAmtPerBlock := annualProvisions.Quo(sdk.NewDec(int64(params.BlocksPerYear)))
+	var provisionAmtPerBlock sdk.Dec
+	if ctx.BlockHeight() == 0 || minter.NextBlockToUpdate == 0 {
+		provisionAmtPerBlock = params.InitTokensPerBlock
+	} else {
+		provisionAmtPerBlock = minter.MintedPerBlock.AmountOf(params.MintDenom).Mul(params.DeflationRate)
+	}
 
 	// update new MinterCustom
 	minter.MintedPerBlock = sdk.NewDecCoinsFromDec(params.MintDenom, provisionAmtPerBlock)
-	minter.NextBlockToUpdate += params.BlocksPerYear
-	minter.AnnualProvisions = annualProvisions
+	minter.NextBlockToUpdate += params.DeflationYears * params.BlocksPerYear
 	k.SetMinterCustom(ctx, *minter)
 }

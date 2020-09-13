@@ -40,11 +40,13 @@ var (
 	ModuleCdc        = types.ModuleCdc
 	MinterKey        = types.MinterKey
 	KeyMintDenom     = types.KeyMintDenom
-	KeyInflationRate = types.KeyInflationRate
+	KeyInflationRate = types.KeyDeflationRate
 	//KeyInflationMax  = types.KeyInflationMax
 	//KeyInflationMin  = types.KeyInflationMin
 	//KeyGoalBonded    = types.KeyGoalBonded
-	KeyBlocksPerYear = types.KeyBlocksPerYear
+	KeyBlocksPerYear      = types.KeyBlocksPerYear
+	KeyDeflationYears     = types.KeyDeflationYears
+	KeyInitTokensPerBlock = types.KeyInitTokensPerBlock
 )
 
 type (

@@ -339,6 +339,8 @@ func GenMintGenesisState(cdc *codec.Codec, r *rand.Rand, ap simulation.AppParams
 				return v
 			}(r),
 			uint64(60*60*8766/5),
+			uint64(4),
+			uint64(50),
 		),
 	)
 

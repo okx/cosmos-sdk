@@ -54,10 +54,10 @@ func ValidateMinter(minter Minter) error {
 //	// defined to be 13% per year, however the annual inflation is capped as between
 //	// 7% and 20%.
 //
-//	// (1 - bondedRatio/GoalBonded) * InflationRate
+//	// (1 - bondedRatio/GoalBonded) * DeflationRate
 //	inflationRateChangePerYear := sdk.OneDec().
 //		Sub(bondedRatio.Quo(params.GoalBonded)).
-//		Mul(params.InflationRate)
+//		Mul(params.DeflationRate)
 //	inflationRateChange := inflationRateChangePerYear.Quo(sdk.NewDec(int64(params.BlocksPerYear)))
 //
 //	// adjust the new annual inflation for this next cycle
