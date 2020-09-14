@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	defaultMinGasPrices = "0.00000001"+sdk.DefaultBondDenom
+	defaultMinGasPrices = "0.00000001" + sdk.DefaultBondDenom
 )
 
 // BaseConfig defines the server's basic configuration
@@ -36,6 +36,7 @@ type BaseConfig struct {
 type Config struct {
 	BaseConfig    `mapstructure:",squash"`
 	BackendConfig *BackendConfig `mapstructure:"backend"`
+	StreamConfig  *StreamConfig  `mapstructure:"stream"`
 }
 
 // SetMinGasPrices sets the validator's minimum gas prices.
@@ -72,5 +73,6 @@ func DefaultConfig() *Config {
 			MinGasPrices: defaultMinGasPrices,
 		},
 		BackendConfig: DefaultBackendConfig(),
+		StreamConfig: DefaultStreamConfig(),
 	}
 }

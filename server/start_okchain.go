@@ -29,10 +29,31 @@ const (
 	FlagBackendCleanUpsTime        = "backend.clean_ups_time"
 	FlagBacekendOrmEngineType      = "backend.orm_engine.engine_type"
 	FlagBackendOrmEngineConnectStr = "backend.orm_engine.connect_str"
+
+	FlagStreamEngine                        = "stream.engine"
+	FlagStreamKlineQueryConnect             = "stream.klines_query_connect"
+	FlagStreamWorkerId                      = "stream.worker_id"
+	FlagStreamRedisScheduler                = "stream.redis_scheduler"
+	FlagStreamRedisLock                     = "stream.redis_lock"
+	FlagStreamLocalLockDir                  = "stream.local_lock_dir"
+	FlagStreamMarketServiceEnable           = "stream.market_service_enable"
+	FlagStreamCacheQueueCapacity            = "stream.cache_queue_capacity"
+	FlagStreamMarketPulsarTopic             = "stream.market_pulsar_topic"
+	FlagStreamMarketPulsarPartition         = "stream.market_pulsar_partition"
+	FlagStreamMarketQuotationsEurekaName    = "stream.market_quotations_eureka_name"
+	FlagStreamEurekaServerUrl               = "stream.eureka_server_url"
+	FlagStreamRestApplicationName           = "stream.rest_application_name"
+	FlagStreamNacosServerUrl                = "stream.nacos_server_url"
+	FlagStreamNacosNamespaceId              = "stream.nacos_namespace_id"
+	FlagStreamPushservicePulsarPublicTopic  = "stream.pushservice_pulsar_public_topic"
+	FlagStreamPushservicePulsarPrivateTopic = "stream.pushservice_pulsar_private_topic"
+	FlagStreamPushservicePulsarDepthTopic   = "stream.pushservice_pulsar_depth_topic"
+	FlagStreamRedisRequirePass              = "stream.redis_require_pass"
 )
 
 var (
 	backendConf = config.DefaultConfig().BackendConfig
+	streamConf  = config.DefaultConfig().StreamConfig
 )
 
 //module hook
@@ -161,5 +182,24 @@ func registerokexchainPluginFlags(cmd *cobra.Command) *cobra.Command {
 	cmd.Flags().String(FlagBacekendOrmEngineType, backendConf.OrmEngine.EngineType, "Backend plugin`s db (mysql or sqlite3)")
 	cmd.Flags().String(FlagBackendOrmEngineConnectStr, backendConf.OrmEngine.ConnectStr, "Backend plugin`s db connect address")
 
+	cmd.Flags().String(FlagStreamEngine, streamConf.Engine, "Stream plugin`s engine config")
+	cmd.Flags().String(FlagStreamKlineQueryConnect, streamConf.KlineQueryConnect, "Stream plugin`s kiline query connect url")
+	cmd.Flags().String(FlagStreamWorkerId, streamConf.WorkerId, "Stream plugin`s worker id")
+	cmd.Flags().String(FlagStreamRedisScheduler, streamConf.RedisScheduler, "Stream plugin`s redis url for scheduler job")
+	cmd.Flags().String(FlagStreamRedisLock, streamConf.RedisLock, "Stream plugin`s redis url for distributed lock")
+	cmd.Flags().String(FlagStreamLocalLockDir, streamConf.LocalLockDir, "Stream plugin`s local lock dir")
+	cmd.Flags().Bool(FlagStreamMarketServiceEnable, streamConf.MarketServiceEnable, "Stream plugin`s market service enable config")
+	cmd.Flags().Int(FlagStreamCacheQueueCapacity, streamConf.CacheQueueCapacity, "Stream plugin`s cache queue capacity config")
+	cmd.Flags().String(FlagStreamMarketPulsarTopic, streamConf.MarketPulsarTopic, "Stream plugin`s pulsar topic for market quotation")
+	cmd.Flags().Int(FlagStreamMarketPulsarPartition, streamConf.MarketPulsarPartition, "Stream plugin`s pulsar partition for market quotation")
+	cmd.Flags().String(FlagStreamMarketQuotationsEurekaName, streamConf.MarketQuotationsEurekaName, "Stream plugin`s market quotation service name in eureka")
+	cmd.Flags().String(FlagStreamEurekaServerUrl, streamConf.EurekaServerUrl, "Eureka server url for discovery service of rest api")
+	cmd.Flags().String(FlagStreamRestApplicationName, streamConf.RestApplicationName, "Rest application name in eureka or nacos")
+	cmd.Flags().String(FlagStreamNacosServerUrl, streamConf.NacosServerUrl, "Nacos server url for discovery service of rest api")
+	cmd.Flags().String(FlagStreamNacosNamespaceId, streamConf.NacosNamespaceId, "Nacos namepace id")
+	cmd.Flags().String(FlagStreamPushservicePulsarPublicTopic, streamConf.PushservicePulsarPublicTopic, "Stream plugin`s pulsar public topic of push service")
+	cmd.Flags().String(FlagStreamPushservicePulsarPrivateTopic, streamConf.PushservicePulsarPrivateTopic, "Stream plugin`s pulsar private topic of push service")
+	cmd.Flags().String(FlagStreamPushservicePulsarDepthTopic, streamConf.PushservicePulsarDepthTopic, "Stream plugin`s pulsar depth topic of push service")
+	cmd.Flags().String(FlagStreamRedisRequirePass, streamConf.RedisRequirePass, "Stream plugin`s redis require pass")
 	return cmd
 }
