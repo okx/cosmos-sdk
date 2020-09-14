@@ -64,7 +64,7 @@ func TestCreateLedger(t *testing.T) {
 	pubKey := ledger.GetPubKey()
 	pk, err := sdk.Bech32ifyAccPub(pubKey)
 	assert.NoError(t, err)
-	assert.Equal(t, "okchainpub1addwnpepqg94y3n0sdcg5w0vhjqgp6e2ux20hxpm2sdy59nnlcny76uc729fyquy75e", pk)
+	assert.Equal(t, "okexchainpub1addwnpepqg94y3n0sdcg5w0vhjqgp6e2ux20hxpm2sdy59nnlcny76uc729fyquy75e", pk)
 
 	// Check that restoring the key gets the same results
 	restoredKey, err := kb.Get("some_account")
@@ -73,7 +73,7 @@ func TestCreateLedger(t *testing.T) {
 	assert.Equal(t, TypeLedger, restoredKey.GetType())
 	pubKey = restoredKey.GetPubKey()
 	pk, err = sdk.Bech32ifyAccPub(pubKey)
-	assert.Equal(t, "okchainpub1addwnpepqg94y3n0sdcg5w0vhjqgp6e2ux20hxpm2sdy59nnlcny76uc729fyquy75e", pk)
+	assert.Equal(t, "okexchainpub1addwnpepqg94y3n0sdcg5w0vhjqgp6e2ux20hxpm2sdy59nnlcny76uc729fyquy75e", pk)
 
 	path, err := restoredKey.GetPath()
 	assert.NoError(t, err)
@@ -114,7 +114,7 @@ func TestKeyManagement(t *testing.T) {
 	require.NotNil(t, err)
 	_, err = cstore.GetByAddress(accAddr(i2))
 	require.NoError(t, err)
-	addr, err := sdk.AccAddressFromBech32("okchain1yq8lgssgxlx9smjhes6ryjasmqmd3ts2kwlceg")
+	addr, err := sdk.AccAddressFromBech32("okexchain1yq8lgssgxlx9smjhes6ryjasmqmd3ts2kwlceg")
 	require.NoError(t, err)
 	_, err = cstore.GetByAddress(addr)
 	require.NotNil(t, err)
