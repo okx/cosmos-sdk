@@ -34,17 +34,17 @@ func TestPublicKeyUnsafe(t *testing.T) {
 
 	pubKeyAddr, err := sdk.Bech32ifyAccPub(priv.PubKey())
 	require.NoError(t, err)
-	require.Equal(t, "okexchainpub1addwnpepqgt2zq3j80ggkfd4arcv74euwu26z6j7myraw2v0cg0w8t8w72tzsw0zse0",
+	require.Equal(t, "okexchainpub1addwnpepqgt2zq3j80ggkfd4arcv74euwu26z6j7myraw2v0cg0w8t8w72tzs8cwdx9",
 		pubKeyAddr, "Is your device using test mnemonic: %s ?", tests.TestMnemonic)
 
 	addr := sdk.AccAddress(priv.PubKey().Address()).String()
-	require.Equal(t, "okexchain1sjjdwhadqgt4e4507ps54zwc3zvx9c5hfxtysq",
+	require.Equal(t, "okexchain1sjjdwhadqgt4e4507ps54zwc3zvx9c5hy7v3vc",
 		addr, "Is your device using test mnemonic: %s ?", tests.TestMnemonic)
 }
 
 func TestPublicKeyUnsafeHDPath(t *testing.T) {
 	expectedAnswers := []string{
-		"okexchainpub1addwnpepqgt2zq3j80ggkfd4arcv74euwu26z6j7myraw2v0cg0w8t8w72tzsw0zse0",
+		"okexchainpub1addwnpepqgt2zq3j80ggkfd4arcv74euwu26z6j7myraw2v0cg0w8t8w72tzs8cwdx9",
 		"okexchainpub1addwnpepqdvr3cuk0yvr6nct8zf6l7pxtyxxgtnc8ncxjnjjs4z2j3s2xlffxja4pkf",
 		"okexchainpub1addwnpepqwmkd5ng58gt8mpt3j5hekp5jnq2p7a55p7qut5tx9xdkyguqgvgjvxdxjq",
 		"okexchainpub1addwnpepq0pk8w5se4p352jm0ga36mrdtxc62rwppthncs9h632xhvxlw8ft6ygdfvm",
@@ -110,10 +110,10 @@ func TestPublicKeySafe(t *testing.T) {
 
 	pubKeyAddr, err := sdk.Bech32ifyAccPub(priv.PubKey())
 	require.NoError(t, err)
-	require.Equal(t, "okexchainpub1addwnpepqgt2zq3j80ggkfd4arcv74euwu26z6j7myraw2v0cg0w8t8w72tzsw0zse0",
+	require.Equal(t, "okexchainpub1addwnpepqgt2zq3j80ggkfd4arcv74euwu26z6j7myraw2v0cg0w8t8w72tzs8cwdx9",
 		pubKeyAddr, "Is your device using test mnemonic: %s ?", tests.TestMnemonic)
 
-	require.Equal(t, "okexchain1sjjdwhadqgt4e4507ps54zwc3zvx9c5hfxtysq",
+	require.Equal(t, "okexchain1sjjdwhadqgt4e4507ps54zwc3zvx9c5hy7v3vc",
 		addr, "Is your device using test mnemonic: %s ?", tests.TestMnemonic)
 
 	addr2 := sdk.AccAddress(priv.PubKey().Address()).String()
@@ -122,7 +122,7 @@ func TestPublicKeySafe(t *testing.T) {
 
 func TestPublicKeyHDPath(t *testing.T) {
 	expectedPubKeys := []string{
-		"okexchainpub1addwnpepqgt2zq3j80ggkfd4arcv74euwu26z6j7myraw2v0cg0w8t8w72tzsw0zse0",
+		"okexchainpub1addwnpepqgt2zq3j80ggkfd4arcv74euwu26z6j7myraw2v0cg0w8t8w72tzs8cwdx9",
 		"okexchainpub1addwnpepqdvr3cuk0yvr6nct8zf6l7pxtyxxgtnc8ncxjnjjs4z2j3s2xlffxja4pkf",
 		"okexchainpub1addwnpepqwmkd5ng58gt8mpt3j5hekp5jnq2p7a55p7qut5tx9xdkyguqgvgjvxdxjq",
 		"okexchainpub1addwnpepq0pk8w5se4p352jm0ga36mrdtxc62rwppthncs9h632xhvxlw8ft6ygdfvm",
@@ -135,7 +135,7 @@ func TestPublicKeyHDPath(t *testing.T) {
 	}
 
 	expectedAddrs := []string{
-		"okexchain1sjjdwhadqgt4e4507ps54zwc3zvx9c5hfxtysq",
+		"okexchain1sjjdwhadqgt4e4507ps54zwc3zvx9c5hy7v3vc",
 		"okexchain1kywusqu9t5ppe9nl2rq26tg0cnzwygdctmmz5q",
 		"okexchain1w9jw7273g3n8l0fyjtmlxmqhrctcn2afnlv9a2",
 		"okexchain1lpjkyd2esun6y3l6qkjt377szaszn7ndte9sl7",
