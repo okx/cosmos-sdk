@@ -99,6 +99,6 @@ func Test_runAddCmdLedger(t *testing.T) {
 	assert.Equal(t, "keyname1", key1.GetName())
 	assert.Equal(t, keys.TypeLedger, key1.GetType())
 	assert.Equal(t,
-		"okexchainpub1addwnpepqd87l8xhcnrrtzxnkql7k55ph8fr9jarf4hn6udwukfprlalu8lgwxtwrat",
+		"okexchainpub1addwnpepqd87l8xhcnrrtzxnkql7k55ph8fr9jarf4hn6udwukfprlalu8lgw0uz7zp",
 		sdk.MustBech32ifyAccPub(key1.GetPubKey()))
 }
