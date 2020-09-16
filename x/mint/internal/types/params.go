@@ -59,7 +59,7 @@ func DefaultParams() Params {
 		//InflationMax:  sdk.NewDecWithPrec(20, 2),
 		//InflationMin:  sdk.NewDecWithPrec(7, 2),
 		//GoalBonded:    sdk.NewDecWithPrec(67, 2),
-		BlocksPerYear:      uint64(60 * 60 * 8766 / 3), // assuming 5 second block times
+		BlocksPerYear:      uint64(60 * 60 * 8766 / 3), // assuming 3 second block times
 		DeflationYears:     3,
 		InitTokensPerBlock: sdk.MustNewDecFromStr("0.05"),
 	}
