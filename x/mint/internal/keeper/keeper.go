@@ -20,7 +20,7 @@ type Keeper struct {
 	sk                 types.StakingKeeper
 	supplyKeeper       types.SupplyKeeper
 	feeCollectorName   string
-	initTokensPerBlock sdk.Dec
+	originalMintedPerBlock sdk.Dec
 }
 
 // NewKeeper creates a new mint Keeper instance
@@ -40,7 +40,7 @@ func NewKeeper(
 		sk:                 sk,
 		supplyKeeper:       supplyKeeper,
 		feeCollectorName:   feeCollectorName,
-		initTokensPerBlock: DefaultInitTokensPerBlock(),
+		originalMintedPerBlock: DefaultOriginalMintedPerBlock(),
 	}
 }
 
@@ -72,23 +72,23 @@ func (k Keeper) SetMinter(ctx sdk.Context, minter types.Minter) {
 
 //______________________________________________________________________
 
-// GetInitTokensPerBlock returns the init tokens per block.
-func (k Keeper) GetInitTokensPerBlock() sdk.Dec {
-	return k.initTokensPerBlock
+// GetOriginalMintedPerBlock returns the init tokens per block.
+func (k Keeper) GetOriginalMintedPerBlock() sdk.Dec {
+	return k.originalMintedPerBlock
 }
 
-// SetInitTokensPerBlock sets the init tokens per block.
-func (k Keeper) SetInitTokensPerBlock(initTokensPerBlock sdk.Dec) {
-	k.initTokensPerBlock = initTokensPerBlock
+// SetOriginalMintedPerBlock sets the init tokens per block.
+func (k Keeper) SetOriginalMintedPerBlock(originalMintedPerBlock sdk.Dec) {
+	k.originalMintedPerBlock = originalMintedPerBlock
 }
 
-func DefaultInitTokensPerBlock() sdk.Dec {
+func DefaultOriginalMintedPerBlock() sdk.Dec {
 	return sdk.MustNewDecFromStr("0.05")
 }
 
 // ValidateMinterCustom validate minter
-func ValidateInitTokensPerBlock(initTokensPerBlock sdk.Dec) error {
-	if initTokensPerBlock.IsNegative() {
+func ValidateOriginalMintedPerBlock(originalMintedPerBlock sdk.Dec) error {
+	if originalMintedPerBlock.IsNegative() {
 		return errors.New("init tokens per block must be non-negative")
 	}
 
@@ -167,7 +167,7 @@ func (k Keeper) UpdateMinterCustom(ctx sdk.Context, minter *types.MinterCustom, 
 
 	var provisionAmtPerBlock sdk.Dec
 	if ctx.BlockHeight() == 0 || minter.NextBlockToUpdate == 0 {
-		provisionAmtPerBlock = k.GetInitTokensPerBlock()
+		provisionAmtPerBlock = k.GetOriginalMintedPerBlock()
 	} else {
 		provisionAmtPerBlock = minter.MintedPerBlock.AmountOf(params.MintDenom).Mul(params.DeflationRate)
 	}

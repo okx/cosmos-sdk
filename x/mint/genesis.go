@@ -9,15 +9,15 @@ import (
 type GenesisState struct {
 	Minter             MinterCustom `json:"minter_custom" yaml:"minter_custom"` // minter object
 	Params             Params       `json:"params" yaml:"params"`               // inflation params
-	InitTokensPerBlock sdk.Dec      `json:"init_tokens_per_block" yaml:"init_tokens_per_block"`
+	OriginalMintedPerBlock sdk.Dec      `json:"original_minted_per_block" yaml:"original_minted_per_block"`
 }
 
 // NewGenesisState creates a new GenesisState object
-func NewGenesisState(minter MinterCustom, params Params, initTokensPerBlock sdk.Dec) GenesisState {
+func NewGenesisState(minter MinterCustom, params Params, originalMintedPerBlock sdk.Dec) GenesisState {
 	return GenesisState{
 		Minter:             minter,
 		Params:             params,
-		InitTokensPerBlock: initTokensPerBlock,
+		OriginalMintedPerBlock: originalMintedPerBlock,
 	}
 }
 
@@ -26,7 +26,7 @@ func DefaultGenesisState() GenesisState {
 	return GenesisState{
 		Minter:             DefaultInitialMinterCustom(),
 		Params:             DefaultParams(),
-		InitTokensPerBlock: keeper.DefaultInitTokensPerBlock(),
+		OriginalMintedPerBlock: keeper.DefaultOriginalMintedPerBlock(),
 	}
 }
 
@@ -34,14 +34,14 @@ func DefaultGenesisState() GenesisState {
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 	keeper.SetMinterCustom(ctx, data.Minter)
 	keeper.SetParams(ctx, data.Params)
-	keeper.SetInitTokensPerBlock(data.InitTokensPerBlock)
+	keeper.SetOriginalMintedPerBlock(data.OriginalMintedPerBlock)
 }
 
 // ExportGenesis returns a GenesisState for a given context and keeper.
 func ExportGenesis(ctx sdk.Context, keeper Keeper) GenesisState {
 	minter := keeper.GetMinterCustom(ctx)
 	params := keeper.GetParams(ctx)
-	return NewGenesisState(minter, params, keeper.GetInitTokensPerBlock())
+	return NewGenesisState(minter, params, keeper.GetOriginalMintedPerBlock())
 }
 
 // ValidateGenesis validates the provided genesis state to ensure the
@@ -57,7 +57,7 @@ func ValidateGenesis(data GenesisState) error {
 		return err
 	}
 
-	err = keeper.ValidateInitTokensPerBlock(data.InitTokensPerBlock)
+	err = keeper.ValidateOriginalMintedPerBlock(data.OriginalMintedPerBlock)
 	if err != nil {
 		return err
 	}

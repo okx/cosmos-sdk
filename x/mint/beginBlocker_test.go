@@ -24,7 +24,7 @@ func TestBeginBlocker(t *testing.T) {
 	// mint rate test
 	minter := mapp.mintKeeper.GetMinterCustom(ctx)
 	ratePerBlock0 := minter.MintedPerBlock.AmountOf(sdk.DefaultBondDenom)
-	assert.EqualValues(t, ratePerBlock0, mapp.mintKeeper.GetInitTokensPerBlock())
+	assert.EqualValues(t, ratePerBlock0, mapp.mintKeeper.GetOriginalMintedPerBlock())
 
 	var curHeight int64 = 2
 	runBlocks := int64(mintParams.BlocksPerYear * mintParams.DeflationEpoch)
@@ -48,7 +48,7 @@ func TestBeginBlocker(t *testing.T) {
 
 	minter = mapp.mintKeeper.GetMinterCustom(ctx)
 	ratePerBlock1 := minter.MintedPerBlock.AmountOf(sdk.DefaultBondDenom)
-	assert.EqualValues(t, ratePerBlock1, mintParams.DeflationRate.Mul(mapp.mintKeeper.GetInitTokensPerBlock()))
+	assert.EqualValues(t, ratePerBlock1, mintParams.DeflationRate.Mul(mapp.mintKeeper.GetOriginalMintedPerBlock()))
 
 	// annual mint test
 	step1Mint := ratePerBlock0.Mul(sdk.NewDec(runBlocks))
