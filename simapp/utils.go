@@ -294,16 +294,7 @@ func GenGovGenesisState(cdc *codec.Codec, r *rand.Rand, ap simulation.AppParams,
 // GenMintGenesisState generates a random GenesisState for mint
 func GenMintGenesisState(cdc *codec.Codec, r *rand.Rand, ap simulation.AppParams, genesisState map[string]json.RawMessage) {
 	mintGenesis := mint.NewGenesisState(
-		mint.InitialMinterCustom(
-			func(r *rand.Rand) sdk.Dec {
-				var v sdk.Dec
-				ap.GetOrGenerate(cdc, simulation.Inflation, &v, r,
-					func(r *rand.Rand) {
-						v = simulation.ModuleParamSimulator[simulation.Inflation](r).(sdk.Dec)
-					})
-				return v
-			}(r),
-		),
+		mint.InitialMinterCustom(),
 		mint.NewParams(
 			sdk.DefaultBondDenom,
 			func(r *rand.Rand) sdk.Dec {
@@ -338,8 +329,17 @@ func GenMintGenesisState(cdc *codec.Codec, r *rand.Rand, ap simulation.AppParams
 					})
 				return v
 			}(r),
-			uint64(60*60*8766/5),
+			uint64(60*60*8766/3),
+			uint64(3),
 		),
+		func(r *rand.Rand) sdk.Dec {
+			var v sdk.Dec
+			ap.GetOrGenerate(cdc, simulation.GoalBonded, &v, r,
+				func(r *rand.Rand) {
+					v = simulation.ModuleParamSimulator[simulation.GoalBonded](r).(sdk.Dec)
+				})
+			return v
+		}(r),
 	)
 
 	fmt.Printf("Selected randomly generated minting parameters:\n%s\n", codec.MustMarshalJSONIndent(cdc, mintGenesis.Params))

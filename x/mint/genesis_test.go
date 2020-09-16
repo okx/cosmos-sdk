@@ -1,6 +1,7 @@
 package mint
 
 import (
+	"github.com/cosmos/cosmos-sdk/x/mint/internal/keeper"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -11,7 +12,7 @@ func TestGenesis(t *testing.T) {
 	setup := newTestInput(t)
 
 	genesisState := NewGenesisState(
-		DefaultInitialMinterCustom(), DefaultParams())
+		DefaultInitialMinterCustom(), DefaultParams(), keeper.DefaultOriginalMintedPerBlock())
 
 	defaultGenesisState := DefaultGenesisState()
 

@@ -20,18 +20,16 @@ func beginBlocker(ctx sdk.Context, k Keeper) {
 	// fetch stored minter & params
 	params := k.GetParams(ctx)
 	minter := k.GetMinterCustom(ctx)
-	if ctx.BlockHeight() == 0 || uint64(ctx.BlockHeight()) > minter.NextBlockToUpdate {
+	if ctx.BlockHeight() == 0 || uint64(ctx.BlockHeight()) >= minter.NextBlockToUpdate {
 		k.UpdateMinterCustom(ctx, &minter, params)
 	}
 
 	logger.Debug(fmt.Sprintf(
 		"total supply <%v>, "+
-			"annual provisions <%v>, "+
 			"params <%v>, "+
 			"minted this block <%v>, "+
 			"next block to update minted per block <%v>, ",
 		sdk.NewDecCoinFromDec(params.MintDenom, k.StakingTokenSupply(ctx)),
-		sdk.NewDecCoinFromDec(params.MintDenom, minter.AnnualProvisions),
 		params,
 		minter.MintedPerBlock,
 		minter.NextBlockToUpdate))
@@ -50,8 +48,7 @@ func beginBlocker(ctx sdk.Context, k Keeper) {
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			types.EventTypeMint,
-			sdk.NewAttribute(types.AttributeKeyInflation, params.InflationRate.String()),
-			sdk.NewAttribute(types.AttributeKeyAnnualProvisions, minter.AnnualProvisions.String()),
+			sdk.NewAttribute(types.AttributeKeyInflation, params.DeflationRate.String()),
 			sdk.NewAttribute(sdk.AttributeKeyAmount, minter.MintedPerBlock.String()),
 		),
 	)

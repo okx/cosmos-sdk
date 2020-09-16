@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/tendermint/tendermint/libs/log"
@@ -13,13 +14,13 @@ import (
 
 // Keeper of the mint store
 type Keeper struct {
-	cdc              *codec.Codec
-	storeKey         sdk.StoreKey
-	paramSpace       params.Subspace
-	sk               types.StakingKeeper
-	supplyKeeper     types.SupplyKeeper
-	feeCollectorName string
-	cache            *types.Cache
+	cdc                *codec.Codec
+	storeKey           sdk.StoreKey
+	paramSpace         params.Subspace
+	sk                 types.StakingKeeper
+	supplyKeeper       types.SupplyKeeper
+	feeCollectorName   string
+	originalMintedPerBlock sdk.Dec
 }
 
 // NewKeeper creates a new mint Keeper instance
@@ -33,13 +34,13 @@ func NewKeeper(
 	}
 
 	return Keeper{
-		cdc:              cdc,
-		storeKey:         key,
-		paramSpace:       paramSpace.WithKeyTable(types.ParamKeyTable()),
-		sk:               sk,
-		supplyKeeper:     supplyKeeper,
-		feeCollectorName: feeCollectorName,
-		cache:            &types.Cache{},
+		cdc:                cdc,
+		storeKey:           key,
+		paramSpace:         paramSpace.WithKeyTable(types.ParamKeyTable()),
+		sk:                 sk,
+		supplyKeeper:       supplyKeeper,
+		feeCollectorName:   feeCollectorName,
+		originalMintedPerBlock: DefaultOriginalMintedPerBlock(),
 	}
 }
 
@@ -71,20 +72,40 @@ func (k Keeper) SetMinter(ctx sdk.Context, minter types.Minter) {
 
 //______________________________________________________________________
 
+// GetOriginalMintedPerBlock returns the init tokens per block.
+func (k Keeper) GetOriginalMintedPerBlock() sdk.Dec {
+	return k.originalMintedPerBlock
+}
+
+// SetOriginalMintedPerBlock sets the init tokens per block.
+func (k Keeper) SetOriginalMintedPerBlock(originalMintedPerBlock sdk.Dec) {
+	k.originalMintedPerBlock = originalMintedPerBlock
+}
+
+func DefaultOriginalMintedPerBlock() sdk.Dec {
+	return sdk.MustNewDecFromStr("0.05")
+}
+
+// ValidateMinterCustom validate minter
+func ValidateOriginalMintedPerBlock(originalMintedPerBlock sdk.Dec) error {
+	if originalMintedPerBlock.IsNegative() {
+		return errors.New("init tokens per block must be non-negative")
+	}
+
+	return nil
+}
+
+//______________________________________________________________________
+
 // GetParams returns the total set of minting parameters.
 func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
-	if k.cache.Params != nil {
-		return *k.cache.Params
-	}
 	k.paramSpace.GetParamSet(ctx, &params)
-	k.cache.Params = &params
 	return params
 }
 
 // SetParams sets the total set of minting parameters.
 func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
 	k.paramSpace.SetParamSet(ctx, &params)
-	k.cache.Params = &params
 }
 
 //______________________________________________________________________
@@ -119,16 +140,11 @@ func (k Keeper) AddCollectedFees(ctx sdk.Context, fees sdk.Coins) sdk.Error {
 
 // get the minter custom
 func (k Keeper) GetMinterCustom(ctx sdk.Context) (minter types.MinterCustom) {
-	if k.cache.Minter != nil {
-		return *k.cache.Minter
-	}
 	store := ctx.KVStore(k.storeKey)
 	b := store.Get(types.MinterKey)
 	if b != nil {
 		k.cdc.MustUnmarshalBinaryLengthPrefixed(b, &minter)
 	}
-
-	k.cache.Minter = &minter
 	return
 }
 
@@ -137,17 +153,28 @@ func (k Keeper) SetMinterCustom(ctx sdk.Context, minter types.MinterCustom) {
 	store := ctx.KVStore(k.storeKey)
 	b := k.cdc.MustMarshalBinaryLengthPrefixed(minter)
 	store.Set(types.MinterKey, b)
-	k.cache.Minter = &minter
 }
 
 func (k Keeper) UpdateMinterCustom(ctx sdk.Context, minter *types.MinterCustom, params types.Params) {
-	totalStakingSupply := k.StakingTokenSupply(ctx)
-	annualProvisions := params.InflationRate.Mul(totalStakingSupply)
-	provisionAmtPerBlock := annualProvisions.Quo(sdk.NewDec(int64(params.BlocksPerYear)))
+	//totalStakingSupply := k.StakingTokenSupply(ctx)
+	//annualProvisions := params.InflationRate.Mul(totalStakingSupply)
+	//provisionAmtPerBlock := annualProvisions.Quo(sdk.NewDec(int64(params.BlocksPerYear)))
+
+	// update new MinterCustom
+	//minter.MintedPerBlock = sdk.NewDecCoinsFromDec(params.MintDenom, provisionAmtPerBlock)
+	//minter.NextBlockToUpdate += params.BlocksPerYear
+	//minter.AnnualProvisions = annualProvisions
+
+	var provisionAmtPerBlock sdk.Dec
+	if ctx.BlockHeight() == 0 || minter.NextBlockToUpdate == 0 {
+		provisionAmtPerBlock = k.GetOriginalMintedPerBlock()
+	} else {
+		provisionAmtPerBlock = minter.MintedPerBlock.AmountOf(params.MintDenom).Mul(params.DeflationRate)
+	}
 
 	// update new MinterCustom
 	minter.MintedPerBlock = sdk.NewDecCoinsFromDec(params.MintDenom, provisionAmtPerBlock)
-	minter.NextBlockToUpdate += params.BlocksPerYear
-	minter.AnnualProvisions = annualProvisions
+	minter.NextBlockToUpdate += params.DeflationEpoch * params.BlocksPerYear
+
 	k.SetMinterCustom(ctx, *minter)
 }

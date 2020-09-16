@@ -8,26 +8,26 @@ import (
 )
 
 type MinterCustom struct {
-	NextBlockToUpdate uint64         `json:"next_block_to_update" yaml:"next_block_to_update"` // record the block height for next year
-	AnnualProvisions  sdk.Dec        `json:"annual_provisions" yaml:"annual_provisions"`       // record the amount of Annual minted
-	MintedPerBlock    types.DecCoins `json:"minted_per_block" yaml:"minted_per_block"`         // record the MintedPerBlock per block in this year
+	NextBlockToUpdate uint64 `json:"next_block_to_update" yaml:"next_block_to_update"` // record the block height for next year
+	//AnnualProvisions  sdk.Dec        `json:"annual_provisions" yaml:"annual_provisions"`       // record the amount of Annual minted
+	MintedPerBlock types.DecCoins `json:"minted_per_block" yaml:"minted_per_block"` // record the MintedPerBlock per block in this year
 }
 
 // NewMinterCustom returns a new Minter object with the given inflation and annual
 // provisions values.
-func NewMinterCustom(nextBlockToUpdate uint64, annualProvisions sdk.Dec, mintedPerBlock sdk.DecCoins) MinterCustom {
+func NewMinterCustom(nextBlockToUpdate uint64, mintedPerBlock sdk.DecCoins) MinterCustom {
 	return MinterCustom{
 		NextBlockToUpdate: nextBlockToUpdate,
-		AnnualProvisions:  annualProvisions,
-		MintedPerBlock:    mintedPerBlock,
+		//AnnualProvisions:  annualProvisions,
+		MintedPerBlock: mintedPerBlock,
 	}
 }
 
 // InitialMinterCustom returns an initial Minter object with a given inflation value.
-func InitialMinterCustom(inflation sdk.Dec) MinterCustom {
+func InitialMinterCustom() MinterCustom {
 	return NewMinterCustom(
 		0,
-		sdk.NewDec(0),
+		//sdk.NewDec(0),
 		sdk.DecCoins{sdk.NewDecCoin(sdk.DefaultBondDenom, sdk.ZeroInt())},
 	)
 }
@@ -35,9 +35,8 @@ func InitialMinterCustom(inflation sdk.Dec) MinterCustom {
 // DefaultInitialMinterCustom returns a default initial MinterCustom object for a new chain
 // which uses an inflation rate of 1%.
 func DefaultInitialMinterCustom() MinterCustom {
-	return InitialMinterCustom(
-		sdk.NewDecWithPrec(1, 2),
-	)
+	//return InitialMinterCustom(sdk.NewDecWithPrec(1, 2),)
+	return InitialMinterCustom()
 }
 
 // ValidateMinterCustom validate minter

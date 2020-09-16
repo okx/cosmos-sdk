@@ -10,9 +10,10 @@ import (
 
 func TestBeginBlocker(t *testing.T) {
 	mintParams := Params{
-		MintDenom:     sdk.DefaultBondDenom,
-		InflationRate: sdk.NewDecWithPrec(1, 2),
-		BlocksPerYear: uint64(100),
+		MintDenom:      sdk.DefaultBondDenom,
+		DeflationRate:  sdk.NewDecWithPrec(50, 2),
+		BlocksPerYear:  uint64(30),
+		DeflationEpoch: uint64(3),
 	}
 	var balance int64 = 10000
 	mapp, _ := getMockApp(t, 1, balance, mintParams)
@@ -23,13 +24,11 @@ func TestBeginBlocker(t *testing.T) {
 	// mint rate test
 	minter := mapp.mintKeeper.GetMinterCustom(ctx)
 	ratePerBlock0 := minter.MintedPerBlock.AmountOf(sdk.DefaultBondDenom)
-
-	annualProvisions := mintParams.InflationRate.Mul(sdk.NewDec(balance))
-	provisionAmtPerBlock := annualProvisions.Quo(sdk.NewDec(int64(mintParams.BlocksPerYear)))
-	assert.EqualValues(t, ratePerBlock0, provisionAmtPerBlock)
+	assert.EqualValues(t, ratePerBlock0, mapp.mintKeeper.GetOriginalMintedPerBlock())
 
 	var curHeight int64 = 2
-	for ; curHeight < 101; curHeight++ {
+	runBlocks := int64(mintParams.BlocksPerYear * mintParams.DeflationEpoch)
+	for ; curHeight < runBlocks; curHeight++ {
 		mapp.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{Height: curHeight}})
 		mapp.EndBlock(abci.RequestEndBlock{Height: curHeight})
 		mapp.Commit()
@@ -49,14 +48,11 @@ func TestBeginBlocker(t *testing.T) {
 
 	minter = mapp.mintKeeper.GetMinterCustom(ctx)
 	ratePerBlock1 := minter.MintedPerBlock.AmountOf(sdk.DefaultBondDenom)
-	lastMintTotalSupply := mintParams.InflationRate.Mul(sdk.NewDec(balance)).Add(sdk.NewDec(balance))
-	annualProvisions = mintParams.InflationRate.Mul(lastMintTotalSupply)
-	provisionAmtPerBlock = annualProvisions.Quo(sdk.NewDec(int64(mintParams.BlocksPerYear)))
-	assert.EqualValues(t, ratePerBlock1, provisionAmtPerBlock)
+	assert.EqualValues(t, ratePerBlock1, mintParams.DeflationRate.Mul(mapp.mintKeeper.GetOriginalMintedPerBlock()))
 
 	// annual mint test
-	step1Mint := ratePerBlock0.Mul(sdk.NewDec(100))
-	step2Mint := ratePerBlock1.Mul(sdk.NewDec(curHeight - 100))
+	step1Mint := ratePerBlock0.Mul(sdk.NewDec(runBlocks))
+	step2Mint := ratePerBlock1.Mul(sdk.NewDec(curHeight - runBlocks - 1))
 	totalMint := step1Mint.Add(step2Mint)
 	assert.EqualValues(t, curCoin1.Sub(rawCoin), totalMint)
 }
