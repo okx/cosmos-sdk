@@ -12,7 +12,7 @@ func TestGenesis(t *testing.T) {
 	setup := newTestInput(t)
 
 	genesisState := NewGenesisState(
-		DefaultInitialMinterCustom(), DefaultParams(), keeper.DefaultInitTokensPerBlock())
+		DefaultInitialMinterCustom(), DefaultParams(), keeper.DefaultOriginalMintedPerBlock())
 
 	defaultGenesisState := DefaultGenesisState()
 

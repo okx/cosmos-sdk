@@ -84,9 +84,9 @@ func ValidateParams(params Params) error {
 
 func (p Params) String() string {
 	return fmt.Sprintf(`Minting Params:
-  Mint Denom:             			%s
-  Deflation Rate Every %d Years:		%s
-  Blocks Per Year:        			%d
+  Mint Denom:                     %s
+  Deflation Rate Every %d Years:  %s
+  Blocks Per Year:                %d
 `,
 		p.MintDenom, p.DeflationEpoch, p.DeflationRate, p.BlocksPerYear,
 	)
