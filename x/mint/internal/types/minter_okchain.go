@@ -8,8 +8,9 @@ import (
 )
 
 type MinterCustom struct {
-	NextBlockToUpdate uint64         `json:"next_block_to_update" yaml:"next_block_to_update"` // record the block height for next year
-	MintedPerBlock    types.DecCoins `json:"minted_per_block" yaml:"minted_per_block"`         // record the MintedPerBlock per block in this year
+	NextBlockToUpdate uint64 `json:"next_block_to_update" yaml:"next_block_to_update"` // record the block height for next year
+	//AnnualProvisions  sdk.Dec        `json:"annual_provisions" yaml:"annual_provisions"`       // record the amount of Annual minted
+	MintedPerBlock types.DecCoins `json:"minted_per_block" yaml:"minted_per_block"` // record the MintedPerBlock per block in this year
 }
 
 // NewMinterCustom returns a new Minter object with the given inflation and annual
@@ -17,7 +18,8 @@ type MinterCustom struct {
 func NewMinterCustom(nextBlockToUpdate uint64, mintedPerBlock sdk.DecCoins) MinterCustom {
 	return MinterCustom{
 		NextBlockToUpdate: nextBlockToUpdate,
-		MintedPerBlock:    mintedPerBlock,
+		//AnnualProvisions:  annualProvisions,
+		MintedPerBlock: mintedPerBlock,
 	}
 }
 
@@ -25,6 +27,7 @@ func NewMinterCustom(nextBlockToUpdate uint64, mintedPerBlock sdk.DecCoins) Mint
 func InitialMinterCustom() MinterCustom {
 	return NewMinterCustom(
 		0,
+		//sdk.NewDec(0),
 		sdk.DecCoins{sdk.NewDecCoin(sdk.DefaultBondDenom, sdk.ZeroInt())},
 	)
 }
@@ -32,6 +35,7 @@ func InitialMinterCustom() MinterCustom {
 // DefaultInitialMinterCustom returns a default initial MinterCustom object for a new chain
 // which uses an inflation rate of 1%.
 func DefaultInitialMinterCustom() MinterCustom {
+	//return InitialMinterCustom(sdk.NewDecWithPrec(1, 2),)
 	return InitialMinterCustom()
 }
 

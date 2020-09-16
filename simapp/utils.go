@@ -330,16 +330,16 @@ func GenMintGenesisState(cdc *codec.Codec, r *rand.Rand, ap simulation.AppParams
 				return v
 			}(r),
 			uint64(60*60*8766/3),
-			uint64(4),
-			func(r *rand.Rand) sdk.Dec {
-				var v sdk.Dec
-				ap.GetOrGenerate(cdc, simulation.InflationMax, &v, r,
-					func(r *rand.Rand) {
-						v = simulation.ModuleParamSimulator[simulation.InflationMax](r).(sdk.Dec)
-					})
-				return v
-			}(r),
+			uint64(3),
 		),
+		func(r *rand.Rand) sdk.Dec {
+			var v sdk.Dec
+			ap.GetOrGenerate(cdc, simulation.GoalBonded, &v, r,
+				func(r *rand.Rand) {
+					v = simulation.ModuleParamSimulator[simulation.GoalBonded](r).(sdk.Dec)
+				})
+			return v
+		}(r),
 	)
 
 	fmt.Printf("Selected randomly generated minting parameters:\n%s\n", codec.MustMarshalJSONIndent(cdc, mintGenesis.Params))

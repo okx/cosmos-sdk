@@ -9,26 +9,26 @@ import (
 
 // Parameter store keys
 var (
-	KeyMintDenom     = []byte("MintDenom")
-	KeyDeflationRate = []byte("DeflationRate")
+	KeyMintDenom = []byte("MintDenom")
+	//KeyInflationRate = []byte("InflationRate")
 	//KeyInflationMax  = []byte("InflationMax")
 	//KeyInflationMin  = []byte("InflationMin")
 	//KeyGoalBonded    = []byte("GoalBonded")
-	KeyBlocksPerYear      = []byte("BlocksPerYear")
-	KeyDeflationYears     = []byte("DeflationYears")
-	KeyInitTokensPerBlock = []byte("InitTokensPerBlock")
+	KeyBlocksPerYear  = []byte("BlocksPerYear")
+	KeyDeflationRate  = []byte("DeflationRate")
+	KeyDeflationEpoch = []byte("DeflationEpoch")
 )
 
 // mint parameters
 type Params struct {
-	MintDenom     string  `json:"mint_denom" yaml:"mint_denom"`         // type of coin to mint
-	DeflationRate sdk.Dec `json:"inflation_rate" yaml:"inflation_rate"` // maximum annual change in inflation rate
+	MintDenom string `json:"mint_denom" yaml:"mint_denom"` // type of coin to mint
+	//InflationRate sdk.Dec `json:"inflation_rate" yaml:"inflation_rate"` // maximum annual change in inflation rate
 	//InflationMax  sdk.Dec `json:"inflation_max" yaml:"inflation_max"`     // maximum inflation rate
 	//InflationMin  sdk.Dec `json:"inflation_min" yaml:"inflation_min"`     // minimum inflation rate
 	//GoalBonded    sdk.Dec `json:"goal_bonded" yaml:"goal_bonded"`         // goal of percent bonded atoms
-	BlocksPerYear      uint64  `json:"blocks_per_year" yaml:"blocks_per_year"` // expected blocks per year
-	DeflationYears     uint64  `json:"inflation_years" yaml:"inflation_years"`
-	InitTokensPerBlock sdk.Dec `json:"init_tokens_per_block" yaml:"init_tokens_per_block"`
+	BlocksPerYear  uint64  `json:"blocks_per_year" yaml:"blocks_per_year"` // expected blocks per year
+	DeflationRate  sdk.Dec `json:"deflation_rate" yaml:"deflation_rate"`   // maximum annual change in deflation rate
+	DeflationEpoch uint64  `json:"inflation_epoch" yaml:"inflation_epoch"`
 }
 
 // ParamTable for minting module.
@@ -37,31 +37,31 @@ func ParamKeyTable() params.KeyTable {
 }
 
 func NewParams(mintDenom string, deflationRateChange, inflationMax,
-	inflationMin, goalBonded sdk.Dec, blocksPerYear, deflationYears uint64, initTokensPerBlock sdk.Dec) Params {
+	inflationMin, goalBonded sdk.Dec, blocksPerYear, deflationEpoch uint64) Params {
 
 	return Params{
-		MintDenom:     mintDenom,
-		DeflationRate: deflationRateChange,
+		MintDenom: mintDenom,
+		//InflationRate: inflationRateChange,
 		//InflationMax:  inflationMax,
 		//InflationMin:  inflationMin,
 		//GoalBonded:    goalBonded,
-		BlocksPerYear:      blocksPerYear,
-		DeflationYears:     deflationYears,
-		InitTokensPerBlock: initTokensPerBlock,
+		BlocksPerYear:  blocksPerYear,
+		DeflationRate:  deflationRateChange,
+		DeflationEpoch: deflationEpoch,
 	}
 }
 
 // default minting module parameters
 func DefaultParams() Params {
 	return Params{
-		MintDenom:     sdk.DefaultBondDenom,
-		DeflationRate: sdk.NewDecWithPrec(50, 2),
+		MintDenom: sdk.DefaultBondDenom,
+		//InflationRate: sdk.NewDecWithPrec(1, 2),
 		//InflationMax:  sdk.NewDecWithPrec(20, 2),
 		//InflationMin:  sdk.NewDecWithPrec(7, 2),
 		//GoalBonded:    sdk.NewDecWithPrec(67, 2),
-		BlocksPerYear:      uint64(60 * 60 * 8766 / 3), // assuming 3 second block times
-		DeflationYears:     3,
-		InitTokensPerBlock: sdk.MustNewDecFromStr("0.05"),
+		BlocksPerYear:  uint64(60 * 60 * 8766 / 3), // assuming 3 second block times
+		DeflationRate:  sdk.NewDecWithPrec(5, 1),
+		DeflationEpoch: 3,
 	}
 }
 
@@ -84,13 +84,11 @@ func ValidateParams(params Params) error {
 
 func (p Params) String() string {
 	return fmt.Sprintf(`Minting Params:
-  Mint Denom:             %s
-  Deflation Rate:         %s
-  Blocks Per Year:        %d
-  Deflation Years:        %d
-  Init Tokens Per Block:  %s
+  Mint Denom:             			%s
+  Deflation Rate Every %d Years:		%s
+  Blocks Per Year:        			%d
 `,
-		p.MintDenom, p.DeflationRate, p.BlocksPerYear, p.DeflationYears, p.InitTokensPerBlock,
+		p.MintDenom, p.DeflationEpoch, p.DeflationRate, p.BlocksPerYear,
 	)
 }
 
@@ -98,12 +96,12 @@ func (p Params) String() string {
 func (p *Params) ParamSetPairs() params.ParamSetPairs {
 	return params.ParamSetPairs{
 		{KeyMintDenom, &p.MintDenom},
-		{KeyDeflationRate, &p.DeflationRate},
+		//{KeyInflationRate, &p.InflationRate},
 		//{KeyInflationMax, &p.InflationMax},
 		//{KeyInflationMin, &p.InflationMin},
 		//{KeyGoalBonded, &p.GoalBonded},
 		{KeyBlocksPerYear, &p.BlocksPerYear},
-		{KeyDeflationYears, &p.DeflationYears},
-		{KeyInitTokensPerBlock, &p.InitTokensPerBlock},
+		{KeyDeflationRate, &p.DeflationRate},
+		{KeyDeflationEpoch, &p.DeflationEpoch},
 	}
 }

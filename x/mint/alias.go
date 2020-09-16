@@ -37,16 +37,16 @@ var (
 	ValidateParams             = types.ValidateParams
 
 	// variable aliases
-	ModuleCdc        = types.ModuleCdc
-	MinterKey        = types.MinterKey
-	KeyMintDenom     = types.KeyMintDenom
-	KeyInflationRate = types.KeyDeflationRate
+	ModuleCdc    = types.ModuleCdc
+	MinterKey    = types.MinterKey
+	KeyMintDenom = types.KeyMintDenom
+	//KeyInflationRate = types.KeyInflationRate
 	//KeyInflationMax  = types.KeyInflationMax
 	//KeyInflationMin  = types.KeyInflationMin
 	//KeyGoalBonded    = types.KeyGoalBonded
-	KeyBlocksPerYear      = types.KeyBlocksPerYear
-	KeyDeflationYears     = types.KeyDeflationYears
-	KeyInitTokensPerBlock = types.KeyInitTokensPerBlock
+	KeyBlocksPerYear  = types.KeyBlocksPerYear
+	KeyDeflationRate  = types.KeyDeflationRate
+	KeyDeflationEpoch = types.KeyDeflationEpoch
 )
 
 type (
