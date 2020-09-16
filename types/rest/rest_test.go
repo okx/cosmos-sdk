@@ -22,7 +22,7 @@ import (
 type mockResponseWriter struct{}
 
 func TestBaseReqValidateBasic(t *testing.T) {
-	fromAddr := "okchain1cq0sxam6x4l0sv9yz3a2vlqhdhvt2k6jfjzq0v"
+	fromAddr := "okexchain1cq0sxam6x4l0sv9yz3a2vlqhdhvt2k6jfjzq0v"
 	tenstakes, err := types.ParseCoins("10stake")
 	require.NoError(t, err)
 	onestake, err := types.ParseDecCoins("1.0stake")

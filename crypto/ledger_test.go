@@ -34,26 +34,26 @@ func TestPublicKeyUnsafe(t *testing.T) {
 
 	pubKeyAddr, err := sdk.Bech32ifyAccPub(priv.PubKey())
 	require.NoError(t, err)
-	require.Equal(t, "okchainpub1addwnpepqgt2zq3j80ggkfd4arcv74euwu26z6j7myraw2v0cg0w8t8w72tzsw0zse0",
+	require.Equal(t, "okexchainpub1addwnpepqgt2zq3j80ggkfd4arcv74euwu26z6j7myraw2v0cg0w8t8w72tzsw0zse0",
 		pubKeyAddr, "Is your device using test mnemonic: %s ?", tests.TestMnemonic)
 
 	addr := sdk.AccAddress(priv.PubKey().Address()).String()
-	require.Equal(t, "okchain1sjjdwhadqgt4e4507ps54zwc3zvx9c5hfxtysq",
+	require.Equal(t, "okexchain1sjjdwhadqgt4e4507ps54zwc3zvx9c5hfxtysq",
 		addr, "Is your device using test mnemonic: %s ?", tests.TestMnemonic)
 }
 
 func TestPublicKeyUnsafeHDPath(t *testing.T) {
 	expectedAnswers := []string{
-		"okchainpub1addwnpepqgt2zq3j80ggkfd4arcv74euwu26z6j7myraw2v0cg0w8t8w72tzsw0zse0",
-		"okchainpub1addwnpepqdvr3cuk0yvr6nct8zf6l7pxtyxxgtnc8ncxjnjjs4z2j3s2xlffxja4pkf",
-		"okchainpub1addwnpepqwmkd5ng58gt8mpt3j5hekp5jnq2p7a55p7qut5tx9xdkyguqgvgjvxdxjq",
-		"okchainpub1addwnpepq0pk8w5se4p352jm0ga36mrdtxc62rwppthncs9h632xhvxlw8ft6ygdfvm",
-		"okchainpub1addwnpepq2e43ypcapx6d03rctews7qkjtcxkuav58dazkesrwe5nl77gucvspwql4x",
-		"okchainpub1addwnpepqdyarkhe2kh56l5j5kde55qq29mff5u49y0qsthww34ymffsps0jv4q9rnz",
-		"okchainpub1addwnpepqgtg3xaplrf8a79e6j09cxp0hwaq40yrfn90udwz09dwg50asacpceup5r3",
-		"okchainpub1addwnpepq2wvn84fky0chza9zrje6qkg34rr7fwwlan9npln7j5vay6w3uh9qvzctya",
-		"okchainpub1addwnpepqg4u7rz8uksafzdgjxvepssnxtn897ettdpkfqcn26ygh7gsp6fygl3nlzl",
-		"okchainpub1addwnpepqvesztxmxvh8t2hl5q6l0m3vgcd26dnuvsct6fptzt3sruflun255mjuhn3",
+		"okexchainpub1addwnpepqgt2zq3j80ggkfd4arcv74euwu26z6j7myraw2v0cg0w8t8w72tzsw0zse0",
+		"okexchainpub1addwnpepqdvr3cuk0yvr6nct8zf6l7pxtyxxgtnc8ncxjnjjs4z2j3s2xlffxja4pkf",
+		"okexchainpub1addwnpepqwmkd5ng58gt8mpt3j5hekp5jnq2p7a55p7qut5tx9xdkyguqgvgjvxdxjq",
+		"okexchainpub1addwnpepq0pk8w5se4p352jm0ga36mrdtxc62rwppthncs9h632xhvxlw8ft6ygdfvm",
+		"okexchainpub1addwnpepq2e43ypcapx6d03rctews7qkjtcxkuav58dazkesrwe5nl77gucvspwql4x",
+		"okexchainpub1addwnpepqdyarkhe2kh56l5j5kde55qq29mff5u49y0qsthww34ymffsps0jv4q9rnz",
+		"okexchainpub1addwnpepqgtg3xaplrf8a79e6j09cxp0hwaq40yrfn90udwz09dwg50asacpceup5r3",
+		"okexchainpub1addwnpepq2wvn84fky0chza9zrje6qkg34rr7fwwlan9npln7j5vay6w3uh9qvzctya",
+		"okexchainpub1addwnpepqg4u7rz8uksafzdgjxvepssnxtn897ettdpkfqcn26ygh7gsp6fygl3nlzl",
+		"okexchainpub1addwnpepqvesztxmxvh8t2hl5q6l0m3vgcd26dnuvsct6fptzt3sruflun255mjuhn3",
 	}
 
 	const numIters = 10
@@ -110,10 +110,10 @@ func TestPublicKeySafe(t *testing.T) {
 
 	pubKeyAddr, err := sdk.Bech32ifyAccPub(priv.PubKey())
 	require.NoError(t, err)
-	require.Equal(t, "okchainpub1addwnpepqgt2zq3j80ggkfd4arcv74euwu26z6j7myraw2v0cg0w8t8w72tzsw0zse0",
+	require.Equal(t, "okexchainpub1addwnpepqgt2zq3j80ggkfd4arcv74euwu26z6j7myraw2v0cg0w8t8w72tzsw0zse0",
 		pubKeyAddr, "Is your device using test mnemonic: %s ?", tests.TestMnemonic)
 
-	require.Equal(t, "okchain1sjjdwhadqgt4e4507ps54zwc3zvx9c5hfxtysq",
+	require.Equal(t, "okexchain1sjjdwhadqgt4e4507ps54zwc3zvx9c5hfxtysq",
 		addr, "Is your device using test mnemonic: %s ?", tests.TestMnemonic)
 
 	addr2 := sdk.AccAddress(priv.PubKey().Address()).String()
@@ -122,29 +122,29 @@ func TestPublicKeySafe(t *testing.T) {
 
 func TestPublicKeyHDPath(t *testing.T) {
 	expectedPubKeys := []string{
-		"okchainpub1addwnpepqgt2zq3j80ggkfd4arcv74euwu26z6j7myraw2v0cg0w8t8w72tzsw0zse0",
-		"okchainpub1addwnpepqdvr3cuk0yvr6nct8zf6l7pxtyxxgtnc8ncxjnjjs4z2j3s2xlffxja4pkf",
-		"okchainpub1addwnpepqwmkd5ng58gt8mpt3j5hekp5jnq2p7a55p7qut5tx9xdkyguqgvgjvxdxjq",
-		"okchainpub1addwnpepq0pk8w5se4p352jm0ga36mrdtxc62rwppthncs9h632xhvxlw8ft6ygdfvm",
-		"okchainpub1addwnpepq2e43ypcapx6d03rctews7qkjtcxkuav58dazkesrwe5nl77gucvspwql4x",
-		"okchainpub1addwnpepqdyarkhe2kh56l5j5kde55qq29mff5u49y0qsthww34ymffsps0jv4q9rnz",
-		"okchainpub1addwnpepqgtg3xaplrf8a79e6j09cxp0hwaq40yrfn90udwz09dwg50asacpceup5r3",
-		"okchainpub1addwnpepq2wvn84fky0chza9zrje6qkg34rr7fwwlan9npln7j5vay6w3uh9qvzctya",
-		"okchainpub1addwnpepqg4u7rz8uksafzdgjxvepssnxtn897ettdpkfqcn26ygh7gsp6fygl3nlzl",
-		"okchainpub1addwnpepqvesztxmxvh8t2hl5q6l0m3vgcd26dnuvsct6fptzt3sruflun255mjuhn3",
+		"okexchainpub1addwnpepqgt2zq3j80ggkfd4arcv74euwu26z6j7myraw2v0cg0w8t8w72tzsw0zse0",
+		"okexchainpub1addwnpepqdvr3cuk0yvr6nct8zf6l7pxtyxxgtnc8ncxjnjjs4z2j3s2xlffxja4pkf",
+		"okexchainpub1addwnpepqwmkd5ng58gt8mpt3j5hekp5jnq2p7a55p7qut5tx9xdkyguqgvgjvxdxjq",
+		"okexchainpub1addwnpepq0pk8w5se4p352jm0ga36mrdtxc62rwppthncs9h632xhvxlw8ft6ygdfvm",
+		"okexchainpub1addwnpepq2e43ypcapx6d03rctews7qkjtcxkuav58dazkesrwe5nl77gucvspwql4x",
+		"okexchainpub1addwnpepqdyarkhe2kh56l5j5kde55qq29mff5u49y0qsthww34ymffsps0jv4q9rnz",
+		"okexchainpub1addwnpepqgtg3xaplrf8a79e6j09cxp0hwaq40yrfn90udwz09dwg50asacpceup5r3",
+		"okexchainpub1addwnpepq2wvn84fky0chza9zrje6qkg34rr7fwwlan9npln7j5vay6w3uh9qvzctya",
+		"okexchainpub1addwnpepqg4u7rz8uksafzdgjxvepssnxtn897ettdpkfqcn26ygh7gsp6fygl3nlzl",
+		"okexchainpub1addwnpepqvesztxmxvh8t2hl5q6l0m3vgcd26dnuvsct6fptzt3sruflun255mjuhn3",
 	}
 
 	expectedAddrs := []string{
-		"okchain1sjjdwhadqgt4e4507ps54zwc3zvx9c5hfxtysq",
-		"okchain1kywusqu9t5ppe9nl2rq26tg0cnzwygdctmmz5q",
-		"okchain1w9jw7273g3n8l0fyjtmlxmqhrctcn2afnlv9a2",
-		"okchain1lpjkyd2esun6y3l6qkjt377szaszn7ndte9sl7",
-		"okchain1m4hehxcu4nnq48wh6wummhdqtsnatm2cu8nlvc",
-		"okchain1chkys65xeekky8rjsr492n9ghytqprm6n3a2nt",
-		"okchain166tecxhd52la8w33g4kvpnnhp33wdfy0v6uda7",
-		"okchain1u8nwm4vk3q025azsujfqxwnftzzffjhkm0l7kr",
-		"okchain1m79f2vy0xm756v7evs2dz9umkw4swfn7j3e2a9",
-		"okchain13aex5w5w3hyg6zyvfq367g7alu47nk25msf2pj",
+		"okexchain1sjjdwhadqgt4e4507ps54zwc3zvx9c5hfxtysq",
+		"okexchain1kywusqu9t5ppe9nl2rq26tg0cnzwygdctmmz5q",
+		"okexchain1w9jw7273g3n8l0fyjtmlxmqhrctcn2afnlv9a2",
+		"okexchain1lpjkyd2esun6y3l6qkjt377szaszn7ndte9sl7",
+		"okexchain1m4hehxcu4nnq48wh6wummhdqtsnatm2cu8nlvc",
+		"okexchain1chkys65xeekky8rjsr492n9ghytqprm6n3a2nt",
+		"okexchain166tecxhd52la8w33g4kvpnnhp33wdfy0v6uda7",
+		"okexchain1u8nwm4vk3q025azsujfqxwnftzzffjhkm0l7kr",
+		"okexchain1m79f2vy0xm756v7evs2dz9umkw4swfn7j3e2a9",
+		"okexchain13aex5w5w3hyg6zyvfq367g7alu47nk25msf2pj",
 	}
 
 	const numIters = 10
