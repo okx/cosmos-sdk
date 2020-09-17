@@ -24,6 +24,11 @@ func beginBlocker(ctx sdk.Context, k Keeper) {
 		k.UpdateMinterCustom(ctx, &minter, params)
 	}
 
+	if minter.MintedPerBlock.AmountOf(params.MintDenom).LTE(sdk.ZeroDec()) {
+		logger.Debug(fmt.Sprintf("No more <%v> to mint", params.MintDenom))
+		return
+	}
+
 	logger.Debug(fmt.Sprintf(
 		"total supply <%v>, "+
 			"params <%v>, "+
