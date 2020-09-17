@@ -66,8 +66,6 @@ func TestMintZero(t *testing.T) {
 	}
 	var balance int64 = 10000
 	mapp, _ := getMockApp(t, 1, balance, mintParams)
-	mapp.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{Height: int64(2)}})
-	ctx := mapp.BaseApp.NewContext(false, abci.Header{}).WithBlockHeight(int64(2))
 
 	var curHeight int64 = 2
 	for ; curHeight < 700; curHeight++ {
@@ -76,6 +74,8 @@ func TestMintZero(t *testing.T) {
 		mapp.Commit()
 	}
 
+	mapp.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{Height: curHeight}})
+	ctx := mapp.BaseApp.NewContext(false, abci.Header{}).WithBlockHeight(curHeight)
 	minter := mapp.mintKeeper.GetMinterCustom(ctx)
 	assert.EqualValues(t, true, minter.MintedPerBlock.AmountOf(mintParams.MintDenom).IsZero())
 }

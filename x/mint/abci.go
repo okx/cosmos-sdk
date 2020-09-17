@@ -25,7 +25,7 @@ func beginBlocker(ctx sdk.Context, k Keeper) {
 	}
 
 	if minter.MintedPerBlock.AmountOf(params.MintDenom).LTE(sdk.ZeroDec()) {
-		logger.Debug(fmt.Sprintf("The mint amount is <%v>, just return", minter.MintedPerBlock.AmountOf(params.MintDenom)))
+		logger.Debug(fmt.Sprintf("No more <%v> to mint", params.MintDenom))
 		return
 	}
 
