@@ -56,3 +56,26 @@ func TestBeginBlocker(t *testing.T) {
 	totalMint := step1Mint.Add(step2Mint)
 	assert.EqualValues(t, curCoin1.Sub(rawCoin), totalMint)
 }
+
+func TestMintZero(t *testing.T) {
+	mintParams := Params{
+		MintDenom:      sdk.DefaultBondDenom,
+		DeflationRate:  sdk.NewDecWithPrec(50, 2),
+		BlocksPerYear:  uint64(10),
+		DeflationEpoch: uint64(3),
+	}
+	var balance int64 = 10000
+	mapp, _ := getMockApp(t, 1, balance, mintParams)
+	mapp.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{Height: int64(2)}})
+	ctx := mapp.BaseApp.NewContext(false, abci.Header{}).WithBlockHeight(int64(2))
+
+	var curHeight int64 = 2
+	for ; curHeight < 700; curHeight++ {
+		mapp.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{Height: curHeight}})
+		mapp.EndBlock(abci.RequestEndBlock{Height: curHeight})
+		mapp.Commit()
+	}
+
+	minter := mapp.mintKeeper.GetMinterCustom(ctx)
+	assert.EqualValues(t, true, minter.MintedPerBlock.AmountOf(mintParams.MintDenom).IsZero())
+}
