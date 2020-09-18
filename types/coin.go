@@ -179,8 +179,7 @@ func removeZeroCoins(coins Coins) Coins {
 
 var (
 	// Denominations can be 3 ~ 16 characters long.
-	possibleDnmPrefix   = `ammswap-`
-	reDnmString = fmt.Sprintf(`(%s)?[a-z][a-z0-9]{0,9}(\-[a-f0-9]{3})?`, possibleDnmPrefix)
+	reDnmString = fmt.Sprintf(`[a-z][a-z0-9]{0,9}(\-[a-f0-9]{3})?`)
 	reAmt       = `[[:digit:]]+`
 	reDecAmt    = `[[:digit:]]*\.?[[:digit:]]+`
 	reSpc       = `[[:space:]]*`
@@ -189,8 +188,14 @@ var (
 	reDecCoin   = regexp.MustCompile(fmt.Sprintf(`^(%s)%s(%s)$`, reDecAmt, reSpc, reDnmString))
 )
 
+var (
+	rePoolTokenDnmString = fmt.Sprintf(`(ammswap_)[a-z][a-z0-9]{0,9}(\-[a-f0-9]{3})?_[a-z][a-z0-9]{0,9}(\-[a-f0-9]{3})?`)
+	rePoolTokenDnm       = regexp.MustCompile(fmt.Sprintf(`^%s$`, rePoolTokenDnmString))
+	reDecCoinPoolToken   = regexp.MustCompile(fmt.Sprintf(`^(%s)%s(%s)$`, reDecAmt, reSpc, rePoolTokenDnmString))
+)
+
 func validateDenom(denom string) error {
-	if !reDnm.MatchString(denom) {
+	if !reDnm.MatchString(denom) && !rePoolTokenDnm.MatchString(denom) {
 		return fmt.Errorf("invalid denom: %s", denom)
 	}
 	return nil
