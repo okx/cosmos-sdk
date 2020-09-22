@@ -51,6 +51,11 @@ const (
 	FlagStreamRedisRequirePass              = "stream.redis_require_pass"
 )
 
+const (
+	// 3 seconds for default timeout commit
+	defaultTimeoutCommit = 3
+)
+
 var (
 	backendConf = config.DefaultConfig().BackendConfig
 	streamConf  = config.DefaultConfig().StreamConfig
