@@ -548,7 +548,7 @@ func (kb *dbKeybase) persistDerivedKeyByPrivKey(privKey string, passwd, name str
 	derivedPriv := decode(privKey)
 	keyStr := encode(derivedPriv)
 	if privKey != keyStr {
-		panic("")
+		panic("invalid private key")
 	}
 	// if we have a password, use it to encrypt the private key and store it
 	// else store the public key only
