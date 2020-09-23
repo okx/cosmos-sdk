@@ -2,6 +2,7 @@ package keys
 
 import (
 	"bufio"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"reflect"
@@ -132,6 +133,11 @@ func (kb dbKeybase) CreateAccount(name, mnemonic, bip39Passwd, encryptPasswd str
 }
 
 func (kb dbKeybase) Derive(name, mnemonic, bip39Passphrase, encryptPasswd string, params hd.BIP44Params) (info Info, err error) {
+	if !strings.Contains(mnemonic, " ") {
+		info, err = kb.persistDerivedKeyByPrivKey(mnemonic, encryptPasswd, name)
+		return
+	}
+
 	seed, err := bip39.NewSeedWithErrorChecking(mnemonic, bip39Passphrase)
 	if err != nil {
 		return
@@ -504,4 +510,55 @@ func addrKey(address types.AccAddress) []byte {
 
 func infoKey(name string) []byte {
 	return []byte(fmt.Sprintf("%s.%s", name, infoSuffix))
+}
+
+
+func encode(derivedPriv [32]byte) string {
+	src := make([]byte, len(derivedPriv))
+	for idx, m := range derivedPriv {
+		src[idx] = m
+	}
+
+	dst := make([]byte, hex.EncodedLen(len(src)))
+	hex.Encode(dst, src)
+	fmt.Printf("%s\n", dst)
+	return string(dst)
+}
+
+func decode(key string) [32]byte {
+	src := []byte(key)
+	dst := make([]byte, hex.DecodedLen(len(src)))
+	n, err := hex.Decode(dst, src)
+	if err != nil {
+		panic(err)
+	}
+
+	if n != 32 {
+		panic("invalid input!")
+	}
+
+	var res [32]byte
+	for idx, m := range dst {
+		res[idx] = m
+	}
+
+	return res
+}
+
+func (kb *dbKeybase) persistDerivedKeyByPrivKey(privKey string, passwd, name string) (info Info, err error) {
+
+	derivedPriv := decode(privKey)
+	keyStr := encode(derivedPriv)
+	if privKey != keyStr {
+		panic("")
+	}
+	// if we have a password, use it to encrypt the private key and store it
+	// else store the public key only
+	if passwd != "" {
+		info = kb.writeLocalKey(name, secp256k1.PrivKeySecp256k1(derivedPriv), passwd)
+	} else {
+		pubk := secp256k1.PrivKeySecp256k1(derivedPriv).PubKey()
+		info = kb.writeOfflineKey(name, pubk)
+	}
+	return
 }
