@@ -518,10 +518,8 @@ func encode(derivedPriv [32]byte) string {
 	for idx, m := range derivedPriv {
 		src[idx] = m
 	}
-
 	dst := make([]byte, hex.EncodedLen(len(src)))
 	hex.Encode(dst, src)
-	fmt.Printf("%s\n", dst)
 	return string(dst)
 }
 
