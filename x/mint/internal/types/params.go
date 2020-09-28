@@ -17,7 +17,7 @@ var (
 	KeyBlocksPerYear  = []byte("BlocksPerYear")
 	KeyDeflationRate  = []byte("DeflationRate")
 	KeyDeflationEpoch = []byte("DeflationEpoch")
-	KeyFarmProportion = []byte("FarmYieldingProportion")
+	KeyFarmProportion = []byte("YieldFarmingProportion")
 )
 
 // mint parameters

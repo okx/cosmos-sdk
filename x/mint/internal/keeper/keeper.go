@@ -140,7 +140,7 @@ func (k Keeper) AddCollectedFees(ctx sdk.Context, fees sdk.Coins) sdk.Error {
 	return k.supplyKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, k.feeCollectorName, fees)
 }
 
-func (k Keeper) AddFarmYielding(ctx sdk.Context, yieldAmt sdk.Coins) sdk.Error {
+func (k Keeper) AddYieldFarming(ctx sdk.Context, yieldAmt sdk.Coins) sdk.Error {
 	return k.supplyKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, k.farmModuleName, yieldAmt)
 }
 
