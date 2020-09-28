@@ -56,13 +56,16 @@ func newTestInput(t *testing.T) testInput {
 
 	ctx := sdk.NewContext(ms, abci.Header{Time: time.Unix(0, 0)}, false, log.NewTMLogger(os.Stdout))
 
+	var farmModuleName = "farm"
 	feeCollectorAcc := supply.NewEmptyModuleAccount(auth.FeeCollectorName)
+	farmYieldingAcc := supply.NewEmptyModuleAccount(farmModuleName)
 	notBondedPool := supply.NewEmptyModuleAccount(staking.NotBondedPoolName, supply.Burner, supply.Staking)
 	bondPool := supply.NewEmptyModuleAccount(staking.BondedPoolName, supply.Burner, supply.Staking)
 	minterAcc := supply.NewEmptyModuleAccount(types.ModuleName, supply.Minter)
 
 	blacklistedAddrs := make(map[string]bool)
 	blacklistedAddrs[feeCollectorAcc.String()] = true
+	blacklistedAddrs[farmYieldingAcc.String()] = true
 	blacklistedAddrs[notBondedPool.String()] = true
 	blacklistedAddrs[bondPool.String()] = true
 	blacklistedAddrs[minterAcc.String()] = true
@@ -82,7 +85,7 @@ func newTestInput(t *testing.T) testInput {
 	stakingKeeper := staking.NewKeeper(
 		types.ModuleCdc, keyStaking, tkeyStaking, supplyKeeper, paramsKeeper.Subspace(staking.DefaultParamspace), staking.DefaultCodespace,
 	)
-	mintKeeper := keeper.NewKeeper(types.ModuleCdc, keyMint, paramsKeeper.Subspace(types.DefaultParamspace), &stakingKeeper, supplyKeeper, auth.FeeCollectorName)
+	mintKeeper := keeper.NewKeeper(types.ModuleCdc, keyMint, paramsKeeper.Subspace(types.DefaultParamspace), &stakingKeeper, supplyKeeper, auth.FeeCollectorName, farmModuleName)
 
 	// set module accounts
 	supplyKeeper.SetModuleAccount(ctx, feeCollectorAcc)
