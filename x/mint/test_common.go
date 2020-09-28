@@ -56,9 +56,8 @@ func newTestInput(t *testing.T) testInput {
 
 	ctx := sdk.NewContext(ms, abci.Header{Time: time.Unix(0, 0)}, false, log.NewTMLogger(os.Stdout))
 
-	var farmModuleName = "farm"
 	feeCollectorAcc := supply.NewEmptyModuleAccount(auth.FeeCollectorName)
-	farmYieldingAcc := supply.NewEmptyModuleAccount(farmModuleName)
+	farmYieldingAcc := supply.NewEmptyModuleAccount(keeper.FarmModuleName)
 	notBondedPool := supply.NewEmptyModuleAccount(staking.NotBondedPoolName, supply.Burner, supply.Staking)
 	bondPool := supply.NewEmptyModuleAccount(staking.BondedPoolName, supply.Burner, supply.Staking)
 	minterAcc := supply.NewEmptyModuleAccount(types.ModuleName, supply.Minter)
@@ -85,7 +84,7 @@ func newTestInput(t *testing.T) testInput {
 	stakingKeeper := staking.NewKeeper(
 		types.ModuleCdc, keyStaking, tkeyStaking, supplyKeeper, paramsKeeper.Subspace(staking.DefaultParamspace), staking.DefaultCodespace,
 	)
-	mintKeeper := keeper.NewKeeper(types.ModuleCdc, keyMint, paramsKeeper.Subspace(types.DefaultParamspace), &stakingKeeper, supplyKeeper, auth.FeeCollectorName, farmModuleName)
+	mintKeeper := keeper.NewKeeper(types.ModuleCdc, keyMint, paramsKeeper.Subspace(types.DefaultParamspace), &stakingKeeper, supplyKeeper, auth.FeeCollectorName, keeper.FarmModuleName)
 
 	// set module accounts
 	supplyKeeper.SetModuleAccount(ctx, feeCollectorAcc)

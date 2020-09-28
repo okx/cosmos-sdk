@@ -44,7 +44,7 @@ func beginBlocker(ctx sdk.Context, k Keeper) {
 		panic(err)
 	}
 
-	yieldAmt := minter.MintedPerBlock.MulDecTruncate(sdk.NewDecWithPrec(5, 1))
+	yieldAmt := minter.MintedPerBlock.MulDecTruncate(params.FarmProportion)
 	fees := minter.MintedPerBlock.Sub(yieldAmt)
 	// send the minted coins to the fee collector account
 	err = k.AddCollectedFees(ctx, fees)

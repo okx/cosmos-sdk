@@ -17,6 +17,7 @@ var (
 	KeyBlocksPerYear  = []byte("BlocksPerYear")
 	KeyDeflationRate  = []byte("DeflationRate")
 	KeyDeflationEpoch = []byte("DeflationEpoch")
+	KeyFarmProportion = []byte("FarmYieldingProportion")
 )
 
 // mint parameters
@@ -29,6 +30,7 @@ type Params struct {
 	BlocksPerYear  uint64  `json:"blocks_per_year" yaml:"blocks_per_year"` // expected blocks per year
 	DeflationRate  sdk.Dec `json:"deflation_rate" yaml:"deflation_rate"`   // maximum annual change in deflation rate
 	DeflationEpoch uint64  `json:"inflation_epoch" yaml:"inflation_epoch"`
+	FarmProportion sdk.Dec `json:"farm_proportion" yaml:"farm_proportion"`
 }
 
 // ParamTable for minting module.
@@ -37,7 +39,7 @@ func ParamKeyTable() params.KeyTable {
 }
 
 func NewParams(mintDenom string, deflationRateChange, inflationMax,
-	inflationMin, goalBonded sdk.Dec, blocksPerYear, deflationEpoch uint64) Params {
+	inflationMin, goalBonded sdk.Dec, blocksPerYear, deflationEpoch uint64, farmPropotion sdk.Dec) Params {
 
 	return Params{
 		MintDenom: mintDenom,
@@ -48,6 +50,7 @@ func NewParams(mintDenom string, deflationRateChange, inflationMax,
 		BlocksPerYear:  blocksPerYear,
 		DeflationRate:  deflationRateChange,
 		DeflationEpoch: deflationEpoch,
+		FarmProportion: farmPropotion,
 	}
 }
 
@@ -62,6 +65,7 @@ func DefaultParams() Params {
 		BlocksPerYear:  uint64(60 * 60 * 8766 / 3), // assuming 3 second block times
 		DeflationRate:  sdk.NewDecWithPrec(5, 1),
 		DeflationEpoch: 3,
+		FarmProportion: sdk.NewDecWithPrec(5, 1),
 	}
 }
 
@@ -87,8 +91,9 @@ func (p Params) String() string {
   Mint Denom:                     %s
   Deflation Rate Every %d Years:  %s
   Blocks Per Year:                %d
+  Farm Proportion:                %s
 `,
-		p.MintDenom, p.DeflationEpoch, p.DeflationRate, p.BlocksPerYear,
+		p.MintDenom, p.DeflationEpoch, p.DeflationRate, p.BlocksPerYear, p.FarmProportion,
 	)
 }
 
@@ -103,5 +108,6 @@ func (p *Params) ParamSetPairs() params.ParamSetPairs {
 		{KeyBlocksPerYear, &p.BlocksPerYear},
 		{KeyDeflationRate, &p.DeflationRate},
 		{KeyDeflationEpoch, &p.DeflationEpoch},
+		{KeyFarmProportion, &p.FarmProportion},
 	}
 }

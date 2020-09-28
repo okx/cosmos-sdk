@@ -2,6 +2,7 @@ package mint
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/x/mint/internal/keeper"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -57,6 +58,7 @@ func getMockApp(t *testing.T, numGenAccs int, balance int64, mintParams Params) 
 		types.ModuleName:          []string{supply.Minter},
 		staking.NotBondedPoolName: []string{supply.Burner, supply.Staking},
 		staking.BondedPoolName:    []string{supply.Burner, supply.Staking},
+		keeper.FarmModuleName: nil,
 	}
 
 	mockApp.supplyKeeper = supply.NewKeeper(mockApp.Cdc, mockApp.keySupply, mockApp.AccountKeeper,
@@ -69,7 +71,7 @@ func getMockApp(t *testing.T, numGenAccs int, balance int64, mintParams Params) 
 
 	mockApp.mintKeeper = NewKeeper(mockApp.Cdc, mockApp.keyMint,
 		mockApp.ParamsKeeper.Subspace(types.DefaultParamspace), &mockApp.stakingKeeper,
-		mockApp.supplyKeeper, auth.FeeCollectorName)
+		mockApp.supplyKeeper, auth.FeeCollectorName, keeper.FarmModuleName)
 
 	//mockApp.Router().AddRoute("", nil)
 	mockApp.QueryRouter().AddRoute(QuerierRoute, NewQuerier(mockApp.mintKeeper))
