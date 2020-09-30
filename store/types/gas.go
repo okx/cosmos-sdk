@@ -152,13 +152,13 @@ type GasConfig struct {
 // KVGasConfig returns a default gas config for KVStores.
 func KVGasConfig() GasConfig {
 	return GasConfig{
-		HasCost:          1000,
-		DeleteCost:       1000,
-		ReadCostFlat:     1000,
+		HasCost:          1,
+		DeleteCost:       1,
+		ReadCostFlat:     1,
 		ReadCostPerByte:  3,
-		WriteCostFlat:    2000,
-		WriteCostPerByte: 30,
-		IterNextCostFlat: 30,
+		WriteCostFlat:    2,
+		WriteCostPerByte: 1,
+		IterNextCostFlat: 1,
 	}
 }
 
