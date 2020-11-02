@@ -21,7 +21,7 @@ func TestNewQuerier(t *testing.T) {
 		sdk.NewCoin("btc", sdk.NewInt(21000000)),
 	)
 
-	keeper.SetSupply(ctx, types.NewSupply(supplyCoins))
+	keeper.SetTokensSupply(ctx, supplyCoins)
 
 	query := abci.RequestQuery{
 		Path: "",
@@ -65,7 +65,7 @@ func TestQuerySupply(t *testing.T) {
 		sdk.NewCoin("btc", sdk.NewInt(21000000)),
 	)
 
-	keeper.SetSupply(ctx, types.NewSupply(supplyCoins))
+	keeper.SetTokensSupply(ctx, supplyCoins)
 
 	queryTotalSupplyParams := types.NewQueryTotalSupplyParams(1, 10)
 	bz, errRes := keeper.cdc.MarshalJSON(queryTotalSupplyParams)

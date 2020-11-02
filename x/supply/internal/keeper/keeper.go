@@ -42,24 +42,6 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-// GetSupply retrieves the Supply from store
-//func (k Keeper) GetSupply(ctx sdk.Context) (supply exported.SupplyI) {
-//	store := ctx.KVStore(k.storeKey)
-//	b := store.Get(SupplyKey)
-//	if b == nil {
-//		panic("stored supply should not have been nil")
-//	}
-//	k.cdc.MustUnmarshalBinaryLengthPrefixed(b, &supply)
-//	return
-//}
-
-// SetSupply sets the Supply to store
-//func (k Keeper) SetSupply(ctx sdk.Context, supply exported.SupplyI) {
-//	store := ctx.KVStore(k.storeKey)
-//	b := k.cdc.MustMarshalBinaryLengthPrefixed(supply)
-//	store.Set(SupplyKey, b)
-//}
-
 // ValidatePermissions validates that the module account has been granted
 // permissions within its set of allowed permissions.
 func (k Keeper) ValidatePermissions(macc exported.ModuleAccountI) error {
@@ -87,7 +69,7 @@ func (k Keeper) GetTotalSupply(ctx sdk.Context) (totalSupply sdk.DecCoins) {
 	return
 }
 
-// Inflate adds the amount of a token in the store
+// inflate adds the amount of a token in the store
 func (k Keeper) inflate(ctx sdk.Context, tokenSymbol string, amount sdk.Dec) {
 	if amount.Equal(sdk.ZeroDec()) {
 		return
@@ -97,7 +79,7 @@ func (k Keeper) inflate(ctx sdk.Context, tokenSymbol string, amount sdk.Dec) {
 	k.setTokenSupplyAmount(ctx, tokenSymbol, originalSupplyAmount.Add(amount))
 }
 
-// Deflate subtracts the amount of a token from the original in the store
+// deflate subtracts the amount of a token from the original in the store
 func (k Keeper) deflate(ctx sdk.Context, tokenSymbol string, deflationAmount sdk.Dec) sdk.Error {
 	currentSupplyAmount := k.GetTokenSupplyAmount(ctx, tokenSymbol)
 	supplyAmount := currentSupplyAmount.Sub(deflationAmount)

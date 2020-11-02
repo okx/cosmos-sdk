@@ -9,14 +9,14 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/supply/internal/types"
 )
 
-func TestSupply(t *testing.T) {
+func TestGetTotalSupply(t *testing.T) {
 	initialPower := int64(100)
 	initTokens := sdk.TokensFromConsensusPower(initialPower)
 	nAccs := int64(4)
 
 	_, ctx, _, keeper := CreateTestInput(t, false, initialPower, nAccs)
 
-	total := keeper.GetSupply(ctx).GetTotal()
+	total := keeper.GetTotalSupply(ctx)
 	expectedTotal := sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, initTokens.MulRaw(nAccs)))
 
 	require.Equal(t, expectedTotal, total)

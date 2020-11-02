@@ -83,7 +83,7 @@ func TestMintCoins(t *testing.T) {
 	keeper.SetModuleAccount(ctx, multiPermAcc)
 	keeper.SetModuleAccount(ctx, randomPermAcc)
 
-	initialSupply := keeper.GetSupply(ctx)
+	initialSupply := keeper.GetTotalSupply(ctx)
 
 	require.Error(t, keeper.MintCoins(ctx, "", initCoins), "no module account")
 	require.Panics(t, func() { keeper.MintCoins(ctx, types.Burner, initCoins) }, "invalid permission")
@@ -94,15 +94,15 @@ func TestMintCoins(t *testing.T) {
 	err := keeper.MintCoins(ctx, types.Minter, initCoins)
 	require.NoError(t, err)
 	require.Equal(t, initCoins, getCoinsByName(ctx, keeper, types.Minter))
-	require.Equal(t, initialSupply.GetTotal().Add(initCoins), keeper.GetSupply(ctx).GetTotal())
+	require.True(t, keeper.GetTotalSupply(ctx).IsEqual(initialSupply.Add(initCoins)))
 
 	// test same functionality on module account with multiple permissions
-	initialSupply = keeper.GetSupply(ctx)
+	initialSupply = keeper.GetTotalSupply(ctx)
 
 	err = keeper.MintCoins(ctx, multiPermAcc.GetName(), initCoins)
 	require.NoError(t, err)
 	require.Equal(t, initCoins, getCoinsByName(ctx, keeper, multiPermAcc.GetName()))
-	require.Equal(t, initialSupply.GetTotal().Add(initCoins), keeper.GetSupply(ctx).GetTotal())
+	require.True(t, keeper.GetTotalSupply(ctx).IsEqual(initialSupply.Add(initCoins)))
 
 	require.Panics(t, func() { keeper.MintCoins(ctx, types.Burner, initCoins) })
 }
@@ -114,30 +114,33 @@ func TestBurnCoins(t *testing.T) {
 	require.NoError(t, burnerAcc.SetCoins(initCoins))
 	keeper.SetModuleAccount(ctx, burnerAcc)
 
-	initialSupply := keeper.GetSupply(ctx)
-	initialSupply = initialSupply.Inflate(initCoins)
-	keeper.SetSupply(ctx, initialSupply)
+	initialSupply := keeper.GetTotalSupply(ctx)
+	for _, coin := range initCoins {
+		keeper.inflate(ctx, coin.Denom, coin.Amount)
+	}
 
 	require.Error(t, keeper.BurnCoins(ctx, "", initCoins), "no module account")
 	require.Panics(t, func() { keeper.BurnCoins(ctx, types.Minter, initCoins) }, "invalid permission")
-	require.Panics(t, func() { keeper.BurnCoins(ctx, randomPerm, initialSupply.GetTotal()) }, "random permission")
-	require.Panics(t, func() { keeper.BurnCoins(ctx, types.Burner, initialSupply.GetTotal()) }, "insufficient coins")
+	require.Panics(t, func() { keeper.BurnCoins(ctx, randomPerm, initialSupply) }, "random permission")
+	require.Panics(t, func() { keeper.BurnCoins(ctx, types.Burner, initialSupply) }, "insufficient coins")
 
+	initialSupply = keeper.GetTotalSupply(ctx)
 	err := keeper.BurnCoins(ctx, types.Burner, initCoins)
 	require.NoError(t, err)
 	require.Equal(t, sdk.Coins(nil), getCoinsByName(ctx, keeper, types.Burner))
-	require.Equal(t, initialSupply.GetTotal().Sub(initCoins), keeper.GetSupply(ctx).GetTotal())
+	require.True(t, keeper.GetTotalSupply(ctx).IsEqual(initialSupply.Sub(initCoins)))
 
 	// test same functionality on module account with multiple permissions
-	initialSupply = keeper.GetSupply(ctx)
-	initialSupply = initialSupply.Inflate(initCoins)
-	keeper.SetSupply(ctx, initialSupply)
+	for _, coin := range initCoins {
+		keeper.inflate(ctx, coin.Denom, coin.Amount)
+	}
 
+	initialSupply = keeper.GetTotalSupply(ctx)
 	require.NoError(t, multiPermAcc.SetCoins(initCoins))
 	keeper.SetModuleAccount(ctx, multiPermAcc)
 
 	err = keeper.BurnCoins(ctx, multiPermAcc.GetName(), initCoins)
 	require.NoError(t, err)
 	require.Equal(t, sdk.Coins(nil), getCoinsByName(ctx, keeper, multiPermAcc.GetName()))
-	require.Equal(t, initialSupply.GetTotal().Sub(initCoins), keeper.GetSupply(ctx).GetTotal())
+	require.True(t, keeper.GetTotalSupply(ctx).IsEqual(initialSupply.Sub(initCoins)))
 }
