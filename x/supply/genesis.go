@@ -25,9 +25,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, ak types.AccountKeeper, data Ge
 	}
 
 	// set total supply to the store
-	for i := 0; i < len(data.Supply); i++ {
-		keeper.SetTokenSupplyAmount(ctx, data.Supply[i].Denom, data.Supply[i].Amount)
-	}
+	keeper.SetTokensSupply(ctx, data.Supply)
 }
 
 // ExportGenesis returns a GenesisState for a given context and keeper.

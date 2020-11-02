@@ -58,7 +58,7 @@ func TestGetSimulationLog(t *testing.T) {
 		{gov.StoreKey, cmn.KVPair{Key: gov.VoteKey(1, delAddr1), Value: cdc.MustMarshalBinaryLengthPrefixed(gov.Vote{})}},
 		{distribution.StoreKey, cmn.KVPair{Key: distr.ProposerKey, Value: consAddr1.Bytes()}},
 		{slashing.StoreKey, cmn.KVPair{Key: slashing.GetValidatorMissedBlockBitArrayKey(consAddr1, 6), Value: cdc.MustMarshalBinaryLengthPrefixed(true)}},
-		{supply.StoreKey, cmn.KVPair{Key: supply.SupplyKey, Value: cdc.MustMarshalBinaryLengthPrefixed(supply.NewSupply(sdk.Coins{}))}},
+		{supply.StoreKey, cmn.KVPair{Key: supply.PrefixTokenSupplyKey, Value: cdc.MustMarshalBinaryLengthPrefixed(sdk.NewDec(1024))}},
 		{"Empty", cmn.KVPair{}},
 		{"OtherStore", cmn.KVPair{Key: []byte("key"), Value: []byte("value")}},
 	}
@@ -307,10 +307,10 @@ func TestDecodeGovStore(t *testing.T) {
 func TestDecodeSupplyStore(t *testing.T) {
 	cdc := makeTestCodec()
 
-	totalSupply := supply.NewSupply(sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000)))
+	totalSupply := sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000))
 
 	kvPairs := cmn.KVPairs{
-		cmn.KVPair{Key: supply.SupplyKey, Value: cdc.MustMarshalBinaryLengthPrefixed(totalSupply)},
+		cmn.KVPair{Key: supply.GetTokenSupplyKey(sdk.DefaultBondDenom), Value: cdc.MustMarshalBinaryLengthPrefixed(sdk.NewDec(1000))},
 		cmn.KVPair{Key: []byte{0x99}, Value: []byte{0x99}},
 	}
 
@@ -318,7 +318,7 @@ func TestDecodeSupplyStore(t *testing.T) {
 		name        string
 		expectedLog string
 	}{
-		{"Supply", fmt.Sprintf("%v\n%v", totalSupply, totalSupply)},
+		{"Token Supply", fmt.Sprintf("%v\n%v", totalSupply, totalSupply)},
 		{"other", ""},
 	}
 

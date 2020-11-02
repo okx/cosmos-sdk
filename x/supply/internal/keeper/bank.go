@@ -145,3 +145,10 @@ func (k Keeper) BurnCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) sdk
 
 	return nil
 }
+
+// SetTokensSupply sets the collection of the token supply into the store
+func (k Keeper) SetTokensSupply(ctx sdk.Context, tokensSupply sdk.DecCoins) {
+	for i := 0; i < len(tokensSupply); i++ {
+		k.setTokenSupplyAmount(ctx, tokensSupply[i].Denom, tokensSupply[i].Amount)
+	}
+}

@@ -27,15 +27,14 @@ var (
 	TotalSupply           = keeper.TotalSupply
 	NewKeeper             = keeper.NewKeeper
 	NewQuerier            = keeper.NewQuerier
-	SupplyKey             = keeper.SupplyKey
 	NewModuleAddress      = types.NewModuleAddress
 	NewEmptyModuleAccount = types.NewEmptyModuleAccount
 	NewModuleAccount      = types.NewModuleAccount
 	RegisterCodec         = types.RegisterCodec
 	NewGenesisState       = types.NewGenesisState
 	DefaultGenesisState   = types.DefaultGenesisState
-	NewSupply             = types.NewSupply
-	DefaultSupply         = types.DefaultSupply
+	GetTokenSupplyKey     = types.GetTokenSupplyKey
+	PrefixTokenSupplyKey  = types.PrefixTokenSupplyKey
 
 	// variable aliases
 	DefaultCodespace = types.DefaultCodespace
@@ -46,5 +45,4 @@ type (
 	Keeper        = keeper.Keeper
 	ModuleAccount = types.ModuleAccount
 	GenesisState  = types.GenesisState
-	Supply        = types.Supply
 )

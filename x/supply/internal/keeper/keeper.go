@@ -94,7 +94,7 @@ func (k Keeper) inflate(ctx sdk.Context, tokenSymbol string, amount sdk.Dec) {
 	}
 
 	originalSupplyAmount := k.GetTokenSupplyAmount(ctx, tokenSymbol)
-	k.SetTokenSupplyAmount(ctx, tokenSymbol, originalSupplyAmount.Add(amount))
+	k.setTokenSupplyAmount(ctx, tokenSymbol, originalSupplyAmount.Add(amount))
 }
 
 // Deflate subtracts the amount of a token from the original in the store
@@ -105,7 +105,7 @@ func (k Keeper) deflate(ctx sdk.Context, tokenSymbol string, deflationAmount sdk
 		return types.ErrInvalidDeflation(types.DefaultCodespace, deflationAmount, currentSupplyAmount, tokenSymbol)
 	}
 
-	k.SetTokenSupplyAmount(ctx, tokenSymbol, supplyAmount)
+	k.setTokenSupplyAmount(ctx, tokenSymbol, supplyAmount)
 	return nil
 }
 
@@ -121,7 +121,7 @@ func (k Keeper) GetTokenSupplyAmount(ctx sdk.Context, tokenSymbol string) sdk.De
 	return tokenSupplyAmount
 }
 
-// SetTokenSupplyAmount sets the supply amount of a token to the store
-func (k Keeper) SetTokenSupplyAmount(ctx sdk.Context, tokenSymbol string, supplyAmount sdk.Dec) {
+// setTokenSupplyAmount sets the supply amount of a token to the store
+func (k Keeper) setTokenSupplyAmount(ctx sdk.Context, tokenSymbol string, supplyAmount sdk.Dec) {
 	ctx.KVStore(k.storeKey).Set(types.GetTokenSupplyKey(tokenSymbol), k.cdc.MustMarshalBinaryLengthPrefixed(supplyAmount))
 }

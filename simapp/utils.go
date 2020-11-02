@@ -721,11 +721,11 @@ func DecodeGovStore(cdcA, cdcB *codec.Codec, kvA, kvB cmn.KVPair) string {
 // DecodeSupplyStore unmarshals the KVPair's Value to the corresponding supply type
 func DecodeSupplyStore(cdcA, cdcB *codec.Codec, kvA, kvB cmn.KVPair) string {
 	switch {
-	case bytes.Equal(kvA.Key[:1], supply.SupplyKey):
-		var supplyA, supplyB supply.Supply
+	case bytes.Equal(kvA.Key[:1], supply.PrefixTokenSupplyKey):
+		var supplyA, supplyB sdk.Dec
 		cdcA.MustUnmarshalBinaryLengthPrefixed(kvA.Value, &supplyA)
 		cdcB.MustUnmarshalBinaryLengthPrefixed(kvB.Value, &supplyB)
-		return fmt.Sprintf("%v\n%v", supplyB, supplyB)
+		return fmt.Sprintf("%v%s\n%v%s", supplyA, kvA.Key[1:], supplyB, kvB.Key[1:])
 	default:
 		panic(fmt.Sprintf("invalid supply key %X", kvA.Key))
 	}

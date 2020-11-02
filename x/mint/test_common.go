@@ -79,7 +79,6 @@ func newTestInput(t *testing.T) testInput {
 		staking.BondedPoolName:    []string{supply.Burner, supply.Staking},
 	}
 	supplyKeeper := supply.NewKeeper(types.ModuleCdc, keySupply, accountKeeper, bankKeeper, maccPerms)
-	supplyKeeper.SetSupply(ctx, supply.NewSupply(sdk.Coins{}))
 
 	stakingKeeper := staking.NewKeeper(
 		types.ModuleCdc, keyStaking, tkeyStaking, supplyKeeper, paramsKeeper.Subspace(staking.DefaultParamspace), staking.DefaultCodespace,

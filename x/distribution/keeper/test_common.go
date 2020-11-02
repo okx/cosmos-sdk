@@ -147,7 +147,7 @@ func CreateTestInputAdvanced(t *testing.T, isCheckTx bool, initPower int64,
 
 	initCoins := sdk.NewCoins(sdk.NewCoin(sk.BondDenom(ctx), initTokens))
 	totalSupply := sdk.NewCoins(sdk.NewCoin(sk.BondDenom(ctx), initTokens.MulRaw(int64(len(TestAddrs)))))
-	supplyKeeper.SetSupply(ctx, supply.NewSupply(totalSupply))
+	supplyKeeper.SetTokensSupply(ctx, totalSupply)
 
 	// fill all the addresses with some coins, set the loose pool tokens simultaneously
 	for _, addr := range TestAddrs {

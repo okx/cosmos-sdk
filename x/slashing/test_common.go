@@ -100,7 +100,7 @@ func createTestInput(t *testing.T, defaults Params) (*codec.Codec, sdk.Context, 
 	supplyKeeper := supply.NewKeeper(cdc, keySupply, accountKeeper, bk, maccPerms)
 
 	totalSupply := sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, initTokens.MulRaw(int64(len(addrs)))))
-	supplyKeeper.SetSupply(ctx, supply.NewSupply(totalSupply))
+	supplyKeeper.SetTokensSupply(ctx, totalSupply)
 
 	sk := staking.NewKeeper(cdc, keyStaking, tkeyStaking, supplyKeeper, paramsKeeper.Subspace(staking.DefaultParamspace), staking.DefaultCodespace)
 	genesis := staking.DefaultGenesisState()

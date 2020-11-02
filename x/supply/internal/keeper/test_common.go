@@ -90,8 +90,7 @@ func CreateTestInput(t *testing.T, isCheckTx bool, initPower int64, nAccs int64)
 	}
 	keeper := NewKeeper(cdc, keySupply, ak, bk, maccPerms)
 	totalSupply := sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, valTokens.MulRaw(nAccs)))
-	keeper.SetSupply(ctx, types.NewSupply(totalSupply))
-
+	keeper.SetTokensSupply(ctx, totalSupply)
 	return cdc, ctx, ak, keeper
 }
 
