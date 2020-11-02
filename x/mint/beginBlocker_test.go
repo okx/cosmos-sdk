@@ -35,7 +35,7 @@ func TestBeginBlocker(t *testing.T) {
 	}
 
 	// this year mint test
-	curSupply0 := mapp.supplyKeeper.GetSupply(ctx).GetTotal().AmountOf(sdk.DefaultBondDenom)
+	curSupply0 := mapp.supplyKeeper.GetTokenSupplyAmount(ctx, sdk.DefaultBondDenom)
 	curCoin0 := curSupply0
 	rawCoin := sdk.NewDec(balance)
 	assert.EqualValues(t, curCoin0.Sub(rawCoin), ratePerBlock0.Mul(sdk.NewDec(curHeight-1)))
@@ -43,7 +43,7 @@ func TestBeginBlocker(t *testing.T) {
 	// next year mint test
 	mapp.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{Height: curHeight}})
 	ctx = mapp.BaseApp.NewContext(false, abci.Header{}).WithBlockHeight(curHeight)
-	curSupply1 := mapp.supplyKeeper.GetSupply(ctx).GetTotal().AmountOf(sdk.DefaultBondDenom)
+	curSupply1 := mapp.supplyKeeper.GetTokenSupplyAmount(ctx, sdk.DefaultBondDenom)
 	curCoin1 := curSupply1
 
 	minter = mapp.mintKeeper.GetMinterCustom(ctx)

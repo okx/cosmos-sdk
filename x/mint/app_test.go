@@ -58,7 +58,7 @@ func getMockApp(t *testing.T, numGenAccs int, balance int64, mintParams Params) 
 		types.ModuleName:          []string{supply.Minter},
 		staking.NotBondedPoolName: []string{supply.Burner, supply.Staking},
 		staking.BondedPoolName:    []string{supply.Burner, supply.Staking},
-		keeper.FarmModuleName: nil,
+		keeper.FarmModuleName:     nil,
 	}
 
 	mockApp.supplyKeeper = supply.NewKeeper(mockApp.Cdc, mockApp.keySupply, mockApp.AccountKeeper,
@@ -121,7 +121,7 @@ func getInitChainer(mapp *mock.App, supplyKeeper supply.Keeper, mintKeeper Keepe
 		for _, acc := range genAccs {
 			mapp.TotalCoinsSupply = mapp.TotalCoinsSupply.Add(acc.GetCoins())
 		}
-		supplyKeeper.SetSupply(ctx, supply.NewSupply(mapp.TotalCoinsSupply))
+		supplyKeeper.SetTokensSupply(ctx, mapp.TotalCoinsSupply)
 
 		mintKeeper.SetParams(ctx, mintParams)
 		mintKeeper.SetMinterCustom(ctx, types.MinterCustom{})
