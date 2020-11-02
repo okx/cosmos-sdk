@@ -16,5 +16,5 @@ func NewGenesisState(supply sdk.Coins) GenesisState {
 
 // DefaultGenesisState returns a default genesis state
 func DefaultGenesisState() GenesisState {
-	return NewGenesisState(DefaultSupply().GetTotal())
+	return NewGenesisState(sdk.NewCoins())
 }

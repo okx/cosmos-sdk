@@ -24,19 +24,19 @@ func AllInvariants(k Keeper) sdk.Invariant {
 func TotalSupply(k Keeper) sdk.Invariant {
 	return func(ctx sdk.Context) (string, bool) {
 		var expectedTotal sdk.Coins
-		supply := k.GetSupply(ctx)
+		totalSupply := k.GetTotalSupply(ctx)
 
 		k.ak.IterateAccounts(ctx, func(acc exported.Account) bool {
 			expectedTotal = expectedTotal.Add(acc.GetCoins())
 			return false
 		})
 
-		broken := !expectedTotal.IsEqual(supply.GetTotal())
+		broken := !expectedTotal.IsEqual(totalSupply)
 
 		return sdk.FormatInvariant(types.ModuleName, "total supply",
 			fmt.Sprintf(
 				"\tsum of accounts coins: %v\n"+
 					"\tsupply.Total:          %v\n",
-				expectedTotal, supply.GetTotal())), broken
+				expectedTotal, totalSupply)), broken
 	}
 }

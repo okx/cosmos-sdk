@@ -103,11 +103,10 @@ func (k Keeper) MintCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) sdk
 		panic(err)
 	}
 
-	// update total supply
-	supply := k.GetSupply(ctx)
-	supply = supply.Inflate(amt)
-
-	k.SetSupply(ctx, supply)
+	// update supply
+	for i := 0; i < len(amt); i++ {
+		k.inflate(ctx, amt[i].Denom, amt[i].Amount)
+	}
 
 	logger := k.Logger(ctx)
 	logger.Info(fmt.Sprintf("minted %s from %s module account", amt.String(), moduleName))
@@ -134,10 +133,12 @@ func (k Keeper) BurnCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) sdk
 		panic(err)
 	}
 
-	// update total supply
-	supply := k.GetSupply(ctx)
-	supply = supply.Deflate(amt)
-	k.SetSupply(ctx, supply)
+	// update supply
+	for i := 0; i < len(amt); i++ {
+		if err = k.deflate(ctx, amt[i].Denom, amt[i].Amount); err != nil {
+			return err
+		}
+	}
 
 	logger := k.Logger(ctx)
 	logger.Info(fmt.Sprintf("burned %s from %s module account", amt.String(), moduleName))

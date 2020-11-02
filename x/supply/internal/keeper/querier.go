@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/codec"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -35,7 +36,7 @@ func queryTotalSupply(ctx sdk.Context, req abci.RequestQuery, k Keeper) ([]byte,
 		return nil, sdk.ErrInternal(fmt.Sprintf("failed to parse params: %s", err))
 	}
 
-	totalSupply := k.GetSupply(ctx).GetTotal()
+	totalSupply := k.GetTotalSupply(ctx)
 
 	start, end := client.Paginate(len(totalSupply), params.Page, params.Limit, 100)
 	if start < 0 || end < 0 {
@@ -60,9 +61,7 @@ func querySupplyOf(ctx sdk.Context, req abci.RequestQuery, k Keeper) ([]byte, sd
 		return nil, sdk.ErrInternal(fmt.Sprintf("failed to parse params: %s", err))
 	}
 
-	supply := k.GetSupply(ctx).GetTotal().AmountOf(params.Denom)
-
-	res, err := supply.MarshalJSON()
+	res, err := codec.MarshalJSONIndent(types.ModuleCdc, k.GetTokenSupplyAmount(ctx, params.Denom))
 	if err != nil {
 		return nil, sdk.ErrInternal(sdk.AppendMsgToErr("failed to JSON marshal result: %s", err.Error()))
 	}

@@ -38,7 +38,7 @@ var (
 	DefaultSupply         = types.DefaultSupply
 
 	// variable aliases
-	DefaultCodespace = keeper.DefaultCodespace
+	DefaultCodespace = types.DefaultCodespace
 	ModuleCdc        = types.ModuleCdc
 )
 

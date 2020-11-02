@@ -1,6 +1,7 @@
 package supply
 
 import (
+	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	autypes "github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/supply/internal/types"
@@ -23,16 +24,23 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, ak types.AccountKeeper, data Ge
 		data.Supply = totalSupply
 	}
 
-	keeper.SetSupply(ctx, types.NewSupply(data.Supply))
+	// set total supply to the store
+	for i := 0; i < len(data.Supply); i++ {
+		keeper.SetTokenSupplyAmount(ctx, data.Supply[i].Denom, data.Supply[i].Amount)
+	}
 }
 
 // ExportGenesis returns a GenesisState for a given context and keeper.
 func ExportGenesis(ctx sdk.Context, keeper Keeper) GenesisState {
-	return NewGenesisState(keeper.GetSupply(ctx).GetTotal())
+	return NewGenesisState(keeper.GetTotalSupply(ctx))
 }
 
 // ValidateGenesis performs basic validation of supply genesis data returning an
 // error for any failed validation criteria.
 func ValidateGenesis(data GenesisState) error {
-	return types.NewSupply(data.Supply).ValidateBasic()
+	if !data.Supply.IsValid() {
+		return fmt.Errorf("failed. invalid total supply: %s", data.Supply.String())
+	}
+
+	return nil
 }

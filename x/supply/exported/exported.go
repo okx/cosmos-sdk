@@ -18,7 +18,7 @@ type ModuleAccountI interface {
 // SupplyI defines an inflationary supply interface for modules that handle
 // token supply.
 type SupplyI interface {
-	GetTotal() sdk.Coins
+	GetTokenSupply() sdk.Coins
 	SetTotal(total sdk.Coins) SupplyI
 
 	Inflate(amount sdk.Coins) SupplyI
