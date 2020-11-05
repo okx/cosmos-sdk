@@ -15,3 +15,8 @@ var DefaultCodespace sdk.CodespaceType = types.ModuleName
 var (
 	SupplyKey = []byte{0x00}
 )
+
+// getTokenSupplyKey gets the store key of a supply for a token
+func getTokenSupplyKey(denom string) []byte {
+	return append(SupplyKey, []byte(denom)...)
+}
