@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -42,7 +43,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 }
 
 // GetSupply retrieves the Supply from store
-func (k Keeper) GetSupply(ctx sdk.Context) exported.SupplyI {
+func (k Keeper) GetSupply(ctx sdk.Context) (supply exported.SupplyI) {
 	store := ctx.KVStore(k.storeKey)
 	iterator := sdk.KVStorePrefixIterator(store, SupplyKey)
 	defer iterator.Close()
