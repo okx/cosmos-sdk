@@ -55,6 +55,10 @@ func (k Keeper) GetSupply(ctx sdk.Context) (supply exported.SupplyI) {
 		totalSupply.Total = append(totalSupply.Total, sdk.NewDecCoinFromDec(string(iterator.Key()[1:]), amount))
 	}
 
+	if len(totalSupply.Total) == 0 {
+		panic("stored supply should not have been nil")
+	}
+
 	return totalSupply
 }
 
