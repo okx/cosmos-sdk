@@ -331,6 +331,7 @@ func GenMintGenesisState(cdc *codec.Codec, r *rand.Rand, ap simulation.AppParams
 			}(r),
 			uint64(60*60*8766/3),
 			uint64(3),
+			sdk.NewDecWithPrec(5, 1),
 		),
 		func(r *rand.Rand) sdk.Dec {
 			var v sdk.Dec
