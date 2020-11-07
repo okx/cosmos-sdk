@@ -68,7 +68,7 @@ func TestMintZero(t *testing.T) {
 	mapp, _ := getMockApp(t, 1, balance, mintParams)
 
 	var curHeight int64 = 2
-	for ; curHeight < 700; curHeight++ {
+	for ; curHeight < 1000; curHeight++ {
 		mapp.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{Height: curHeight}})
 		mapp.EndBlock(abci.RequestEndBlock{Height: curHeight})
 		mapp.Commit()

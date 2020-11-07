@@ -83,7 +83,7 @@ func (k Keeper) SetOriginalMintedPerBlock(originalMintedPerBlock sdk.Dec) {
 }
 
 func DefaultOriginalMintedPerBlock() sdk.Dec {
-	return sdk.MustNewDecFromStr("0.05")
+	return sdk.MustNewDecFromStr("0.5")
 }
 
 // ValidateMinterCustom validate minter
