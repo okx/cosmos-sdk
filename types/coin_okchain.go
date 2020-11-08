@@ -13,7 +13,14 @@ type Coin = DecCoin
 // Coins: alias to DecCoins
 type Coins = DecCoins
 
+
 //-----------------------------------------------------------------------------
+// Coin: alias to DecCoin
+type SysCoin = DecCoin
+
+//-----------------------------------------------------------------------------
+// Coins: alias to DecCoins
+type SysCoins = DecCoins
 
 func NewCoin(denom string, amount Int) DecCoin {
 	return NewDecCoin(denom, amount)
