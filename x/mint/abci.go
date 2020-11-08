@@ -29,26 +29,37 @@ func beginBlocker(ctx sdk.Context, k Keeper) {
 		return
 	}
 
-	logger.Debug(fmt.Sprintf(
-		"total supply <%v>, "+
-			"params <%v>, "+
-			"minted this block <%v>, "+
-			"next block to update minted per block <%v>, ",
-		sdk.NewDecCoinFromDec(params.MintDenom, k.StakingTokenSupply(ctx)),
-		params,
-		minter.MintedPerBlock,
-		minter.NextBlockToUpdate))
 
 	err := k.MintCoins(ctx, minter.MintedPerBlock)
 	if err != nil {
 		panic(err)
 	}
 
+	farmingAmount := minter.MintedPerBlock.MulDecTruncate(params.FarmProportion)
 	// send the minted coins to the fee collector account
-	err = k.AddCollectedFees(ctx, minter.MintedPerBlock)
+	err = k.AddCollectedFees(ctx, minter.MintedPerBlock.Sub(farmingAmount))
 	if err != nil {
 		panic(err)
 	}
+	// send the minted coins to the farm module account
+	err = k.AddYieldFarming(ctx, farmingAmount)
+	if err != nil {
+		panic(err)
+	}
+
+	logger.Debug(fmt.Sprintf(
+		"total supply <%v>, "+
+			"params <%v>, "+
+			"total minted <%v>, "+
+			"staking amount <%v>, "+
+			"yield farming amount <%v>, "+
+			"next block to update minted per block <%v>, ",
+		sdk.NewDecCoinFromDec(params.MintDenom, k.StakingTokenSupply(ctx)),
+		params,
+		minter.MintedPerBlock,
+		minter.MintedPerBlock.Sub(farmingAmount),
+		farmingAmount,
+		minter.NextBlockToUpdate))
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
