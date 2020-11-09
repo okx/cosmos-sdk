@@ -26,6 +26,8 @@ type AccountKeeper struct {
 	cdc *codec.Codec
 
 	paramSubspace subspace.Subspace
+
+	observer ObserverI
 }
 
 // NewAccountKeeper returns a new sdk.AccountKeeper that uses go-amino to
@@ -103,6 +105,10 @@ func (ak AccountKeeper) SetAccount(ctx sdk.Context, acc exported.Account) {
 		panic(err)
 	}
 	store.Set(types.AddressStoreKey(addr), bz)
+
+	if ak.observer != nil {
+		ak.observer.OnAccountUpdated(acc)
+	}
 }
 
 // RemoveAccount removes an account for the account mapper store.

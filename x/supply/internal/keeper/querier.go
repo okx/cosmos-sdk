@@ -60,7 +60,7 @@ func querySupplyOf(ctx sdk.Context, req abci.RequestQuery, k Keeper) ([]byte, sd
 		return nil, sdk.ErrInternal(fmt.Sprintf("failed to parse params: %s", err))
 	}
 
-	supply := k.GetSupply(ctx).GetTotal().AmountOf(params.Denom)
+	supply := k.GetSupplyByDenom(ctx, params.Denom)
 
 	res, err := supply.MarshalJSON()
 	if err != nil {

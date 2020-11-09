@@ -147,7 +147,7 @@ func (fee StdFee) Bytes() []byte {
 // originally part of the submitted transaction because the fee is computed
 // as fee = ceil(gasWanted * gasPrices).
 func (fee StdFee) GasPrices() sdk.DecCoins {
-	return sdk.NewDecCoins(fee.Amount).QuoDec(sdk.NewDec(int64(fee.Gas)))
+	return fee.Amount.QuoDec(sdk.NewDec(int64(fee.Gas)))
 }
 
 //__________________________________________________________

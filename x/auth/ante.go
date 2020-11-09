@@ -35,7 +35,9 @@ type SignatureVerificationGasConsumer = func(meter sdk.GasMeter, sig []byte, pub
 // NewAnteHandler returns an AnteHandler that checks and increments sequence
 // numbers, checks signatures & account numbers, and deducts fees from the first
 // signer.
-func NewAnteHandler(ak AccountKeeper, supplyKeeper types.SupplyKeeper, sigGasConsumer SignatureVerificationGasConsumer) sdk.AnteHandler {
+func NewAnteHandler(ak AccountKeeper, supplyKeeper types.SupplyKeeper,
+	sigGasConsumer SignatureVerificationGasConsumer, validateMsgHandler ValidateMsgHandler,
+	isSystemFreeHandler IsSystemFreeHandler) sdk.AnteHandler {
 	return func(
 		ctx sdk.Context, tx sdk.Tx, simulate bool,
 	) (newCtx sdk.Context, res sdk.Result, abort bool) {
@@ -55,17 +57,26 @@ func NewAnteHandler(ak AccountKeeper, supplyKeeper types.SupplyKeeper, sigGasCon
 
 		params := ak.GetParams(ctx)
 
+		isFree := false
+		if isSystemFreeHandler != nil {
+			isFree = isSystemFreeHandler(ctx, stdTx.GetMsgs())
+		}
+
 		// Ensure that the provided fees meet a minimum threshold for the validator,
 		// if this is a CheckTx. This is only for local mempool purposes, and thus
 		// is only ran on check tx.
-		if ctx.IsCheckTx() && !simulate {
+		if ctx.IsCheckTx() && !simulate && !isFree {
 			res := EnsureSufficientMempoolFees(ctx, stdTx.Fee)
 			if !res.IsOK() {
 				return newCtx, res, true
 			}
 		}
 
-		newCtx = SetGasMeter(simulate, ctx, stdTx.Fee.Gas)
+		if isFree {
+			newCtx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+		} else {
+			newCtx = SetGasMeter(simulate, ctx, stdTx.Fee.Gas)
+		}
 
 		// AnteHandlers must have their own defer/recover in order for the BaseApp
 		// to know how much gas was used! This is because the GasMeter is created in
@@ -117,7 +128,7 @@ func NewAnteHandler(ak AccountKeeper, supplyKeeper types.SupplyKeeper, sigGasCon
 		}
 
 		// deduct the fees
-		if !stdTx.Fee.Amount.IsZero() {
+		if !stdTx.Fee.Amount.IsZero() && !isFree {
 			res = DeductFees(supplyKeeper, newCtx, signerAccs[0], stdTx.Fee.Amount)
 			if !res.IsOK() {
 				return newCtx, res, true
@@ -144,14 +155,36 @@ func NewAnteHandler(ak AccountKeeper, supplyKeeper types.SupplyKeeper, sigGasCon
 			signBytes := GetSignBytes(newCtx.ChainID(), stdTx, signerAccs[i], isGenesis)
 			signerAccs[i], res = processSig(newCtx, signerAccs[i], stdSigs[i], signBytes, simulate, params, sigGasConsumer)
 			if !res.IsOK() {
+				ctx.Logger().Info("signData:" + string(signBytes))
 				return newCtx, res, true
 			}
 
 			ak.SetAccount(newCtx, signerAccs[i])
 		}
 
+		// *ABORT* the tx in case of failing to validate it in checkTx mode
+		if newCtx.IsCheckTx() && !simulate && validateMsgHandler != nil {
+			res := validateMsgHandler(newCtx, stdTx.GetMsgs())
+			if !res.IsOK() {
+				return newCtx, res, true
+			}
+		}
+
+		//stat actual system fee
+		actualSysFee := stdTx.Fee.Amount
+		if isFree {
+			actualSysFee = sdk.ZeroFee().ToCoins()
+		}
+
+		//fire systemFee event
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent(
+				sdk.EventTypeMessage,
+				sdk.NewAttribute(sdk.AttributeKeyFee, actualSysFee.String()),
+			),
+		)
 		// TODO: tx tags (?)
-		return newCtx, sdk.Result{GasWanted: stdTx.Fee.Gas}, false // continue...
+		return newCtx, sdk.Result{GasWanted: stdTx.Fee.Gas, Events: ctx.EventManager().Events()}, false
 	}
 }
 
@@ -227,7 +260,9 @@ func processSig(
 	}
 
 	if !simulate && !pubKey.VerifyBytes(signBytes, sig.Signature) {
-		return nil, sdk.ErrUnauthorized("signature verification failed; verify correct account sequence and chain-id").Result()
+		return nil, sdk.ErrUnauthorized("signature verification failed; " +
+			"verify correct account sequence, chain-id and message format. " +
+			"Expected message format: " + string(signBytes)).Result()
 	}
 
 	if err := acc.SetSequence(acc.GetSequence() + 1); err != nil {
@@ -382,7 +417,7 @@ func EnsureSufficientMempoolFees(ctx sdk.Context, stdFee StdFee) sdk.Result {
 		glDec := sdk.NewDec(int64(stdFee.Gas))
 		for i, gp := range minGasPrices {
 			fee := gp.Amount.Mul(glDec)
-			requiredFees[i] = sdk.NewCoin(gp.Denom, fee.Ceil().RoundInt())
+			requiredFees[i] = sdk.NewDecCoinFromDec(gp.Denom, fee)
 		}
 
 		if !stdFee.Amount.IsAnyGTE(requiredFees) {

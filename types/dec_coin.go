@@ -45,14 +45,7 @@ func NewDecCoinFromDec(denom string, amount Dec) DecCoin {
 
 // NewDecCoinFromCoin creates a new DecCoin from a Coin.
 func NewDecCoinFromCoin(coin Coin) DecCoin {
-	if err := validate(coin.Denom, coin.Amount); err != nil {
-		panic(err)
-	}
-
-	return DecCoin{
-		Denom:  coin.Denom,
-		Amount: coin.Amount.ToDec(),
-	}
+	return coin
 }
 
 // NewInt64DecCoin returns a new DecCoin with a denomination and amount. It will
@@ -572,7 +565,7 @@ func (coins DecCoins) Sort() DecCoins {
 func ParseDecCoin(coinStr string) (coin DecCoin, err error) {
 	coinStr = strings.TrimSpace(coinStr)
 
-	matches := reDecCoin.FindStringSubmatch(coinStr)
+	matches := findStringSubmatch(coinStr)
 	if matches == nil {
 		return DecCoin{}, fmt.Errorf("invalid decimal coin expression: %s", coinStr)
 	}
@@ -620,4 +613,15 @@ func ParseDecCoins(coinsStr string) (DecCoins, error) {
 	}
 
 	return coins, nil
+}
+
+func findStringSubmatch(coinStr string) []string {
+
+	matches := reDecCoin.FindStringSubmatch(coinStr)
+
+	if matches != nil {
+		return matches
+	}
+
+	return reDecCoinPoolToken.FindStringSubmatch(coinStr)
 }
