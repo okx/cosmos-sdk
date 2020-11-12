@@ -34,4 +34,8 @@ require (
 	gopkg.in/yaml.v2 v2.3.0
 )
 
-replace github.com/keybase/go-keychain => github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4
+replace (
+	github.com/keybase/go-keychain => github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4
+	github.com/tendermint/iavl => github.com/okex/iavl v0.14.0-okexchain1
+	github.com/tendermint/tendermint => github.com/okex/tendermint v0.33.7-okexchain1
+)
