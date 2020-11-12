@@ -43,7 +43,8 @@ type BaseConfig struct {
 
 // Config defines the server's top level configuration
 type Config struct {
-	BaseConfig `mapstructure:",squash"`
+	BaseConfig    `mapstructure:",squash"`
+	BackendConfig *BackendConfig `mapstructure:"backend"`
 }
 
 // SetMinGasPrices sets the validator's minimum gas prices.
@@ -84,5 +85,6 @@ func DefaultConfig() *Config {
 			PruningKeepEvery:  "0",
 			PruningInterval:   "0",
 		},
+		BackendConfig: DefaultBackendConfig(),
 	}
 }

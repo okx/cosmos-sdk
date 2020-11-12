@@ -5,6 +5,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 )
+type ValidateMsgHandler func(ctx sdk.Context, msgs []sdk.Msg) sdk.Result
+
+type IsSystemFreeHandler func(ctx sdk.Context, msgs []sdk.Msg) bool
 
 // NewAnteHandler returns an AnteHandler that checks and increments sequence
 // numbers, checks signatures & account numbers, and deducts fees from the first

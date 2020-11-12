@@ -44,6 +44,17 @@ halt-time = {{ .BaseConfig.HaltTime }}
 
 # InterBlockCache enables inter-block caching.
 inter-block-cache = {{ .BaseConfig.InterBlockCache }}
+
+##### backend configuration options #####
+[backend]
+enable_backend = "{{ .BackendConfig.EnableBackend }}"
+enable_mkt_compute = "{{ .BackendConfig.EnableMktCompute }}"
+log_sql = "{{ .BackendConfig.LogSQL }}"
+clean_ups_kept_days = "{{ .BackendConfig.CleanUpsKeptDays }}"
+clean_ups_time = "{{ .BackendConfig.CleanUpsTime }}"
+[backend.orm_engine]
+engine_type = "{{ .BackendConfig.OrmEngine.EngineType }}"
+connect_str = "{{ js .BackendConfig.OrmEngine.ConnectStr }}"
 `
 
 var configTemplate *template.Template
