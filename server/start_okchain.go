@@ -206,11 +206,6 @@ func registerokexchainPluginFlags(cmd *cobra.Command) *cobra.Command {
 
 	// market service flags
 	cmd.Flags().Bool(FlagStreamMarketServiceEnable, streamConf.MarketServiceEnable, "Stream plugin`s market service enable config")
-	//FlagStreamMarketNacosUrls               = "stream.market_nacos_urls"
-	//FlagStreamMarketNacosNamespaceId        = "stream.market_nacos_namespace_id"
-	//FlagStreamMarketNacosClusters           = "stream.market_nacos_clusters"
-	//FlagStreamMarketNacosServiceName        = "stream.market_nacos_service_name"
-	//FlagStreamMarketNacosGroupName          = "stream.market_nacos_group_name"
 	cmd.Flags().String(FlagStreamMarketNacosUrls, streamConf.MarketNacosUrls, "")
 	cmd.Flags().String(FlagStreamMarketNacosNamespaceId, streamConf.MarketNacosNamespaceId, "")
 	cmd.Flags().StringArray(FlagStreamMarketNacosClusters, streamConf.MarketNacosClusters, "")
