@@ -206,11 +206,11 @@ func registerokexchainPluginFlags(cmd *cobra.Command) *cobra.Command {
 
 	// market service flags
 	cmd.Flags().Bool(FlagStreamMarketServiceEnable, streamConf.MarketServiceEnable, "Stream plugin`s market service enable config")
-	cmd.Flags().String(FlagStreamMarketNacosUrls, streamConf.MarketNacosUrls, "")
-	cmd.Flags().String(FlagStreamMarketNacosNamespaceId, streamConf.MarketNacosNamespaceId, "")
-	cmd.Flags().StringArray(FlagStreamMarketNacosClusters, streamConf.MarketNacosClusters, "")
-	cmd.Flags().String(FlagStreamMarketNacosServiceName, streamConf.MarketNacosServiceName, "")
-	cmd.Flags().String(FlagStreamMarketNacosGroupName, streamConf.MarketNacosGroupName, "")
+	cmd.Flags().String(FlagStreamMarketNacosUrls, streamConf.MarketNacosUrls, "Stream plugin`s nacos server urls for getting market service info")
+	cmd.Flags().String(FlagStreamMarketNacosNamespaceId, streamConf.MarketNacosNamespaceId, "Stream plugin`s nacos name space id for getting market service info")
+	cmd.Flags().StringArray(FlagStreamMarketNacosClusters, streamConf.MarketNacosClusters, "Stream plugin`s nacos clusters array list for getting market service info")
+	cmd.Flags().String(FlagStreamMarketNacosServiceName, streamConf.MarketNacosServiceName, "Stream plugin`s nacos service name for getting market service info")
+	cmd.Flags().String(FlagStreamMarketNacosGroupName, streamConf.MarketNacosGroupName, "Stream plugin`s nacos group name for getting market service info")
 
 	// restful service flags
 	cmd.Flags().String(FlagStreamRestApplicationName, streamConf.RestApplicationName, "Stream plugin`s rest application name in eureka or nacos")
