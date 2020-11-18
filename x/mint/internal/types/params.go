@@ -11,17 +11,16 @@ import (
 
 // Parameter store keys
 var (
-	KeyMintDenom           = []byte("MintDenom")
+	KeyMintDenom = []byte("MintDenom")
 	//KeyInflationRateChange = []byte("InflationRateChange")
 	//KeyInflationMax        = []byte("InflationMax")
 	//KeyInflationMin        = []byte("InflationMin")
 	//KeyGoalBonded          = []byte("GoalBonded")
-	KeyBlocksPerYear       = []byte("BlocksPerYear")
+	KeyBlocksPerYear = []byte("BlocksPerYear")
 
 	KeyDeflationRate  = []byte("DeflationRate")
 	KeyDeflationEpoch = []byte("DeflationEpoch")
 	KeyFarmProportion = []byte("YieldFarmingProportion")
-
 )
 
 // mint parameters
@@ -33,8 +32,8 @@ type Params struct {
 	GoalBonded          sdk.Dec `json:"goal_bonded" yaml:"goal_bonded"`                     // goal of percent bonded atoms
 	BlocksPerYear       uint64  `json:"blocks_per_year" yaml:"blocks_per_year"`             // expected blocks per year
 
-	DeflationRate  sdk.Dec `json:"deflation_rate" yaml:"deflation_rate"`   // maximum annual change in deflation rate
-	DeflationEpoch uint64  `json:"inflation_epoch" yaml:"inflation_epoch"`
+	DeflationRate  sdk.Dec `json:"deflation_rate" yaml:"deflation_rate"` // maximum annual change in deflation rate
+	DeflationEpoch uint64  `json:"deflation_epoch" yaml:"deflation_epoch"`
 	FarmProportion sdk.Dec `json:"farm_proportion" yaml:"farm_proportion"`
 }
 
@@ -45,12 +44,12 @@ func ParamKeyTable() params.KeyTable {
 
 func NewParams(
 	mintDenom string, inflationRateChange, inflationMax, inflationMin, goalBonded sdk.Dec, blocksPerYear uint64,
-	 deflationEpoch uint64, deflationRateChange, farmPropotion sdk.Dec,
+	deflationEpoch uint64, deflationRateChange, farmPropotion sdk.Dec,
 ) Params {
 
 	return Params{
-		MintDenom:           mintDenom,
-		BlocksPerYear:       blocksPerYear,
+		MintDenom:      mintDenom,
+		BlocksPerYear:  blocksPerYear,
 		DeflationRate:  deflationRateChange,
 		DeflationEpoch: deflationEpoch,
 		FarmProportion: farmPropotion,
@@ -60,14 +59,14 @@ func NewParams(
 // default minting module parameters
 func DefaultParams() Params {
 	return Params{
-		MintDenom:           sdk.DefaultBondDenom,
+		MintDenom: sdk.DefaultBondDenom,
 		//InflationRateChange: sdk.NewDecWithPrec(13, 2),
 		//InflationMax:        sdk.NewDecWithPrec(20, 2),
 		//InflationMin:        sdk.NewDecWithPrec(7, 2),
 		//GoalBonded:          sdk.NewDecWithPrec(67, 2),
-		BlocksPerYear:       uint64(60 * 60 * 8766 / 3), // assuming 3 second block times
+		BlocksPerYear:  uint64(60 * 60 * 8766 / 3), // assuming 3 second block times
 		DeflationRate:  sdk.NewDecWithPrec(5, 1),
-		DeflationEpoch: 3,                                // 3 years
+		DeflationEpoch: 3,                        // 3 years
 		FarmProportion: sdk.NewDecWithPrec(5, 1), // 0.5
 	}
 }
@@ -93,7 +92,6 @@ func (p Params) Validate() error {
 	return nil
 }
 
-
 func (p Params) String() string {
 	return fmt.Sprintf(`Minting Params:
   Mint Denom:                     %s
@@ -113,7 +111,6 @@ func (p *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyDeflationRate, &p.DeflationRate, validateDeflationRate),
 		params.NewParamSetPair(KeyDeflationEpoch, &p.DeflationEpoch, validateDeflationEpoch),
 		params.NewParamSetPair(KeyFarmProportion, &p.FarmProportion, validateFarmProportion),
-
 	}
 }
 
@@ -210,8 +207,6 @@ func validateBlocksPerYear(i interface{}) error {
 	return nil
 }
 
-
-
 func validateFarmProportion(i interface{}) error {
 	v, ok := i.(sdk.Dec)
 	if !ok {
@@ -227,7 +222,6 @@ func validateFarmProportion(i interface{}) error {
 
 	return nil
 }
-
 
 func validateDeflationRate(i interface{}) error {
 	v, ok := i.(sdk.Dec)
@@ -245,7 +239,7 @@ func validateDeflationRate(i interface{}) error {
 	return nil
 }
 
-func validateDeflationEpoch (i interface{}) error {
+func validateDeflationEpoch(i interface{}) error {
 	v, ok := i.(uint64)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
