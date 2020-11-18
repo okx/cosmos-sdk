@@ -29,7 +29,7 @@ type Params struct {
 	//GoalBonded    sdk.Dec `json:"goal_bonded" yaml:"goal_bonded"`         // goal of percent bonded atoms
 	BlocksPerYear  uint64  `json:"blocks_per_year" yaml:"blocks_per_year"` // expected blocks per year
 	DeflationRate  sdk.Dec `json:"deflation_rate" yaml:"deflation_rate"`   // maximum annual change in deflation rate
-	DeflationEpoch uint64  `json:"inflation_epoch" yaml:"inflation_epoch"`
+	DeflationEpoch uint64  `json:"deflation_epoch" yaml:"deflation_epoch"`
 	FarmProportion sdk.Dec `json:"farm_proportion" yaml:"farm_proportion"`
 }
 
