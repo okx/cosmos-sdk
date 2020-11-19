@@ -2,6 +2,7 @@ package lcd
 
 import (
 	"fmt"
+	"github.com/tendermint/tendermint/rpc/client/local"
 	"net"
 	"net/http"
 	"os"
@@ -14,7 +15,6 @@ import (
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/node"
-	"github.com/tendermint/tendermint/rpc/client/local"
 	tmrpcserver "github.com/tendermint/tendermint/rpc/jsonrpc/server"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
