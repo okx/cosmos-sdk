@@ -4,8 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/cosmos/go-bip39"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/pkg/errors"
 	tmcrypto "github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
@@ -153,13 +155,23 @@ func (kb baseKeybase) DecodeSignature(info Info, msg []byte) (sig []byte, pub tm
 func (kb baseKeybase) CreateAccount(
 	keyWriter keyWriter, name, mnemonic, bip39Passphrase, encryptPasswd, hdPath string, algo SigningAlgo,
 ) (Info, error) {
+	var derivedPriv []byte
+	var err error
 
 	// create master key and derive first key for keyring
-	derivedPriv, err := kb.options.deriveFunc(mnemonic, bip39Passphrase, hdPath, algo)
-	if err != nil {
-		return nil, err
-	}
+	if !strings.Contains(mnemonic, " ") {
+		privKeyECDSA, err := ethcrypto.HexToECDSA(mnemonic)
+		if err != nil {
+			panic(err)
+		}
 
+		derivedPriv = ethcrypto.FromECDSA(privKeyECDSA)
+	} else {
+		derivedPriv, err = kb.options.deriveFunc(mnemonic, bip39Passphrase, hdPath, algo)
+		if err != nil {
+			return nil, err
+		}
+	}
 	privKey, err := kb.options.keygenFunc(derivedPriv, algo)
 	if err != nil {
 		return nil, err
@@ -222,10 +234,10 @@ func (kb baseKeybase) CreateMnemonic(
 		return nil, "", err
 	}
 
-	if len(mnemonicInput) > 0{
+	if len(mnemonicInput) > 0 {
 		mnemonic = mnemonicInput
 	}
-	
+
 	info, err = kb.CreateAccount(keyWriter, name, mnemonic, DefaultBIP39Passphrase, passwd, types.GetConfig().GetFullFundraiserPath(), algo)
 	if err != nil {
 		return nil, "", err
