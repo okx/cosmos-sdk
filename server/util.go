@@ -60,13 +60,12 @@ func PersistentPreRunEFn(context *Context) func(*cobra.Command, []string) error 
 		}
 		// okchain
 		output := os.Stdout
-		// todook
-		//if !config.LogStdout {
-		//	output, err = os.OpenFile(config.LogFile, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
-		//	if err != nil {
-		//		return err
-		//	}
-		//}
+		if !config.LogStdout {
+			output, err = os.OpenFile(config.LogFile, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
+			if err != nil {
+				return err
+			}
+		}
 
 		logger := log.NewTMLogger(log.NewSyncWriter(output))
 		logger, err = tmflags.ParseLogLevel(config.LogLevel, logger, cfg.DefaultLogLevel())
@@ -135,10 +134,8 @@ func AddCommands(
 	registerRouters func(rs *lcd.RestServer)) {
 
 	rootCmd.PersistentFlags().String("log_level", ctx.Config.LogLevel, "Log level")
-
-	// todook
-	//rootCmd.PersistentFlags().String("log_file", ctx.Config.LogFile, "Log file")
-	//rootCmd.PersistentFlags().Bool("log_stdout", ctx.Config.LogStdout, "Print log to stdout, rather than a file")
+	rootCmd.PersistentFlags().String("log_file", ctx.Config.LogFile, "Log file")
+	rootCmd.PersistentFlags().Bool("log_stdout", ctx.Config.LogStdout, "Print log to stdout, rather than a file")
 
 	tendermintCmd := &cobra.Command{
 		Use:   "tendermint",
