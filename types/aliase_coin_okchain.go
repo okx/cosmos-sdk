@@ -42,11 +42,6 @@ func NewCoin(denom string, amount interface{}) DecCoin {
 	}
 }
 
-
-func (d Dec) BigInt() *big.Int {
-	return d.Int
-}
-
 func NewDecCoinsFromDec(denom string, amount Dec) DecCoins {
 	return DecCoins{NewDecCoinFromDec(denom, amount)}
 }
