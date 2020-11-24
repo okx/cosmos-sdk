@@ -300,22 +300,22 @@ func (coins Coins) MarshalJSON() ([]byte, error) {
 //	}
 //}
 //
-//// DenomsSubsetOf returns true if receiver's denom set
-//// is subset of coinsB's denoms.
-//func (coins Coins) DenomsSubsetOf(coinsB Coins) bool {
-//	// more denoms in B than in receiver
-//	if len(coins) > len(coinsB) {
-//		return false
-//	}
-//
-//	for _, coin := range coins {
-//		if coinsB.AmountOf(coin.Denom).IsZero() {
-//			return false
-//		}
-//	}
-//
-//	return true
-//}
+// DenomsSubsetOf returns true if receiver's denom set
+// is subset of coinsB's denoms.
+func (coins Coins) DenomsSubsetOf(coinsB Coins) bool {
+	// more denoms in B than in receiver
+	if len(coins) > len(coinsB) {
+		return false
+	}
+
+	for _, coin := range coins {
+		if coinsB.AmountOf(coin.Denom).IsZero() {
+			return false
+		}
+	}
+
+	return true
+}
 //
 //// Sub subtracts a set of coins from another.
 ////
@@ -342,31 +342,31 @@ func (coins Coins) MarshalJSON() ([]byte, error) {
 //	return diff, diff.IsAnyNegative()
 //}
 //
-//// IsAllGT returns true if for every denom in coinsB,
-//// the denom is present at a greater amount in coins.
-//func (coins Coins) IsAllGT(coinsB Coins) bool {
-//	if len(coins) == 0 {
-//		return false
-//	}
-//
-//	if len(coinsB) == 0 {
-//		return true
-//	}
-//
-//	if !coinsB.DenomsSubsetOf(coins) {
-//		return false
-//	}
-//
-//	for _, coinB := range coinsB {
-//		amountA, amountB := coins.AmountOf(coinB.Denom), coinB.Amount
-//		if !amountA.GT(amountB) {
-//			return false
-//		}
-//	}
-//
-//	return true
-//}
-//
+// IsAllGT returns true if for every denom in coinsB,
+// the denom is present at a greater amount in coins.
+func (coins Coins) IsAllGT(coinsB Coins) bool {
+	if len(coins) == 0 {
+		return false
+	}
+
+	if len(coinsB) == 0 {
+		return true
+	}
+
+	if !coinsB.DenomsSubsetOf(coins) {
+		return false
+	}
+
+	for _, coinB := range coinsB {
+		amountA, amountB := coins.AmountOf(coinB.Denom), coinB.Amount
+		if !amountA.GT(amountB) {
+			return false
+		}
+	}
+
+	return true
+}
+
 //// IsAllGTE returns false if for any denom in coinsB,
 //// the denom is present at a smaller amount in coins;
 //// else returns true.
@@ -387,13 +387,13 @@ func (coins Coins) IsAllGTE(coinsB Coins) bool {
 
 	return true
 }
-//
-//// IsAllLT returns True iff for every denom in coins, the denom is present at
-//// a smaller amount in coinsB.
-//func (coins Coins) IsAllLT(coinsB Coins) bool {
-//	return coinsB.IsAllGT(coins)
-//}
-//
+
+// IsAllLT returns True iff for every denom in coins, the denom is present at
+// a smaller amount in coinsB.
+func (coins Coins) IsAllLT(coinsB Coins) bool {
+	return coinsB.IsAllGT(coins)
+}
+
 //// IsAllLTE returns true iff for every denom in coins, the denom is present at
 //// a smaller or equal amount in coinsB.
 func (coins Coins) IsAllLTE(coinsB Coins) bool {

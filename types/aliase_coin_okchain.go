@@ -112,6 +112,3 @@ func (coins DecCoins) Add2(coinsB DecCoins) DecCoins {
 	return coins.safeAdd(coinsB)
 }
 
-func (coins DecCoins) IsAllLT(coinsB DecCoins) bool {
-	return coinsB.IsAllGTE(coins)
-}
