@@ -37,7 +37,7 @@ const (
 
 	// DefaultKeyPass contains the default key password for genesis transactions
 	DefaultKeyPass = "12345678"
-	flagMnemonic    = "mnemonic"
+	flagMnemonic   = "mnemonic"
 )
 
 // AddKeyCommand defines a keys command to add a generated or recovered private key to keybase.
@@ -226,9 +226,10 @@ func RunAddCmd(cmd *cobra.Command, args []string, kb keys.Keybase, inBuf *bufio.
 	recover, _ := cmd.Flags().GetBool(flagRecover)
 	if recover {
 		mnemonic = viper.GetString(flagMnemonic)
-		if !bip39.IsMnemonicValid(mnemonic) {
-			return errors.New("invalid mnemonic")
-		}
+		// OKExChain: to support the recovery of accounts via private keys
+		//if !bip39.IsMnemonicValid(mnemonic) {
+		//	return errors.New("invalid mnemonic")
+		//}
 	} else if interactive {
 		mnemonic, err = input.GetString("Enter your bip39 mnemonic, or hit enter to generate one.", inBuf)
 		if err != nil {
