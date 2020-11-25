@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 
 	bip39 "github.com/bartekn/go-bip39"
 
@@ -226,10 +227,9 @@ func RunAddCmd(cmd *cobra.Command, args []string, kb keys.Keybase, inBuf *bufio.
 	recover, _ := cmd.Flags().GetBool(flagRecover)
 	if recover {
 		mnemonic = viper.GetString(flagMnemonic)
-		// OKExChain: to support the recovery of accounts via private keys
-		//if !bip39.IsMnemonicValid(mnemonic) {
-		//	return errors.New("invalid mnemonic")
-		//}
+		if strings.Contains(mnemonic, " ") && !bip39.IsMnemonicValid(mnemonic) {
+			return errors.New("invalid mnemonic")
+		}
 	} else if interactive {
 		mnemonic, err = input.GetString("Enter your bip39 mnemonic, or hit enter to generate one.", inBuf)
 		if err != nil {
