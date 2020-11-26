@@ -180,6 +180,7 @@ func registerRestServerFlags(cmd *cobra.Command) *cobra.Command {
 	cmd.Flags().String(FlagUlockKey, "", "Select the keys to unlock on the RPC server")
 	cmd.Flags().String(FlagUlockKeyPassword, "", "The password of the unlocked keys")
 	cmd.Flags().String(FlagUlockKeyHome, "", "The keybase home path")
+	cmd.Flags().String(flags.FlagKeyringBackend, flags.DefaultKeyringBackend, "Select keyring's backend (os|file|test)")
 	cmd.Flags().String(FlagCORS, "", "Set the rest-server domains that can make CORS requests (* for all)")
 	cmd.Flags().Int(FlagMaxOpenConnections, 1000, "The number of maximum open connections of rest-server")
 	cmd.Flags().String(FlagExternalListenAddr, "127.0.0.1:26659", "Set the rest-server external ip and port, when it is launched by Docker")
