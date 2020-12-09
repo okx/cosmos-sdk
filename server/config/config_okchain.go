@@ -81,7 +81,7 @@ type StreamConfig struct {
 	MarketTopic     string `json:"market_topic" mapstructure:"market_topic"`
 	MarketPartition int    `json:"market_partition" mapstructure:"market_partition"`
 
-	// market service config for getting market service url, used for registering token
+	// market service of nacos config for getting market service url, used for registering token
 	MarketServiceEnable    bool     `json:"market_service_enable" mapstructure:"market_service_enable"`
 	MarketNacosUrls        string   `json:"market_nacos_urls" mapstructure:"market_nacos_urls"`
 	MarketNacosNamespaceId string   `json:"market_nacos_namespace_id" mapstructure:"market_nacos_namespace_id"`
@@ -89,7 +89,7 @@ type StreamConfig struct {
 	MarketNacosServiceName string   `json:"market_nacos_service_name" mapstructure:"market_nacos_service_name"`
 	MarketNacosGroupName   string   `json:"market_nacos_group_name" mapstructure:"market_nacos_group_name"`
 
-	// market service config for eureka
+	// market service of eurka config for getting market service url, used for registering token
 	MarketEurekaName string `json:"market_eureka_name" mapstructure:"market_eureka_name"`
 	EurekaServerUrl  string `json:"eureka_server_url" mapstructure:"eureka_server_url"`
 
