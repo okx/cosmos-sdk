@@ -78,8 +78,8 @@ type StreamConfig struct {
 	CacheQueueCapacity int    `json:"cache_queue_capacity" mapstructure:"cache_queue_capacity"`
 
 	// kafka/pulsar service config for transfering match results
-	MarketTopic           string `json:"market_topic" mapstructure:"market_topic"`
-	MarketPulsarPartition int    `json:"market_pulsar_partition" mapstructure:"market_pulsar_partition"`
+	MarketTopic     string `json:"market_topic" mapstructure:"market_topic"`
+	MarketPartition int    `json:"market_partition" mapstructure:"market_partition"`
 
 	// market service config for getting market service url, used for registering token
 	MarketServiceEnable    bool     `json:"market_service_enable" mapstructure:"market_service_enable"`
@@ -88,6 +88,10 @@ type StreamConfig struct {
 	MarketNacosClusters    []string `json:"market_nacos_clusters" mapstructure:"market_nacos_clusters"`
 	MarketNacosServiceName string   `json:"market_nacos_service_name" mapstructure:"market_nacos_service_name"`
 	MarketNacosGroupName   string   `json:"market_nacos_group_name" mapstructure:"market_nacos_group_name"`
+
+	// market service config for eureka
+	MarketEurekaName string `json:"market_eureka_name" mapstructure:"market_eureka_name"`
+	EurekaServerUrl  string `json:"eureka_server_url" mapstructure:"eureka_server_url"`
 
 	// restful service config for registering restful-node
 	RestApplicationName  string `json:"rest_application_name" mapstructure:"rest_application_name"`
