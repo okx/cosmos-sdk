@@ -1,0 +1,21 @@
+syntax = "proto3";
+package cosmos.mint.v1beta1;
+
+option go_package = "github.com/cosmos/cosmos-sdk/x/mint/types";
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+// Minter represents the minting state.
+message MinterCustom {
+  // current annual inflation rate
+  uint64 next_block_to_update = 1 [
+    (gogoproto.moretags) = "yaml:\"next_block_to_update\""
+  ];
+  // current annual expected provisions
+  repeated cosmos.base.v1beta1.DecCoin minted_per_block = 2 [
+    (gogoproto.moretags)   = "yaml:\"minted_per_block\"",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.DecCoins",
+    (gogoproto.nullable)   = false
+  ];
+}

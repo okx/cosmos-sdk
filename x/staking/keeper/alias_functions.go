@@ -101,7 +101,7 @@ func (k Keeper) ValidatorByConsAddr(ctx sdk.Context, addr sdk.ConsAddress) types
 
 // Returns self as it is both a validatorset and delegationset
 func (k Keeper) GetValidatorSet() types.ValidatorSet {
-	return k
+	return nil
 }
 
 // Delegation get the delegation interface for a particular set of delegator and validator addresses

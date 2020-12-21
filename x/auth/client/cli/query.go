@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/version"
 	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
@@ -61,7 +62,7 @@ $ <appd> query auth params
 			queryClient := types.NewQueryClient(clientCtx)
 			res, err := queryClient.Params(context.Background(), &types.QueryParamsRequest{})
 			if err != nil {
-				return err
+				return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, err.Error())
 			}
 
 			return clientCtx.PrintOutput(&res.Params)

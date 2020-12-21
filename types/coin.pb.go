@@ -5,11 +5,12 @@ package types
 
 import (
 	fmt "fmt"
-	_ "github.com/gogo/protobuf/gogoproto"
-	proto "github.com/gogo/protobuf/proto"
 	io "io"
 	math "math"
 	math_bits "math/bits"
+
+	_ "github.com/gogo/protobuf/gogoproto"
+	proto "github.com/gogo/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -27,49 +28,49 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 //
 // NOTE: The amount field is an Int which implements the custom method
 // signatures required by gogoproto.
-type Coin struct {
-	Denom  string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	Amount Int    `protobuf:"bytes,2,opt,name=amount,proto3,customtype=Int" json:"amount"`
-}
-
-func (m *Coin) Reset()      { *m = Coin{} }
-func (*Coin) ProtoMessage() {}
-func (*Coin) Descriptor() ([]byte, []int) {
-	return fileDescriptor_189a96714eafc2df, []int{0}
-}
-func (m *Coin) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *Coin) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_Coin.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *Coin) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Coin.Merge(m, src)
-}
-func (m *Coin) XXX_Size() int {
-	return m.Size()
-}
-func (m *Coin) XXX_DiscardUnknown() {
-	xxx_messageInfo_Coin.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Coin proto.InternalMessageInfo
-
-func (m *Coin) GetDenom() string {
-	if m != nil {
-		return m.Denom
-	}
-	return ""
-}
+//type Coin struct {
+//	Denom  string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
+//	Amount Int    `protobuf:"bytes,2,opt,name=amount,proto3,customtype=Int" json:"amount"`
+//}
+//
+//func (m *Coin) Reset()      { *m = Coin{} }
+//func (*Coin) ProtoMessage() {}
+//func (*Coin) Descriptor() ([]byte, []int) {
+//	return fileDescriptor_189a96714eafc2df, []int{0}
+//}
+//func (m *Coin) XXX_Unmarshal(b []byte) error {
+//	return m.Unmarshal(b)
+//}
+//func (m *Coin) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+//	if deterministic {
+//		return xxx_messageInfo_Coin.Marshal(b, m, deterministic)
+//	} else {
+//		b = b[:cap(b)]
+//		n, err := m.MarshalToSizedBuffer(b)
+//		if err != nil {
+//			return nil, err
+//		}
+//		return b[:n], nil
+//	}
+//}
+//func (m *Coin) XXX_Merge(src proto.Message) {
+//	xxx_messageInfo_Coin.Merge(m, src)
+//}
+//func (m *Coin) XXX_Size() int {
+//	return m.Size()
+//}
+//func (m *Coin) XXX_DiscardUnknown() {
+//	xxx_messageInfo_Coin.DiscardUnknown(m)
+//}
+//
+//var xxx_messageInfo_Coin proto.InternalMessageInfo
+//
+//func (m *Coin) GetDenom() string {
+//	if m != nil {
+//		return m.Denom
+//	}
+//	return ""
+//}
 
 // DecCoin defines a token with a denomination and a decimal amount.
 //
@@ -223,33 +224,34 @@ var fileDescriptor_189a96714eafc2df = []byte{
 	0x93, 0x84, 0x01, 0x00, 0x00,
 }
 
-func (this *Coin) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*Coin)
-	if !ok {
-		that2, ok := that.(Coin)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if this.Denom != that1.Denom {
-		return false
-	}
-	if !this.Amount.Equal(that1.Amount) {
-		return false
-	}
-	return true
-}
+//
+//func (this *Coin) Equal(that interface{}) bool {
+//	if that == nil {
+//		return this == nil
+//	}
+//
+//	that1, ok := that.(*Coin)
+//	if !ok {
+//		that2, ok := that.(Coin)
+//		if ok {
+//			that1 = &that2
+//		} else {
+//			return false
+//		}
+//	}
+//	if that1 == nil {
+//		return this == nil
+//	} else if this == nil {
+//		return false
+//	}
+//	if this.Denom != that1.Denom {
+//		return false
+//	}
+//	if !this.Amount.Equal(that1.Amount) {
+//		return false
+//	}
+//	return true
+//}
 func (this *DecCoin) Equal(that interface{}) bool {
 	if that == nil {
 		return this == nil
@@ -277,45 +279,46 @@ func (this *DecCoin) Equal(that interface{}) bool {
 	}
 	return true
 }
-func (m *Coin) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
 
-func (m *Coin) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
+//func (m *Coin) Marshal() (dAtA []byte, err error) {
+//	size := m.Size()
+//	dAtA = make([]byte, size)
+//	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+//	if err != nil {
+//		return nil, err
+//	}
+//	return dAtA[:n], nil
+//}
 
-func (m *Coin) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	{
-		size := m.Amount.Size()
-		i -= size
-		if _, err := m.Amount.MarshalTo(dAtA[i:]); err != nil {
-			return 0, err
-		}
-		i = encodeVarintCoin(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x12
-	if len(m.Denom) > 0 {
-		i -= len(m.Denom)
-		copy(dAtA[i:], m.Denom)
-		i = encodeVarintCoin(dAtA, i, uint64(len(m.Denom)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
+//func (m *Coin) MarshalTo(dAtA []byte) (int, error) {
+//	size := m.Size()
+//	return m.MarshalToSizedBuffer(dAtA[:size])
+//}
+
+//func (m *Coin) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+//	i := len(dAtA)
+//	_ = i
+//	var l int
+//	_ = l
+//	{
+//		size := m.Amount.Size()
+//		i -= size
+//		if _, err := m.Amount.MarshalTo(dAtA[i:]); err != nil {
+//			return 0, err
+//		}
+//		i = encodeVarintCoin(dAtA, i, uint64(size))
+//	}
+//	i--
+//	dAtA[i] = 0x12
+//	if len(m.Denom) > 0 {
+//		i -= len(m.Denom)
+//		copy(dAtA[i:], m.Denom)
+//		i = encodeVarintCoin(dAtA, i, uint64(len(m.Denom)))
+//		i--
+//		dAtA[i] = 0xa
+//	}
+//	return len(dAtA) - i, nil
+//}
 
 func (m *DecCoin) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
@@ -434,20 +437,21 @@ func encodeVarintCoin(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *Coin) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Denom)
-	if l > 0 {
-		n += 1 + l + sovCoin(uint64(l))
-	}
-	l = m.Amount.Size()
-	n += 1 + l + sovCoin(uint64(l))
-	return n
-}
+
+//func (m *Coin) Size() (n int) {
+//	if m == nil {
+//		return 0
+//	}
+//	var l int
+//	_ = l
+//	l = len(m.Denom)
+//	if l > 0 {
+//		n += 1 + l + sovCoin(uint64(l))
+//	}
+//	l = m.Amount.Size()
+//	n += 1 + l + sovCoin(uint64(l))
+//	return n
+//}
 
 func (m *DecCoin) Size() (n int) {
 	if m == nil {
@@ -492,125 +496,126 @@ func sovCoin(x uint64) (n int) {
 func sozCoin(x uint64) (n int) {
 	return sovCoin(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Coin) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowCoin
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: Coin: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Coin: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowCoin
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthCoin
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthCoin
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Denom = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Amount", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowCoin
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthCoin
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthCoin
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Amount.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipCoin(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthCoin
-			}
-			if (iNdEx + skippy) < 0 {
-				return ErrInvalidLengthCoin
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
 
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
+//func (m *Coin) Unmarshal(dAtA []byte) error {
+//	l := len(dAtA)
+//	iNdEx := 0
+//	for iNdEx < l {
+//		preIndex := iNdEx
+//		var wire uint64
+//		for shift := uint(0); ; shift += 7 {
+//			if shift >= 64 {
+//				return ErrIntOverflowCoin
+//			}
+//			if iNdEx >= l {
+//				return io.ErrUnexpectedEOF
+//			}
+//			b := dAtA[iNdEx]
+//			iNdEx++
+//			wire |= uint64(b&0x7F) << shift
+//			if b < 0x80 {
+//				break
+//			}
+//		}
+//		fieldNum := int32(wire >> 3)
+//		wireType := int(wire & 0x7)
+//		if wireType == 4 {
+//			return fmt.Errorf("proto: Coin: wiretype end group for non-group")
+//		}
+//		if fieldNum <= 0 {
+//			return fmt.Errorf("proto: Coin: illegal tag %d (wire type %d)", fieldNum, wire)
+//		}
+//		switch fieldNum {
+//		case 1:
+//			if wireType != 2 {
+//				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
+//			}
+//			var stringLen uint64
+//			for shift := uint(0); ; shift += 7 {
+//				if shift >= 64 {
+//					return ErrIntOverflowCoin
+//				}
+//				if iNdEx >= l {
+//					return io.ErrUnexpectedEOF
+//				}
+//				b := dAtA[iNdEx]
+//				iNdEx++
+//				stringLen |= uint64(b&0x7F) << shift
+//				if b < 0x80 {
+//					break
+//				}
+//			}
+//			intStringLen := int(stringLen)
+//			if intStringLen < 0 {
+//				return ErrInvalidLengthCoin
+//			}
+//			postIndex := iNdEx + intStringLen
+//			if postIndex < 0 {
+//				return ErrInvalidLengthCoin
+//			}
+//			if postIndex > l {
+//				return io.ErrUnexpectedEOF
+//			}
+//			m.Denom = string(dAtA[iNdEx:postIndex])
+//			iNdEx = postIndex
+//		case 2:
+//			if wireType != 2 {
+//				return fmt.Errorf("proto: wrong wireType = %d for field Amount", wireType)
+//			}
+//			var stringLen uint64
+//			for shift := uint(0); ; shift += 7 {
+//				if shift >= 64 {
+//					return ErrIntOverflowCoin
+//				}
+//				if iNdEx >= l {
+//					return io.ErrUnexpectedEOF
+//				}
+//				b := dAtA[iNdEx]
+//				iNdEx++
+//				stringLen |= uint64(b&0x7F) << shift
+//				if b < 0x80 {
+//					break
+//				}
+//			}
+//			intStringLen := int(stringLen)
+//			if intStringLen < 0 {
+//				return ErrInvalidLengthCoin
+//			}
+//			postIndex := iNdEx + intStringLen
+//			if postIndex < 0 {
+//				return ErrInvalidLengthCoin
+//			}
+//			if postIndex > l {
+//				return io.ErrUnexpectedEOF
+//			}
+//			if err := m.Amount.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+//				return err
+//			}
+//			iNdEx = postIndex
+//		default:
+//			iNdEx = preIndex
+//			skippy, err := skipCoin(dAtA[iNdEx:])
+//			if err != nil {
+//				return err
+//			}
+//			if skippy < 0 {
+//				return ErrInvalidLengthCoin
+//			}
+//			if (iNdEx + skippy) < 0 {
+//				return ErrInvalidLengthCoin
+//			}
+//			if (iNdEx + skippy) > l {
+//				return io.ErrUnexpectedEOF
+//			}
+//			iNdEx += skippy
+//		}
+//	}
+//
+//	if iNdEx > l {
+//		return io.ErrUnexpectedEOF
+//	}
+//	return nil
+//}
 func (m *DecCoin) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0

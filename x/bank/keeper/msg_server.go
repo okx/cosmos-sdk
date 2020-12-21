@@ -52,7 +52,7 @@ func (k msgServer) Send(goCtx context.Context, msg *types.MsgSend) (*types.MsgSe
 		for _, a := range msg.Amount {
 			telemetry.SetGaugeWithLabels(
 				[]string{"tx", "msg", "send"},
-				float32(a.Amount.Int64()),
+				float32(a.Amount.RoundInt64()),
 				[]metrics.Label{telemetry.NewLabel("denom", a.Denom)},
 			)
 		}

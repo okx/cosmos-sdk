@@ -325,7 +325,8 @@ func PostProcessResponse(w http.ResponseWriter, ctx client.Context, resp interfa
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	_, _ = w.Write(output)
+	_, _ = w.Write(result)
+	_ = output
 }
 
 // ParseHTTPArgsWithLimit parses the request's URL and returns a slice containing

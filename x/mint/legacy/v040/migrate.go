@@ -11,7 +11,7 @@ import (
 // - Re-encode in v0.40 GenesisState.
 func Migrate(mintGenState v039mint.GenesisState) *v040mint.GenesisState {
 	return &v040mint.GenesisState{
-		Minter: v040mint.Minter{
+		Minter: v040mint.MinterCustom{
 			Inflation:        mintGenState.Minter.Inflation,
 			AnnualProvisions: mintGenState.Minter.AnnualProvisions,
 		},

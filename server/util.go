@@ -158,7 +158,7 @@ func interceptConfigs(rootViper *viper.Viper) (*tmcfg.Config, error) {
 		conf.RPC.PprofListenAddress = "localhost:6060"
 		conf.P2P.RecvRate = 5120000
 		conf.P2P.SendRate = 5120000
-		conf.Consensus.TimeoutCommit = 5 * time.Second
+		conf.Consensus.TimeoutCommit = 3 * time.Second
 		tmcfg.WriteConfigFile(configFile, conf)
 
 	case err != nil:
@@ -181,7 +181,8 @@ func interceptConfigs(rootViper *viper.Viper) (*tmcfg.Config, error) {
 	}
 	conf.SetRoot(rootDir)
 
-	appConfigFilePath := filepath.Join(configPath, "app.toml")
+	config.SetNodeHome(rootDir)
+	appConfigFilePath := filepath.Join(configPath, "okexchain.toml")
 	if _, err := os.Stat(appConfigFilePath); os.IsNotExist(err) {
 		appConf, err := config.ParseConfig(rootViper)
 		if err != nil {
@@ -192,7 +193,7 @@ func interceptConfigs(rootViper *viper.Viper) (*tmcfg.Config, error) {
 	}
 
 	rootViper.SetConfigType("toml")
-	rootViper.SetConfigName("app")
+	rootViper.SetConfigName("okexchain")
 	rootViper.AddConfigPath(configPath)
 	if err := rootViper.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read in app.toml: %w", err)
@@ -219,6 +220,7 @@ func AddCommands(rootCmd *cobra.Command, defaultNodeHome string, appCreator type
 
 	rootCmd.AddCommand(
 		startCmd,
+		StopCmd(),
 		UnsafeResetAllCmd(),
 		flags.LineBreak,
 		tendermintCmd,

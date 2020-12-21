@@ -421,8 +421,8 @@ func queryPool(ctx sdk.Context, k Keeper, legacyQuerierCdc *codec.LegacyAmino) (
 	}
 
 	pool := types.NewPool(
-		k.bankKeeper.GetBalance(ctx, notBondedPool.GetAddress(), bondDenom).Amount,
-		k.bankKeeper.GetBalance(ctx, bondedPool.GetAddress(), bondDenom).Amount,
+		k.bankKeeper.GetBalance(ctx, notBondedPool.GetAddress(), bondDenom).Amount.RoundInt(),
+		k.bankKeeper.GetBalance(ctx, bondedPool.GetAddress(), bondDenom).Amount.RoundInt(),
 	)
 
 	res, err := codec.MarshalJSONIndent(legacyQuerierCdc, pool)

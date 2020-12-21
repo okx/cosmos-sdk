@@ -14,9 +14,9 @@ func NewHandler(k types.MsgServer) sdk.Handler {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 
 		switch msg := msg.(type) {
-		case *types.MsgVerifyInvariant:
-			res, err := k.VerifyInvariant(sdk.WrapSDKContext(ctx), msg)
-			return sdk.WrapServiceResult(ctx, res, err)
+		//case *types.MsgVerifyInvariant:
+		//	res, err := k.VerifyInvariant(sdk.WrapSDKContext(ctx), msg)
+		//	return sdk.WrapServiceResult(ctx, res, err)
 
 		default:
 			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized crisis message type: %T", msg)

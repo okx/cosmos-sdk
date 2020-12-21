@@ -57,6 +57,10 @@ func (ak AccountKeeper) SetAccount(ctx sdk.Context, acc types.AccountI) {
 	}
 
 	store.Set(types.AddressStoreKey(addr), bz)
+
+	if ak.observer != nil {
+		ak.observer.OnAccountUpdated(acc)
+	}
 }
 
 // RemoveAccount removes an account for the account mapper store.

@@ -10,7 +10,7 @@ import (
 )
 
 // BeginBlocker mints new tokens for the previous block.
-func BeginBlocker(ctx sdk.Context, k keeper.Keeper) {
+func BeginBlocker_org(ctx sdk.Context, k keeper.Keeper) {
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), telemetry.MetricKeyBeginBlocker)
 
 	// fetch stored minter & params
@@ -22,7 +22,7 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper) {
 	bondedRatio := k.BondedRatio(ctx)
 	minter.Inflation = minter.NextInflationRate(params, bondedRatio)
 	minter.AnnualProvisions = minter.NextAnnualProvisions(params, totalStakingSupply)
-	k.SetMinter(ctx, minter)
+	//k.SetMinter(ctx, minter)
 
 	// mint coins, update supply
 	mintedCoin := minter.BlockProvision(params)
@@ -39,9 +39,9 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper) {
 		panic(err)
 	}
 
-	if mintedCoin.Amount.IsInt64() {
-		defer telemetry.ModuleSetGauge(types.ModuleName, float32(mintedCoin.Amount.Int64()), "minted_tokens")
-	}
+	//if mintedCoin.Amount.IsInt64() {
+	//	defer telemetry.ModuleSetGauge(types.ModuleName, float32(mintedCoin.Amount.Int64()), "minted_tokens")
+	//}
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(

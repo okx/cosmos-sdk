@@ -5,11 +5,13 @@ package types
 
 import (
 	fmt "fmt"
-	_ "github.com/gogo/protobuf/gogoproto"
-	proto "github.com/gogo/protobuf/proto"
 	io "io"
 	math "math"
 	math_bits "math/bits"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	_ "github.com/gogo/protobuf/gogoproto"
+	proto "github.com/gogo/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -26,9 +28,11 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 // GenesisState defines the mint module's genesis state.
 type GenesisState struct {
 	// minter is a space for holding current inflation information.
-	Minter Minter `protobuf:"bytes,1,opt,name=minter,proto3" json:"minter"`
+	Minter MinterCustom `protobuf:"bytes,1,opt,name=minter,proto3" json:"minter"`
 	// params defines all the paramaters of the module.
 	Params Params `protobuf:"bytes,2,opt,name=params,proto3" json:"params"`
+
+	OriginalMintedPerBlock sdk.Dec `json:"original_minted_per_block" yaml:"original_minted_per_block"`
 }
 
 func (m *GenesisState) Reset()         { *m = GenesisState{} }
@@ -64,11 +68,11 @@ func (m *GenesisState) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GenesisState proto.InternalMessageInfo
 
-func (m *GenesisState) GetMinter() Minter {
+func (m *GenesisState) GetMinter() MinterCustom {
 	if m != nil {
 		return m.Minter
 	}
-	return Minter{}
+	return MinterCustom{}
 }
 
 func (m *GenesisState) GetParams() Params {

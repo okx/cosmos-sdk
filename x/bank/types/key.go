@@ -44,3 +44,8 @@ func AddressFromBalancesStore(key []byte) sdk.AccAddress {
 
 	return sdk.AccAddress(addr)
 }
+
+// GetTokenSupplyKey gets the store key of a supply for a token
+func GetTokenSupplyKey(denom string) []byte {
+	return append(SupplyKey, []byte(denom)...)
+}

@@ -19,13 +19,16 @@ type Keeper struct {
 	stakingKeeper    types.StakingKeeper
 	bankKeeper       types.BankKeeper
 	feeCollectorName string
+
+	farmModuleName         string
+	originalMintedPerBlock sdk.Dec
 }
 
 // NewKeeper creates a new mint Keeper instance
 func NewKeeper(
 	cdc codec.BinaryMarshaler, key sdk.StoreKey, paramSpace paramtypes.Subspace,
 	sk types.StakingKeeper, ak types.AccountKeeper, bk types.BankKeeper,
-	feeCollectorName string,
+	feeCollectorName, farmModule string,
 ) Keeper {
 	// ensure mint module account is set
 	if addr := ak.GetModuleAddress(types.ModuleName); addr == nil {
@@ -44,6 +47,9 @@ func NewKeeper(
 		stakingKeeper:    sk,
 		bankKeeper:       bk,
 		feeCollectorName: feeCollectorName,
+
+		farmModuleName:         farmModule,
+		originalMintedPerBlock: types.DefaultOriginalMintedPerBlock(),
 	}
 }
 
@@ -67,7 +73,7 @@ func (k Keeper) GetMinter(ctx sdk.Context) (minter types.Minter) {
 }
 
 // set the minter
-func (k Keeper) SetMinter(ctx sdk.Context, minter types.Minter) {
+func (k Keeper) SetMinter(ctx sdk.Context, minter types.MinterCustom) {
 	store := ctx.KVStore(k.storeKey)
 	b := k.cdc.MustMarshalBinaryBare(&minter)
 	store.Set(types.MinterKey, b)
@@ -90,7 +96,7 @@ func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
 
 // StakingTokenSupply implements an alias call to the underlying staking keeper's
 // StakingTokenSupply to be used in BeginBlocker.
-func (k Keeper) StakingTokenSupply(ctx sdk.Context) sdk.Int {
+func (k Keeper) StakingTokenSupply(ctx sdk.Context) sdk.Dec {
 	return k.stakingKeeper.StakingTokenSupply(ctx)
 }
 

@@ -10,4 +10,5 @@ var (
 	ErrNoOutputs           = sdkerrors.Register(ModuleName, 3, "no outputs to send transaction")
 	ErrInputOutputMismatch = sdkerrors.Register(ModuleName, 4, "sum inputs != sum outputs")
 	ErrSendDisabled        = sdkerrors.Register(ModuleName, 5, "send transactions are disabled")
+	ErrInvalidDeflation    = sdkerrors.Register(ModuleName, 6, "failed. the deflation is larger than the current supply")
 )

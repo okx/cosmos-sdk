@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/spf13/viper"
+
 	bip39 "github.com/cosmos/go-bip39"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/tendermint/crypto"
@@ -34,6 +36,8 @@ const (
 
 	// DefaultKeyPass contains the default key password for genesis transactions
 	DefaultKeyPass = "12345678"
+
+	flagMnemonic = "mnemonic"
 )
 
 // AddKeyCommand defines a keys command to add a generated or recovered private key to keybase.
@@ -76,6 +80,8 @@ the flag --nosort is set.
 	cmd.Flags().Uint32(flagAccount, 0, "Account number for HD derivation")
 	cmd.Flags().Uint32(flagIndex, 0, "Address index number for HD derivation")
 	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
+	cmd.Flags().BoolP(flagYes, "y", false, "Overwrite the existing account without confirmation")
+	cmd.Flags().StringP(flagMnemonic, "m", "", "Mnemonic words")
 
 	cmd.SetOut(cmd.OutOrStdout())
 	cmd.SetErr(cmd.ErrOrStderr())
@@ -132,21 +138,24 @@ func RunAddCmd(cmd *cobra.Command, args []string, kb keyring.Keyring, inBuf *buf
 	}
 
 	if dryRun, _ := cmd.Flags().GetBool(flags.FlagDryRun); !dryRun {
-		_, err = kb.Key(name)
-		if err == nil {
-			// account exists, ask for user confirmation
-			response, err2 := input.GetConfirmation(fmt.Sprintf("override the existing name %s", name), inBuf, cmd.ErrOrStderr())
-			if err2 != nil {
-				return err2
-			}
+		ask := !viper.GetBool(flagYes)
+		if ask {
+			_, err = kb.Key(name)
+			if err == nil {
+				// account exists, ask for user confirmation
+				response, err2 := input.GetConfirmation(fmt.Sprintf("override the existing name %s", name), inBuf, cmd.ErrOrStderr())
+				if err2 != nil {
+					return err2
+				}
 
-			if !response {
-				return errors.New("aborted")
-			}
+				if !response {
+					return errors.New("aborted")
+				}
 
-			err2 = kb.Delete(name)
-			if err2 != nil {
-				return err2
+				err2 = kb.Delete(name)
+				if err2 != nil {
+					return err2
+				}
 			}
 		}
 
@@ -224,9 +233,13 @@ func RunAddCmd(cmd *cobra.Command, args []string, kb keyring.Keyring, inBuf *buf
 
 	// Get bip39 mnemonic
 	var mnemonic, bip39Passphrase string
+	inputMnemonic := viper.GetString(flagMnemonic)
+	if len(inputMnemonic) > 0 {
+		mnemonic = inputMnemonic
+	}
 
 	recover, _ := cmd.Flags().GetBool(flagRecover)
-	if recover {
+	if len(mnemonic) == 0 && recover {
 		mnemonic, err = input.GetString("Enter your bip39 mnemonic", inBuf)
 		if err != nil {
 			return err
@@ -235,7 +248,7 @@ func RunAddCmd(cmd *cobra.Command, args []string, kb keyring.Keyring, inBuf *buf
 		if !bip39.IsMnemonicValid(mnemonic) {
 			return errors.New("invalid mnemonic")
 		}
-	} else if interactive {
+	} else if len(mnemonic) == 0 && interactive {
 		mnemonic, err = input.GetString("Enter your bip39 mnemonic, or hit enter to generate one.", inBuf)
 		if err != nil {
 			return err

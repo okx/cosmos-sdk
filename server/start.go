@@ -113,9 +113,13 @@ which accepts a path for the resulting pprof file.
 
 			serverCtx.Logger.Info("starting ABCI with Tendermint")
 
+			setPID(serverCtx)
 			// amino is needed here for backwards compatibility of REST routes
 			err := startInProcess(serverCtx, clientCtx, appCreator)
-			return err
+			if err != nil {
+				tmos.Exit(err.Error())
+			}
+			return nil
 		},
 	}
 
@@ -143,6 +147,8 @@ which accepts a path for the resulting pprof file.
 
 	cmd.Flags().Uint64(FlagStateSyncSnapshotInterval, 0, "State sync snapshot interval")
 	cmd.Flags().Uint32(FlagStateSyncSnapshotKeepRecent, 2, "State sync snapshot to keep")
+
+	registerokexchainPluginFlags(cmd)
 
 	// add support for all Tendermint-specific command line options
 	tcmd.AddNodeFlags(cmd)
@@ -212,6 +218,9 @@ func startInProcess(ctx *Context, clientCtx client.Context, appCreator types.App
 			f.Close()
 		}
 	}
+
+	//startInProcess hooker
+	callHooker(FlagHookstartInProcess, ctx)
 
 	traceWriterFile := ctx.Viper.GetString(flagTraceStore)
 	db, err := openDB(home)

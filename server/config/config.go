@@ -127,6 +127,9 @@ type Config struct {
 	API       APIConfig        `mapstructure:"api"`
 	GRPC      GRPCConfig       `mapstructure:"grpc"`
 	StateSync StateSyncConfig  `mapstructure:"state-sync"`
+
+	BackendConfig *BackendConfig `mapstructure:"backend"`
+	StreamConfig  *StreamConfig  `mapstructure:"stream"`
 }
 
 // SetMinGasPrices sets the validator's minimum gas prices.
@@ -189,6 +192,8 @@ func DefaultConfig() *Config {
 			SnapshotInterval:   0,
 			SnapshotKeepRecent: 2,
 		},
+		BackendConfig: DefaultBackendConfig(),
+		StreamConfig:  DefaultStreamConfig(),
 	}
 }
 

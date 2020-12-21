@@ -14,7 +14,7 @@ func createTestApp(isCheckTx bool) (*simapp.SimApp, sdk.Context) {
 
 	ctx := app.BaseApp.NewContext(isCheckTx, tmproto.Header{})
 	app.MintKeeper.SetParams(ctx, types.DefaultParams())
-	app.MintKeeper.SetMinter(ctx, types.DefaultInitialMinter())
+	app.MintKeeper.SetMinter(ctx, types.DefaultInitialMinterCustom())
 
 	return app, ctx
 }

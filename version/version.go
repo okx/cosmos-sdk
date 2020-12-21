@@ -31,27 +31,33 @@ var (
 	// commit
 	Commit = ""
 	// build tags
-	BuildTags = ""
+	BuildTags  = ""
+	CosmosSDK  = ""
+	Tendermint = ""
 )
 
 // Info defines the application version information.
 type Info struct {
-	Name      string `json:"name" yaml:"name"`
-	AppName   string `json:"server_name" yaml:"server_name"`
-	Version   string `json:"version" yaml:"version"`
-	GitCommit string `json:"commit" yaml:"commit"`
-	BuildTags string `json:"build_tags" yaml:"build_tags"`
-	GoVersion string `json:"go" yaml:"go"`
+	Name       string `json:"name" yaml:"name"`
+	AppName    string `json:"server_name" yaml:"server_name"`
+	Version    string `json:"version" yaml:"version"`
+	GitCommit  string `json:"commit" yaml:"commit"`
+	BuildTags  string `json:"build_tags" yaml:"build_tags"`
+	GoVersion  string `json:"go" yaml:"go"`
+	CosmosSDK  string `json:"cosmos_sdk" yaml:"cosmos_sdk"`
+	Tendermint string `json:"tendermint" yaml:"tendermint"`
 }
 
 func NewInfo() Info {
 	return Info{
-		Name:      Name,
-		AppName:   AppName,
-		Version:   Version,
-		GitCommit: Commit,
-		BuildTags: BuildTags,
-		GoVersion: fmt.Sprintf("go version %s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH),
+		Name:       Name,
+		AppName:    AppName,
+		Version:    Version,
+		CosmosSDK:  CosmosSDK,
+		Tendermint: Tendermint,
+		GitCommit:  Commit,
+		BuildTags:  BuildTags,
+		GoVersion:  fmt.Sprintf("go version %s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH),
 	}
 }
 
@@ -59,7 +65,9 @@ func (vi Info) String() string {
 	return fmt.Sprintf(`%s: %s
 git commit: %s
 build tags: %s
+cosmos-sdk: %s
+tendermint: %s
 %s`,
-		vi.Name, vi.Version, vi.GitCommit, vi.BuildTags, vi.GoVersion,
+		vi.Name, vi.Version, vi.GitCommit, vi.BuildTags, vi.CosmosSDK, vi.Tendermint, vi.GoVersion,
 	)
 }

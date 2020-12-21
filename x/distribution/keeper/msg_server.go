@@ -68,7 +68,7 @@ func (k msgServer) WithdrawDelegatorReward(goCtx context.Context, msg *types.Msg
 		for _, a := range amount {
 			telemetry.SetGaugeWithLabels(
 				[]string{"tx", "msg", "withdraw_reward"},
-				float32(a.Amount.Int64()),
+				float32(a.Amount.RoundInt64()),
 				[]metrics.Label{telemetry.NewLabel("denom", a.Denom)},
 			)
 		}
@@ -100,7 +100,7 @@ func (k msgServer) WithdrawValidatorCommission(goCtx context.Context, msg *types
 		for _, a := range amount {
 			telemetry.SetGaugeWithLabels(
 				[]string{"tx", "msg", "withdraw_commission"},
-				float32(a.Amount.Int64()),
+				float32(a.Amount.RoundInt64()),
 				[]metrics.Label{telemetry.NewLabel("denom", a.Denom)},
 			)
 		}

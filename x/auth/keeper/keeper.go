@@ -54,6 +54,8 @@ type AccountKeeper struct {
 
 	// The prototypical AccountI constructor.
 	proto func() types.AccountI
+
+	observer ObserverI
 }
 
 var _ AccountKeeperI = &AccountKeeper{}

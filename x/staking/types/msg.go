@@ -131,7 +131,7 @@ func (msg MsgCreateValidator) ValidateBasic() error {
 		return ErrMinSelfDelegationInvalid
 	}
 
-	if msg.Value.Amount.LT(msg.MinSelfDelegation) {
+	if msg.Value.Amount.LT(msg.MinSelfDelegation.ToDec()) {
 		return ErrSelfDelegationBelowMinimum
 	}
 

@@ -113,12 +113,12 @@ func SimulateMsgCreateValidator(ak types.AccountKeeper, bk types.BankKeeper, k k
 			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgCreateValidator, "balance is negative"), nil, nil
 		}
 
-		amount, err := simtypes.RandPositiveInt(r, balance)
+		_, err := simtypes.RandPositiveInt(r, balance)
 		if err != nil {
 			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgCreateValidator, "unable to generate positive amount"), nil, err
 		}
 
-		selfDelegation := sdk.NewCoin(denom, amount)
+		selfDelegation := sdk.NewCoin(denom, balance)
 
 		account := ak.GetAccount(ctx, simAccount.Address)
 		spendable := bk.SpendableCoins(ctx, account.GetAddress())
@@ -275,7 +275,7 @@ func SimulateMsgDelegate(ak types.AccountKeeper, bk types.BankKeeper, k keeper.K
 			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgDelegate, "balance is negative"), nil, nil
 		}
 
-		amount, err := simtypes.RandPositiveInt(r, amount)
+		_, err := simtypes.RandPositiveInt(r, amount)
 		if err != nil {
 			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgDelegate, "unable to generate positive amount"), nil, err
 		}
@@ -352,7 +352,7 @@ func SimulateMsgUndelegate(ak types.AccountKeeper, bk types.BankKeeper, k keeper
 			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgUndelegate, "total bond is negative"), nil, nil
 		}
 
-		unbondAmt, err := simtypes.RandPositiveInt(r, totalBond)
+		unbondAmt, err := simtypes.RandPositiveInt(r, totalBond.ToDec())
 		if err != nil {
 			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgUndelegate, "invalid unbond amount"), nil, err
 		}
@@ -453,7 +453,7 @@ func SimulateMsgBeginRedelegate(ak types.AccountKeeper, bk types.BankKeeper, k k
 			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgBeginRedelegate, "total bond is negative"), nil, nil
 		}
 
-		redAmt, err := simtypes.RandPositiveInt(r, totalBond)
+		redAmt, err := simtypes.RandPositiveInt(r, totalBond.ToDec())
 		if err != nil {
 			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgBeginRedelegate, "unable to generate positive amount"), nil, err
 		}

@@ -1,17 +1,25 @@
 package types
 
+import sdk "github.com/cosmos/cosmos-sdk/types"
+
 // NewGenesisState creates a new GenesisState object
-func NewGenesisState(minter Minter, params Params) *GenesisState {
+func NewGenesisState(minter MinterCustom, params Params, originalMintedPerBlock sdk.Dec) *GenesisState {
 	return &GenesisState{
 		Minter: minter,
 		Params: params,
+
+		OriginalMintedPerBlock: originalMintedPerBlock,
 	}
+}
+
+func DefaultOriginalMintedPerBlock() sdk.Dec {
+	return sdk.MustNewDecFromStr("1")
 }
 
 // DefaultGenesisState creates a default GenesisState object
 func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
-		Minter: DefaultInitialMinter(),
+		Minter: DefaultInitialMinterCustom(),
 		Params: DefaultParams(),
 	}
 }
@@ -23,5 +31,5 @@ func ValidateGenesis(data GenesisState) error {
 		return err
 	}
 
-	return ValidateMinter(data.Minter)
+	return ValidateMinterCustom(data.Minter)
 }

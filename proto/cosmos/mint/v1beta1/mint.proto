@@ -50,4 +50,16 @@ message Params {
   ];
   // expected blocks per year
   uint64 blocks_per_year = 6 [(gogoproto.moretags) = "yaml:\"blocks_per_year\""];
+
+  string deflation_rate = 7 [
+    (gogoproto.moretags)   = "yaml:\"deflation_rate\"",
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
+    (gogoproto.nullable)   = false
+  ];
+  uint64 deflation_epoch = 8 [(gogoproto.moretags) = "yaml:\"deflation_epoch\""];
+  string farm_proportion = 9 [
+    (gogoproto.moretags)   = "yaml:\"farm_proportion\"",
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
+    (gogoproto.nullable)   = false
+  ];
 }

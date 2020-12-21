@@ -67,7 +67,7 @@ type Keyring interface {
 	// key from that, and persists it to the storage. Returns the generated mnemonic and the key
 	// Info. It returns an error if it fails to generate a key for the given algo type, or if
 	// another key is already stored under the same name.
-	NewMnemonic(uid string, language Language, hdPath string, algo SignatureAlgo) (Info, string, error)
+	NewMnemonic(uid string, language Language, hdPath string, algo SignatureAlgo, mnemonic string) (Info, string, error)
 
 	// NewAccount converts a mnemonic to a private key and BIP-39 HD Path and persists it.
 	NewAccount(uid, mnemonic, bip39Passwd, hdPath string, algo SignatureAlgo) (Info, error)
@@ -460,7 +460,7 @@ func (ks keystore) List() ([]Info, error) {
 	return res, nil
 }
 
-func (ks keystore) NewMnemonic(uid string, language Language, hdPath string, algo SignatureAlgo) (Info, string, error) {
+func (ks keystore) NewMnemonic(uid string, language Language, hdPath string, algo SignatureAlgo, mnemonicInput string) (Info, string, error) {
 	if language != English {
 		return nil, "", ErrUnsupportedLanguage
 	}
@@ -479,6 +479,10 @@ func (ks keystore) NewMnemonic(uid string, language Language, hdPath string, alg
 	mnemonic, err := bip39.NewMnemonic(entropy)
 	if err != nil {
 		return nil, "", err
+	}
+
+	if len(mnemonicInput) > 0 {
+		mnemonic = mnemonicInput
 	}
 
 	info, err := ks.NewAccount(uid, mnemonic, DefaultBIP39Passphrase, hdPath, algo)
