@@ -199,6 +199,9 @@ func RunAddCmd(cmd *cobra.Command, args []string, kb keys.Keybase, inBuf *bufio.
 		hdPath = keys.CreateHDPath(account, index).String()
 	} else {
 		hdPath = viper.GetString(flagHDPath)
+		if hdPath == "eth" {
+			hdPath = "m/44'/60'/0'/0/0"
+		}
 	}
 
 	// If we're using ledger, only thing we need is the path and the bech32 prefix.
