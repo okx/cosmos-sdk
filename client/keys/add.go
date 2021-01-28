@@ -193,7 +193,7 @@ func RunAddCmd(cmd *cobra.Command, args []string, kb keys.Keybase, inBuf *bufio.
 
 	account := uint32(viper.GetInt(flagAccount))
 	index := uint32(viper.GetInt(flagIndex))
-	cointype := uint32(viper.GetInt(flagCoinType))
+	cointype := uint32(viper.GetInt(flagCointype))
 
 	useBIP44 := !viper.IsSet(flagHDPath)
 	var hdPath string
