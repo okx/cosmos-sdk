@@ -3,7 +3,6 @@ package types_test
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/aliyun/alibaba-cloud-sdk-go/sdk"
 	"math/rand"
 	"strings"
 	"testing"
