@@ -345,3 +345,34 @@ func TestCustomAddressVerifier(t *testing.T) {
 	_, err = types.ConsAddressFromBech32(consBech)
 	require.Nil(t, err)
 }
+
+// test compate 0x address to send and query
+func TestAccAddressFromBech32(t *testing.T) {
+	// origin true
+	addrStr := "okexchain19n6w5l0htdgn2zwet9rtgvrzuf4a3qp49c9fml"
+	addr, err := types.AccAddressFromBech32(addrStr)
+	require.Nil(t, err)
+	require.NotNil(t, addr)
+
+	// after true
+	addrStr = "0x0073F2E28ef8F117e53d858094086Defaf1837D5"
+	addr, err = types.AccAddressFromBech32(addrStr)
+	require.Nil(t, err)
+	require.NotNil(t, addr)
+	// after true
+	addrStr = "2CF4ea7dF75b513509d95946B43062E26bD88035"
+	addr, err = types.AccAddressFromBech32(addrStr)
+	require.Nil(t, err)
+	require.NotNil(t, addr)
+
+	// after false
+	addrStr = "okexchain19n6w5l0htdgn2zwet9rtgvrzuf4a3qp49c9fml_"
+	addr, err = types.AccAddressFromBech32(addrStr)
+	require.NotNil(t, err)
+	require.Nil(t, addr)
+	// after false
+	addrStr = "0x0073F2E28ef8F117e53d858094086Defaf1837D5_"
+	addr, err = types.AccAddressFromBech32(addrStr)
+	require.NotNil(t, err)
+	require.Nil(t, addr)
+}
