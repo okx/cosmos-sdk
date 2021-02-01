@@ -13,6 +13,8 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/tendermint/tendermint/libs/bech32"
+
+	ethcmn "github.com/ethereum/go-ethereum/common"
 )
 
 const (
@@ -134,6 +136,11 @@ func AccAddressFromBech32(address string) (addr AccAddress, err error) {
 
 	bz, err := GetFromBech32(address, bech32PrefixAccAddr)
 	if err != nil {
+		// try to transfer from EthAddress to AccAddress
+		keyFromEth, ethErr := TransEthAddressToAccAddress(address)
+		if ethErr == nil {
+			return keyFromEth, nil
+		}
 		return nil, err
 	}
 
@@ -143,6 +150,27 @@ func AccAddressFromBech32(address string) (addr AccAddress, err error) {
 	}
 
 	return AccAddress(bz), nil
+}
+
+// TransEthAddressToAccAddress transfer from EthAddress to AccAddress
+func TransEthAddressToAccAddress(addressStr string) (addr AccAddress, err error) {
+	judgeEthAddress := JudgeEthAddress(addressStr)
+	if !judgeEthAddress {
+		return nil, errors.New("input string is not ethAddress")
+	}
+	ethByts := ethcmn.HexToAddress(addressStr).Bytes()
+	return AccAddress(ethByts), nil
+}
+
+// JudgeEthAddress judge whether it is an EthAddress
+func JudgeEthAddress(addressStr string) bool {
+	if strings.HasPrefix(addressStr, "0x") {
+		//42位
+		return len(addressStr) == 42
+	} else {
+		//40位
+		return len(addressStr) == 40
+	}
 }
 
 // Returns boolean for whether two AccAddresses are Equal
