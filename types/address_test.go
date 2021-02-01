@@ -3,6 +3,7 @@ package types_test
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/aliyun/alibaba-cloud-sdk-go/sdk"
 	"math/rand"
 	"strings"
 	"testing"
@@ -348,6 +349,10 @@ func TestCustomAddressVerifier(t *testing.T) {
 
 // test compate 0x address to send and query
 func TestAccAddressFromBech32(t *testing.T) {
+	//config := types.GetConfig()
+	//okexchain.SetBech32Prefixes(config)
+	//fmt.Println(types.GetConfig().GetBech32AccountAddrPrefix())
+
 	// origin true
 	addrStr := "okexchain19n6w5l0htdgn2zwet9rtgvrzuf4a3qp49c9fml"
 	addr, err := types.AccAddressFromBech32(addrStr)
