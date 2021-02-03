@@ -129,9 +129,9 @@ func AccAddressFromBech32(address string) (addr AccAddress, err error) {
 	if len(strings.TrimSpace(address)) == 0 {
 		return AccAddress{}, nil
 	}
+
 	bech32PrefixAccAddr := GetConfig().GetBech32AccountAddrPrefix()
 
-	//first check eth , so that time can be saved
 	if !strings.HasPrefix(address, bech32PrefixAccAddr) {
 		// strip 0x prefix if exists
 		addrStr := strings.TrimPrefix(address, "0x")
