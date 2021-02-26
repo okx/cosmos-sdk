@@ -12,6 +12,10 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 
+		if sdk.IsDisableBankTransferBlock(ctx.BlockHeight()) {
+			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "bank message is disable")
+		}
+
 		switch msg := msg.(type) {
 		case types.MsgSend:
 			return handleMsgSend(ctx, k, msg)
