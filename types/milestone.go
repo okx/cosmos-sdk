@@ -7,7 +7,7 @@ import (
 
 var (
 	MILESTONE_MERCURY_HEIGHT     string
-	MILESTONE_MERCURY_HEIGHT_NUM int64
+	milestoneMercuryHeight       int64
 	once                         sync.Once
 )
 
@@ -24,7 +24,7 @@ func string2number(input string) int64 {
 
 func initVersionBlockHeight() {
 	once.Do(func() {
-		MILESTONE_MERCURY_HEIGHT_NUM = string2number(MILESTONE_MERCURY_HEIGHT)
+		milestoneMercuryHeight = string2number(MILESTONE_MERCURY_HEIGHT)
 	})
 }
 
@@ -33,16 +33,26 @@ func init() {
 }
 
 //disable transfer tokens to contract address by cli
+func higherThanMercury(height int64) bool {
+	if milestoneMercuryHeight == 0 {
+		// milestoneMercuryHeight not enabled
+		return false
+	}
+	return height > milestoneMercuryHeight
+}
+
+
+//disable transfer tokens to contract address by cli
 func IsDisableTransferToContractBlock(height int64) bool {
-	return height >= MILESTONE_MERCURY_HEIGHT_NUM
+	return higherThanMercury(height)
 }
 
 //disable change the param EvmDenom by proposal
 func IsDisableChangeEvmDenomByProposal(height int64) bool {
-	return height >= MILESTONE_MERCURY_HEIGHT_NUM
+	return higherThanMercury(height)
 }
 
 //disable transfer tokens by module of cosmos-sdk/bank
 func IsDisableBankTransferBlock(height int64) bool {
-	return height >= MILESTONE_MERCURY_HEIGHT_NUM
+	return higherThanMercury(height)
 }
