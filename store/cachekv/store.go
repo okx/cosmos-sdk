@@ -24,7 +24,7 @@ type cValue struct {
 
 // Store wraps an in-memory cache around an underlying types.KVStore.
 type Store struct {
-	mtx           sync.Mutex
+	mtx           sync.RWMutex
 	cache         map[string]*cValue
 	unsortedCache map[string]struct{}
 	sortedCache   *list.List // always ascending sorted
@@ -49,8 +49,9 @@ func (store *Store) GetStoreType() types.StoreType {
 
 // Implements types.KVStore.
 func (store *Store) Get(key []byte) (value []byte) {
-	store.mtx.Lock()
-	defer store.mtx.Unlock()
+	store.mtx.RLock()
+
+	defer store.mtx.RUnlock()
 
 	types.AssertValidKey(key)
 
