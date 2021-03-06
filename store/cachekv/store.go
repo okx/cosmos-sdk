@@ -49,8 +49,8 @@ func (store *Store) GetStoreType() types.StoreType {
 
 // Implements types.KVStore.
 func (store *Store) Get(key []byte) (value []byte) {
-	store.mtx.Lock()
-	defer store.mtx.Unlock()
+	//	store.mtx.Lock()
+	//	defer store.mtx.Unlock()
 
 	types.AssertValidKey(key)
 
