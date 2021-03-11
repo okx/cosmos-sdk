@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"github.com/tendermint/tendermint/mempool"
 	"io/ioutil"
 	"os"
 	"sync"
 	"testing"
+
+	"github.com/tendermint/tendermint/mempool"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -579,9 +580,9 @@ func (tx txTest) ValidateBasic() error { return nil }
 
 func (tx txTest) GetTxInfo(ctx sdk.Context) mempool.ExTxInfo {
 	return mempool.ExTxInfo{
-		Sender: "",
+		Sender:   "",
 		GasPrice: 0,
-		Nonce: 0,
+		Nonce:    0,
 	}
 }
 

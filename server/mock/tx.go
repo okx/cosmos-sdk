@@ -4,6 +4,7 @@ package mock
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/tendermint/tendermint/mempool"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -59,9 +60,9 @@ func (tx kvstoreTx) GetSigners() []sdk.AccAddress {
 
 func (tx kvstoreTx) GetTxInfo(ctx sdk.Context) mempool.ExTxInfo {
 	return mempool.ExTxInfo{
-		Sender: "",
+		Sender:   "",
 		GasPrice: 0,
-		Nonce: 0,
+		Nonce:    0,
 	}
 }
 
