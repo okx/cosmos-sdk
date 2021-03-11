@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"github.com/tendermint/tendermint/mempool"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -575,6 +576,14 @@ func (tx *txTest) setFailOnHandler(fail bool) {
 // Implements Tx
 func (tx txTest) GetMsgs() []sdk.Msg   { return tx.Msgs }
 func (tx txTest) ValidateBasic() error { return nil }
+
+func (tx txTest) GetTxInfo(ctx sdk.Context) mempool.ExTxInfo {
+	return mempool.ExTxInfo{
+		Sender: "",
+		GasPrice: 0,
+		Nonce: 0,
+	}
+}
 
 const (
 	routeMsgCounter  = "msgCounter"

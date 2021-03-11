@@ -641,6 +641,14 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (gInfo sdk.
 		msCache.Write()
 	}
 
+	if mode == runTxModeCheck {
+		exTxInfo := tx.GetTxInfo(ctx)
+		data, err := json.Marshal(exTxInfo)
+		if err == nil {
+			result.Data = data
+		}
+	}
+
 	return gInfo, result, err
 }
 

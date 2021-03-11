@@ -4,6 +4,7 @@ package mock
 import (
 	"bytes"
 	"fmt"
+	"github.com/tendermint/tendermint/mempool"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -54,6 +55,14 @@ func (tx kvstoreTx) ValidateBasic() error {
 
 func (tx kvstoreTx) GetSigners() []sdk.AccAddress {
 	return nil
+}
+
+func (tx kvstoreTx) GetTxInfo(ctx sdk.Context) mempool.ExTxInfo {
+	return mempool.ExTxInfo{
+		Sender: "",
+		GasPrice: 0,
+		Nonce: 0,
+	}
 }
 
 // takes raw transaction bytes and decodes them into an sdk.Tx. An sdk.Tx has

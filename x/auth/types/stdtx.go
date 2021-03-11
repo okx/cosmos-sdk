@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/tendermint/tendermint/mempool"
 
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/multisig"
@@ -161,6 +162,22 @@ func (tx StdTx) FeePayer() sdk.AccAddress {
 		return tx.GetSigners()[0]
 	}
 	return sdk.AccAddress{}
+}
+
+// GetTxInfo return tx sender and gas price
+func (tx StdTx) GetTxInfo(ctx sdk.Context)  mempool.ExTxInfo {
+	exInfo := mempool.ExTxInfo {
+		Sender: "",
+		GasPrice: 0,
+		Nonce: 0,
+	}
+
+	if tx.GetSigners() != nil {
+		exInfo.Sender = sdk.AccAddress(tx.GetSigners()[0]).String()
+	}
+	exInfo.GasPrice = tx.Fee.GasPrices()[0].Amount.RoundInt64()
+
+	return exInfo
 }
 
 //__________________________________________________________
