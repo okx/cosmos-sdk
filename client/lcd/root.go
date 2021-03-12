@@ -2,10 +2,8 @@ package lcd
 
 import (
 	"fmt"
-	"github.com/tendermint/tendermint/rpc/client/local"
 	"net"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gorilla/handlers"
@@ -15,6 +13,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/node"
+	"github.com/tendermint/tendermint/rpc/client/local"
 	tmrpcserver "github.com/tendermint/tendermint/rpc/jsonrpc/server"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -41,7 +40,7 @@ type RestServer struct {
 func NewRestServer(cdc *codec.Codec, tmNode *node.Node) *RestServer {
 	rootRouter := mux.NewRouter()
 	cliCtx := context.NewCLIContext().WithCodec(cdc)
-	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "rest-server")
+	logger := tmNode.Logger.With("module", "rest-server")
 	if tmNode != nil {
 		cliCtx.Client = local.New(tmNode)
 	}
@@ -55,6 +54,10 @@ func NewRestServer(cdc *codec.Codec, tmNode *node.Node) *RestServer {
 
 		log: logger,
 	}
+}
+
+func (rs *RestServer) Logger() log.Logger {
+	return rs.log
 }
 
 // Start starts the rest server
