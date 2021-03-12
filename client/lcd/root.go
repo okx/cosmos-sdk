@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gorilla/handlers"
@@ -40,9 +41,10 @@ type RestServer struct {
 func NewRestServer(cdc *codec.Codec, tmNode *node.Node) *RestServer {
 	rootRouter := mux.NewRouter()
 	cliCtx := context.NewCLIContext().WithCodec(cdc)
-	logger := tmNode.Logger.With("module", "rest-server")
+	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "rest-server")
 	if tmNode != nil {
 		cliCtx.Client = local.New(tmNode)
+		logger = tmNode.Logger.With("module", "rest-server")
 	}
 
 	cliCtx.TrustNode = true
