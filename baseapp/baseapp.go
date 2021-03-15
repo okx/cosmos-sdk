@@ -109,6 +109,8 @@ type BaseApp struct { // nolint: maligned
 
 	// trace set will return full stack traces for errors in ABCI Log field
 	trace bool
+
+	lastMS sdk.CacheMultiStore
 }
 
 // NewBaseApp returns a reference to an initialized BaseApp. It accepts a
@@ -131,6 +133,7 @@ func NewBaseApp(
 		txDecoder:      txDecoder,
 		fauxMerkleMode: false,
 		trace:          false,
+		lastMS: nil,
 	}
 	for _, option := range options {
 		option(app)

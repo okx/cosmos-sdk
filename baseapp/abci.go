@@ -2,6 +2,7 @@ package baseapp
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/store/types"
 	"os"
 	"sort"
 	"strings"
@@ -241,6 +242,8 @@ func (app *BaseApp) Commit() (res abci.ResponseCommit) {
 	// Commit. Use the header from this latest block.
 	app.setCheckState(header)
 
+	app.lastMS = app.deliverState.ms
+
 	// empty/reset the deliver state
 	app.deliverState = nil
 
@@ -292,6 +295,11 @@ func (app *BaseApp) halt() {
 // Query implements the ABCI interface. It delegates to CommitMultiStore if it
 // implements Queryable.
 func (app *BaseApp) Query(req abci.RequestQuery) abci.ResponseQuery {
+	lastBlockHeight := app.LastBlockHeight()
+	if req.Height > lastBlockHeight {
+		sdkerrors.QueryResult(sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "req block height great than last block height"))
+	}
+
 	path := splitPath(req.Path)
 	if len(path) == 0 {
 		sdkerrors.QueryResult(sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "no query path provided"))
@@ -446,14 +454,21 @@ func handleQueryCustom(app *BaseApp, path []string, req abci.RequestQuery) abci.
 		)
 	}
 
-	cacheMS, err := app.cms.CacheMultiStoreWithVersion(req.Height)
-	if err != nil {
-		return sdkerrors.QueryResult(
-			sdkerrors.Wrapf(
-				sdkerrors.ErrInvalidRequest,
-				"failed to load state at height %d; %s (latest height: %d)", req.Height, err, app.LastBlockHeight(),
-			),
-		)
+	var cacheMS types.CacheMultiStore
+	if req.Height == app.LastBlockHeight() {
+		cacheMS = app.lastMS
+	} else {
+		ms, err := app.cms.CacheMultiStoreWithVersion(req.Height)
+		if err != nil {
+			return sdkerrors.QueryResult(
+				sdkerrors.Wrapf(
+					sdkerrors.ErrInvalidRequest,
+					"failed to load state at height %d; %s (latest height: %d)", req.Height, err, app.LastBlockHeight(),
+				),
+			)
+		}
+
+		cacheMS = ms
 	}
 
 	// cache wrap the commit-multistore for safety
