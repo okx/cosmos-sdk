@@ -43,13 +43,15 @@ const (
 	FlagPortMonitor       = "netstat"
 	FlagEvmImportPath     = "evm-import-path"
 	FlagEvmImportMode     = "evm-import-mode"
+	FlagGoroutineNum      = "goroutine-num"
 )
 
 // StartCmd runs the service passed in, either stand-alone or in-process with
 // Tendermint.
 func StartCmd(ctx *Context,
 	cdc *codec.Codec, appCreator AppCreator,
-	registerRoutesFn func(restServer *lcd.RestServer)) *cobra.Command {
+	registerRoutesFn func(restServer *lcd.RestServer),
+	registerAppFlagFn func(cmd *cobra.Command)) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start",
 		Short: "Run the full node",
@@ -119,6 +121,7 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().String(FlagPortMonitor, "", "Local target ports for connecting number monitoring(ignored if connecting number monitoring is not required)")
 	cmd.Flags().String(FlagEvmImportMode, "default", "Select import mode for evm state (default|files|db)")
 	cmd.Flags().String(FlagEvmImportPath, "", "Evm contract & storage db or files used for InitGenesis")
+	cmd.Flags().Uint64(FlagGoroutineNum, 0, "Limit on the number of goroutines used to import evm data(ignored if evm-import-mode is 'default')")
 	viper.BindPFlag(FlagTrace, cmd.Flags().Lookup(FlagTrace))
 	viper.BindPFlag(FlagPruning, cmd.Flags().Lookup(FlagPruning))
 	viper.BindPFlag(FlagPruningKeepRecent, cmd.Flags().Lookup(FlagPruningKeepRecent))
@@ -128,9 +131,10 @@ which accepts a path for the resulting pprof file.
 	viper.BindPFlag(FlagPortMonitor, cmd.Flags().Lookup(FlagPortMonitor))
 	viper.BindPFlag(FlagEvmImportMode, cmd.Flags().Lookup(FlagEvmImportMode))
 	viper.BindPFlag(FlagEvmImportPath, cmd.Flags().Lookup(FlagEvmImportPath))
+	viper.BindPFlag(FlagGoroutineNum, cmd.Flags().Lookup(FlagGoroutineNum))
 
 	registerRestServerFlags(cmd)
-
+	registerAppFlagFn(cmd)
 	registerokexchainPluginFlags(cmd)
 	// add support for all Tendermint-specific command line options
 	tcmd.AddNodeFlags(cmd)
