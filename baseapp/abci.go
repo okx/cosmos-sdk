@@ -77,7 +77,14 @@ func (app *BaseApp) Info(req abci.RequestInfo) abci.ResponseInfo {
 
 // SetOption implements the ABCI interface.
 func (app *BaseApp) SetOption(req abci.RequestSetOption) (res abci.ResponseSetOption) {
-	// TODO: Implement!
+	if app.mempoolHandler != nil {
+		// we just need to run in check mode, for tx in mempool is not ultimately confirmed in block
+		ctx := app.getContextForTx(runTxModeCheck, nil)
+		err := app.mempoolHandler(ctx, req.Key, req.Value)
+		if err != nil {
+			app.logger.Error("Fail to run mempool handler: ", err)
+		}
+	}
 	return
 }
 
