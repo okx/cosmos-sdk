@@ -67,6 +67,7 @@ type BaseApp struct { // nolint: maligned
 	baseKey *sdk.KVStoreKey // Main KVStore in cms
 
 	anteHandler    sdk.AnteHandler  // ante handler for fee and auth
+	GasHandler	   sdk.GasHandler   // gas handler for deduction of gas consumed
 	initChainer    sdk.InitChainer  // initialize state with validators and state blob
 	beginBlocker   sdk.BeginBlocker // logic to run before any txs
 	endBlocker     sdk.EndBlocker   // logic to run after all txs, and to determine valset changes
@@ -587,6 +588,17 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (gInfo sdk.
 		}
 	}()
 
+	defer func() {
+		if mode == runTxModeDeliver {
+			var GasCtx sdk.Context
+			var msCache sdk.CacheMultiStore
+			GasCtx, msCache = app.cacheTxContext(ctx, txBytes)
+
+			app.GasHandler(GasCtx, tx, false)
+			msCache.Write()
+		}
+	}()
+
 	msgs := tx.GetMsgs()
 	if err := validateBasicTxMsgs(msgs); err != nil {
 		return sdk.GasInfo{}, nil, err
@@ -639,6 +651,8 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (gInfo sdk.
 	result, err = app.runMsgs(runMsgCtx, msgs, mode)
 	if err == nil && mode == runTxModeDeliver {
 		msCache.Write()
+	} else if mode == runTxModeDeliver {
+		ctx = ctx.WithGasMeter(runMsgCtx.GasMeter())
 	}
 
 	return gInfo, result, err
