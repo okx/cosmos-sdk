@@ -67,7 +67,7 @@ type BaseApp struct { // nolint: maligned
 	baseKey *sdk.KVStoreKey // Main KVStore in cms
 
 	anteHandler    sdk.AnteHandler  // ante handler for fee and auth
-	GasHandler	   sdk.GasHandler   // gas handler for deduction of gas consumed
+	GasRefundHandler	   sdk.GasRefundHandler   // gas refund handler for gas refund
 	initChainer    sdk.InitChainer  // initialize state with validators and state blob
 	beginBlocker   sdk.BeginBlocker // logic to run before any txs
 	endBlocker     sdk.EndBlocker   // logic to run after all txs, and to determine valset changes
@@ -590,11 +590,11 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (gInfo sdk.
 
 	defer func() {
 		if mode == runTxModeDeliver {
-			var GasCtx sdk.Context
+			var GasRefundCtx sdk.Context
 			var msCache sdk.CacheMultiStore
-			GasCtx, msCache = app.cacheTxContext(ctx, txBytes)
+			GasRefundCtx, msCache = app.cacheTxContext(ctx, txBytes)
 
-			err := app.GasHandler(GasCtx, tx, false)
+			err := app.GasRefundHandler(GasRefundCtx, tx, false)
 			if err != nil{
 				panic(err)
 			}
