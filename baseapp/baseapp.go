@@ -594,7 +594,10 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (gInfo sdk.
 			var msCache sdk.CacheMultiStore
 			GasCtx, msCache = app.cacheTxContext(ctx, txBytes)
 
-			app.GasHandler(GasCtx, tx, false)
+			err := app.GasHandler(GasCtx, tx, false)
+			if err != nil{
+				panic(err)
+			}
 			msCache.Write()
 		}
 	}()
