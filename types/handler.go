@@ -1,6 +1,6 @@
 package types
 
-type MempoolHandler func(ctx Context, key, value string) error
+type MempoolHandler func(ctx Context, key string, value int) error
 
 // Handler defines the core of the state transition function of an application.
 type Handler func(ctx Context, msg Msg) (*Result, error)
