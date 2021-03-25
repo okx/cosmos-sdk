@@ -1,6 +1,7 @@
 package simapp
 
 import (
+	"github.com/cosmos/cosmos-sdk/x/auth/refund"
 	"io"
 	"os"
 
@@ -285,6 +286,7 @@ func NewSimApp(
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetAnteHandler(ante.NewAnteHandler(app.AccountKeeper, app.SupplyKeeper, auth.DefaultSigVerificationGasConsumer))
+	app.SetGasRefundHandler(refund.NewGasRefundHandler(app.AccountKeeper, app.SupplyKeeper,))
 	app.SetEndBlocker(app.EndBlocker)
 
 	if loadLatest {

@@ -146,35 +146,3 @@ func DeductFees(supplyKeeper types.SupplyKeeper, ctx sdk.Context, acc exported.A
 
 	return nil
 }
-
-func RefundFees(supplyKeeper types.SupplyKeeper, ctx sdk.Context, acc sdk.AccAddress, redundFees sdk.Coins) error {
-	blockTime := ctx.BlockHeader().Time
-	feeCollector := supplyKeeper.GetModuleAccount(ctx, types.FeeCollectorName)
-	coins := feeCollector.GetCoins()
-
-	if !redundFees.IsValid() {
-		return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "invalid refund fee amount: %s", redundFees)
-	}
-
-	// verify the account has enough funds to pay for fees
-	_, hasNeg := coins.SafeSub(redundFees)
-	if hasNeg {
-		return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds,
-			"insufficient funds to refund for fees; %s < %s", coins, redundFees)
-	}
-
-	// Validate the account has enough "spendable" coins as this will cover cases
-	// such as vesting accounts.
-	spendableCoins := feeCollector.SpendableCoins(blockTime)
-	if _, hasNeg := spendableCoins.SafeSub(redundFees); hasNeg {
-		return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds,
-			"insufficient funds to pay for refund fees; %s < %s", spendableCoins, redundFees)
-	}
-
-	err := supplyKeeper.SendCoinsFromModuleToAccount(ctx, types.FeeCollectorName, acc, redundFees)
-	if err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, err.Error())
-	}
-
-	return nil
-}
