@@ -589,12 +589,9 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (gInfo sdk.
 	}()
 
 	defer func() {
-		if mode == runTxModeDeliver {
-			var GasRefundCtx sdk.Context
-			var msCache sdk.CacheMultiStore
-			GasRefundCtx, msCache = app.cacheTxContext(ctx, txBytes)
-
-			err := app.GasRefundHandler(GasRefundCtx, tx, false)
+		if mode == runTxModeDeliver && app.GasRefundHandler != nil {
+			GasRefundCtx, msCache := app.cacheTxContext(ctx, txBytes)
+			err := app.GasRefundHandler(GasRefundCtx, tx)
 			if err != nil{
 				panic(err)
 			}
