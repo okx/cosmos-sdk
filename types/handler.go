@@ -14,10 +14,6 @@ type AnteDecorator interface {
 	AnteHandle(ctx Context, tx Tx, simulate bool, next AnteHandler) (newCtx Context, err error)
 }
 
-type GasRefundDecorator interface {
-	GasHandler(ctx Context, tx Tx) (err error)
-}
-
 // ChainDecorator chains AnteDecorators together with each AnteDecorator
 // wrapping over the decorators further along chain and returns a single AnteHandler.
 //
