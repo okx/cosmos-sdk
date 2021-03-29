@@ -68,6 +68,7 @@ type BaseApp struct { // nolint: maligned
 
 	mempoolHandler sdk.MempoolHandler
 	anteHandler    sdk.AnteHandler  // ante handler for fee and auth
+	GasRefundHandler	   sdk.GasRefundHandler   // gas refund handler for gas refund
 	initChainer    sdk.InitChainer  // initialize state with validators and state blob
 	beginBlocker   sdk.BeginBlocker // logic to run before any txs
 	endBlocker     sdk.EndBlocker   // logic to run after all txs, and to determine valset changes
@@ -585,6 +586,17 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (gInfo sdk.
 			if ctx.BlockGasMeter().GasConsumed() < startingGas {
 				panic(sdk.ErrorGasOverflow{Descriptor: "tx gas summation"})
 			}
+		}
+	}()
+
+	defer func() {
+		if mode == runTxModeDeliver && app.GasRefundHandler != nil {
+			GasRefundCtx, msCache := app.cacheTxContext(ctx, txBytes)
+			err := app.GasRefundHandler(GasRefundCtx, tx)
+			if err != nil{
+				panic(err)
+			}
+			msCache.Write()
 		}
 	}()
 
