@@ -4,6 +4,7 @@ package mock
 import (
 	"bytes"
 	"fmt"
+	"math/big"
 
 	"github.com/tendermint/tendermint/mempool"
 
@@ -61,7 +62,7 @@ func (tx kvstoreTx) GetSigners() []sdk.AccAddress {
 func (tx kvstoreTx) GetTxInfo(ctx sdk.Context) mempool.ExTxInfo {
 	return mempool.ExTxInfo{
 		Sender:   "",
-		GasPrice: 0,
+		GasPrice: big.NewInt(0),
 		Nonce:    0,
 	}
 }

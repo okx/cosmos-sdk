@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"os"
 	"sync"
 	"testing"
@@ -581,7 +582,7 @@ func (tx txTest) ValidateBasic() error { return nil }
 func (tx txTest) GetTxInfo(ctx sdk.Context) mempool.ExTxInfo {
 	return mempool.ExTxInfo{
 		Sender:   "",
-		GasPrice: 0,
+		GasPrice: big.NewInt(0),
 		Nonce:    0,
 	}
 }

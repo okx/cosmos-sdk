@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/tendermint/tendermint/mempool"
+	"math/big"
 
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/multisig"
@@ -168,14 +169,14 @@ func (tx StdTx) FeePayer() sdk.AccAddress {
 func (tx StdTx) GetTxInfo(ctx sdk.Context) mempool.ExTxInfo {
 	exInfo := mempool.ExTxInfo{
 		Sender:   "",
-		GasPrice: 0,
+		GasPrice: big.NewInt(0),
 		Nonce:    0,
 	}
 
 	if tx.GetSigners() != nil {
 		exInfo.Sender = sdk.AccAddress(tx.GetSigners()[0]).String()
 	}
-	exInfo.GasPrice = tx.Fee.GasPrices()[0].Amount.Quo(sdk.NewDecWithPrec(1, sdk.Precision/2)).RoundInt64()
+	exInfo.GasPrice = tx.Fee.GasPrices()[0].Amount.Quo(sdk.NewDecWithPrec(1, sdk.Precision/2)).Int
 
 	return exInfo
 }
