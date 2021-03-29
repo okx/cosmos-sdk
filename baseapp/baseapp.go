@@ -651,8 +651,6 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (gInfo sdk.
 	result, err = app.runMsgs(runMsgCtx, msgs, mode)
 	if err == nil && mode == runTxModeDeliver {
 		msCache.Write()
-	} else if mode == runTxModeDeliver {
-		ctx = ctx.WithGasMeter(runMsgCtx.GasMeter())
 	}
 
 	return gInfo, result, err
