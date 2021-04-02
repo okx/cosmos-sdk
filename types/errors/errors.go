@@ -82,6 +82,14 @@ var (
 	// ErrTxTooLarge defines an ABCI typed error where tx is too large.
 	ErrTxTooLarge = Register(RootCodespace, 21, "tx too large")
 
+	// ErrLogic defines an internal logic error, e.g. an invariant or assertion
+	// that is violated. It is a programmer error, not a user-facing error.
+	ErrLogic = Register(RootCodespace, 35, "internal logic error")
+
+	// ErrConflict defines a conflict error, e.g. when two goroutines try to access
+	// the same resource and one of them fails.
+	ErrConflict = Register(RootCodespace, 36, "conflict")
+
 	// ErrPanic is only set when we recover from a panic, so we know to
 	// redact potentially sensitive system info
 	ErrPanic = Register(UndefinedCodespace, 111222, "panic")

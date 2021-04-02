@@ -1,6 +1,8 @@
 package iavl
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"sync"
 
@@ -131,6 +133,12 @@ func (st *Store) SetPruning(_ types.PruningOptions) {
 	panic("cannot set pruning options on an initialized IAVL store")
 }
 
+// SetPruning panics as pruning options should be provided at initialization
+// since IAVl accepts pruning options directly.
+func (st *Store) GetPruning() types.PruningOptions {
+	panic("cannot get pruning options on an initialized IAVL store")
+}
+
 // VersionExists returns whether or not a given version is stored.
 func (st *Store) VersionExists(version int64) bool {
 	return st.tree.VersionExists(version)
@@ -206,6 +214,35 @@ func (st *Store) ReverseIterator(start, end []byte) types.Iterator {
 	}
 
 	return newIAVLIterator(iTree, start, end, false)
+}
+
+
+// SetInitialVersion sets the initial version of the IAVL tree. It is used when
+// starting a new chain at an arbitrary height.
+func (st *Store) SetInitialVersion(version int64) {
+	st.tree.SetInitialVersion(uint64(version))
+}
+
+// Exports the IAVL store at the given version, returning an iavl.Exporter for the tree.
+func (st *Store) Export(version int64) (*iavl.Exporter, error) {
+	istore, err := st.GetImmutable(version)
+	if err != nil {
+		return nil, fmt.Errorf("iavl export failed for version %v: %w", version, err)
+	}
+	tree, ok := istore.tree.(*immutableTree)
+	if !ok || tree == nil {
+		return nil, fmt.Errorf("iavl export failed: unable to fetch tree for version %v", version)
+	}
+	return tree.Export(), nil
+}
+
+// Import imports an IAVL tree at the given version, returning an iavl.Importer for importing.
+func (st *Store) Import(version int64) (*iavl.Importer, error) {
+	tree, ok := st.tree.(*iavl.MutableTree)
+	if !ok {
+		return nil, errors.New("iavl import failed: unable to find mutable tree")
+	}
+	return tree.Import(version)
 }
 
 // Handle gatest the latest height, if height is 0

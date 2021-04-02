@@ -44,6 +44,13 @@ const (
 	FlagEvmImportPath     = "evm-import-path"
 	FlagEvmImportMode     = "evm-import-mode"
 	FlagGoroutineNum      = "goroutine-num"
+	FlagMinRetainBlocks   = "min-retain-blocks"
+)
+
+// State sync-related flags.
+const (
+	FlagStateSyncSnapshotInterval   = "state-sync.snapshot-interval"
+	FlagStateSyncSnapshotKeepRecent = "state-sync.snapshot-keep-recent"
 )
 
 // StartCmd runs the service passed in, either stand-alone or in-process with
@@ -132,6 +139,10 @@ which accepts a path for the resulting pprof file.
 	viper.BindPFlag(FlagEvmImportMode, cmd.Flags().Lookup(FlagEvmImportMode))
 	viper.BindPFlag(FlagEvmImportPath, cmd.Flags().Lookup(FlagEvmImportPath))
 	viper.BindPFlag(FlagGoroutineNum, cmd.Flags().Lookup(FlagGoroutineNum))
+	cmd.Flags().Uint64(FlagMinRetainBlocks, 0, "Minimum block height offset during ABCI commit to prune Tendermint blocks")
+
+	cmd.Flags().Uint64(FlagStateSyncSnapshotInterval, 0, "State sync snapshot interval")
+	cmd.Flags().Uint32(FlagStateSyncSnapshotKeepRecent, 2, "State sync snapshot to keep")
 
 	registerRestServerFlags(cmd)
 	registerAppFlagFn(cmd)

@@ -86,6 +86,21 @@ pushservice_pulsar_public_topic = "{{ .StreamConfig.PushservicePulsarPublicTopic
 pushservice_pulsar_private_topic = "{{ .StreamConfig.PushservicePulsarPrivateTopic }}"
 pushservice_pulsar_depth_topic = "{{ .StreamConfig.PushservicePulsarDepthTopic }}"
 redis_require_pass = "{{ .StreamConfig.RedisRequirePass }}"
+
+###############################################################################
+###                        State Sync Configuration                         ###
+###############################################################################
+
+# State sync snapshots allow other nodes to rapidly join the network without replaying historical
+# blocks, instead downloading and applying a snapshot of the application state at a given height.
+[state-sync]
+
+# snapshot-interval specifies the block interval at which local state sync snapshots are
+# taken (0 to disable). Must be a multiple of pruning-keep-every.
+snapshot-interval = {{ .StateSync.SnapshotInterval }}
+
+# snapshot-keep-recent specifies the number of recent snapshots to keep and serve (0 to keep all).
+snapshot-keep-recent = {{ .StateSync.SnapshotKeepRecent }}
 `
 
 var configTemplate *template.Template
