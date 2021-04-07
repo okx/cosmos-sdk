@@ -309,11 +309,11 @@ func (rs *Store) Commit() types.CommitID {
 
 	indexHeight := tmtypes.GetStartBlockHeight() + 1
 	for ; indexHeight < previousHeight; indexHeight++ {
-		if indexHeight % int64(100) == 0 {
+		if indexHeight % int64(rs.pruningOpts.KeepEvery) == 0 {
 			rs.pruneHeights = append(rs.pruneHeights, indexHeight)
 		}
 	}
-	for index := previousHeight-int64(100); index < previousHeight; index++{
+	for index := previousHeight-int64(rs.pruningOpts.KeepRecent); index < previousHeight; index++{
 		rs.pruneHeights = append(rs.pruneHeights, indexHeight)
 	}
 	rs.pruneStores()
