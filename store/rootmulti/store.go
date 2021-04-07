@@ -312,9 +312,9 @@ func (rs *Store) Commit() types.CommitID {
 			rs.pruneHeights = append(rs.pruneHeights, indexHeight)
 		}
 	}
-	//for index := previousHeight-int64(100); index < previousHeight; index++{
-	//	rs.pruneHeights = append(rs.pruneHeights, indexHeight)
-	//}
+	for index := previousHeight-int64(100); index < previousHeight; index++{
+		rs.pruneHeights = append(rs.pruneHeights, indexHeight)
+	}
 	rs.pruneStores()
 	// Determine if pruneHeight height needs to be added to the list of heights to
 	// be pruned, where pruneHeight = (commitHeight - 1) - KeepRecent.
