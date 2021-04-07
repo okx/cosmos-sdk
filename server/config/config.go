@@ -37,6 +37,22 @@ type BaseConfig struct {
 	// Note: Commitment of state will be attempted on the corresponding block.
 	HaltTime uint64 `mapstructure:"halt-time"`
 
+	// MinRetainBlocks defines the minimum block height offset from the current
+	// block being committed, such that blocks past this offset may be pruned
+	// from Tendermint. It is used as part of the process of determining the
+	// ResponseCommit.RetainHeight value during ABCI Commit. A value of 0 indicates
+	// that no blocks should be pruned.
+	//
+	// This configuration value is only responsible for pruning Tendermint blocks.
+	// It has no bearing on application state pruning which is determined by the
+	// "pruning-*" configurations.
+	//
+	// Note: Tendermint block pruning is dependant on this parameter in conunction
+	// with the unbonding (safety threshold) period, state pruning and state sync
+	// snapshot parameters to determine the correct minimum value of
+	// ResponseCommit.RetainHeight.
+	MinRetainBlocks uint64 `mapstructure:"min-retain-blocks"`
+
 	// InterBlockCache enables inter-block caching.
 	InterBlockCache bool `mapstructure:"inter-block-cache"`
 }
@@ -97,6 +113,7 @@ func DefaultConfig() *Config {
 			PruningKeepRecent: "0",
 			PruningKeepEvery:  "0",
 			PruningInterval:   "0",
+			MinRetainBlocks:   0,
 		},
 		BackendConfig: DefaultBackendConfig(),
 		StreamConfig:  DefaultStreamConfig(),

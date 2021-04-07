@@ -161,6 +161,7 @@ func (st *Store) CacheWrapWithTrace(w io.Writer, tc types.TraceContext) types.Ca
 
 // Implements types.KVStore.
 func (st *Store) Set(key, value []byte) {
+	types.AssertValidKey(key)
 	types.AssertValidValue(value)
 	st.tree.Set(key, value)
 }
@@ -215,7 +216,6 @@ func (st *Store) ReverseIterator(start, end []byte) types.Iterator {
 
 	return newIAVLIterator(iTree, start, end, false)
 }
-
 
 // SetInitialVersion sets the initial version of the IAVL tree. It is used when
 // starting a new chain at an arbitrary height.
