@@ -3,6 +3,7 @@ package rootmulti
 import (
 	"fmt"
 	"io"
+	"log"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -351,6 +352,7 @@ func (rs *Store) pruneStores() {
 	}
 
 	for key, store := range rs.stores {
+		log.Println("start delete store", key.String())
 		if store.GetStoreType() == types.StoreTypeIAVL {
 			// If the store is wrapped with an inter-block cache, we must first unwrap
 			// it to get the underlying IAVL store.
