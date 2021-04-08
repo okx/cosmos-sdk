@@ -825,6 +825,7 @@ func (rs *Store) Export(to *Store, initVersion int64) error {
 	// and the following messages contain a SnapshotNode (i.e. an ExportNode). Store changes
 	// are demarcated by new SnapshotStore items.
 	for _, store := range stores {
+		log.Println("--------- export ", store.name,  " start ---------")
 		exporter, err := store.fromStore.Export(curVersion)
 		if err != nil {
 			panic(err)
@@ -855,6 +856,7 @@ func (rs *Store) Export(to *Store, initVersion int64) error {
 			panic(err)
 		}
 		importer.Close()
+		log.Println("--------- export ", store.name,  " end ---------")
 	}
 
 	flushMetadata(to.db, initVersion, rs.buildCommitInfo(initVersion), []int64{})
