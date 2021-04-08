@@ -307,15 +307,16 @@ func (rs *Store) Commit() types.CommitID {
 	version := previousHeight + 1
 	rs.lastCommitInfo = commitStores(version, rs.stores)
 
-	indexHeight := tmtypes.GetStartBlockHeight() + 1
-	for ; indexHeight < previousHeight; indexHeight++ {
-		if indexHeight % int64(rs.pruningOpts.KeepEvery) == 0 {
-			rs.pruneHeights = append(rs.pruneHeights, indexHeight)
-		}
-	}
-	for index := previousHeight-int64(rs.pruningOpts.KeepRecent); index < previousHeight; index++{
-		rs.pruneHeights = append(rs.pruneHeights, indexHeight)
-	}
+	//indexHeight := tmtypes.GetStartBlockHeight() + 1
+	//for ; indexHeight < previousHeight; indexHeight++ {
+	//	if indexHeight % int64(rs.pruningOpts.KeepEvery) == 0 {
+	//		rs.pruneHeights = append(rs.pruneHeights, indexHeight)
+	//	}
+	//}
+	//for index := previousHeight-int64(rs.pruningOpts.KeepRecent); index < previousHeight; index++{
+	//	rs.pruneHeights = append(rs.pruneHeights, indexHeight)
+	//}
+	rs.pruneHeights = append(rs.pruneHeights, version)
 	rs.pruneStores()
 	// Determine if pruneHeight height needs to be added to the list of heights to
 	// be pruned, where pruneHeight = (commitHeight - 1) - KeepRecent.
