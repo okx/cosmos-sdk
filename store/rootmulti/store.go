@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -316,8 +317,8 @@ func (rs *Store) Commit() types.CommitID {
 	//for index := previousHeight-int64(rs.pruningOpts.KeepRecent); index < previousHeight; index++{
 	//	rs.pruneHeights = append(rs.pruneHeights, indexHeight)
 	//}
-	rs.pruneHeights = append(rs.pruneHeights, previousHeight, version)
-	rs.pruneStores()
+	//rs.pruneHeights = append(rs.pruneHeights, previousHeight, version)
+	//rs.pruneStores()
 	// Determine if pruneHeight height needs to be added to the list of heights to
 	// be pruned, where pruneHeight = (commitHeight - 1) - KeepRecent.
 	//if int64(rs.pruningOpts.KeepRecent) < previousHeight {
@@ -780,5 +781,102 @@ func flushMetadata(db dbm.DB, version int64, cInfo commitInfo, pruneHeights []in
 
 	if err := batch.Write(); err != nil {
 		panic(fmt.Errorf("error on batch write %w", err))
+	}
+}
+
+// Snapshot implements snapshottypes.Snapshotter. The snapshot output for a given format must be
+// identical across nodes such that chunks from different sources fit together. If the output for a
+// given format changes (at the byte level), the snapshot format must be bumped - see
+// TestMultistoreSnapshot_Checksum test.
+func (rs *Store) Export(to *Store, initVersion int64) error {
+	curVersion := rs.lastCommitInfo.Version
+	// Collect stores to snapshot (only IAVL stores are supported)
+	type namedStore struct {
+		fromStore *iavl.Store
+		toStore   *iavl.Store
+		name      string
+	}
+	stores := []namedStore{}
+	for key := range rs.stores {
+		switch store := rs.GetCommitKVStore(key).(type) {
+		case *iavl.Store:
+			var toKVStore types.CommitKVStore
+			for toKey, toValue := range to.stores {
+				if key.Name() == toKey.Name() {
+					toKVStore = toValue
+				}
+			}
+			toStore, _ := toKVStore.(*iavl.Store)
+			stores = append(stores, namedStore{name: key.Name(), fromStore: store, toStore: toStore})
+		case *transient.Store:
+			// Non-persisted stores shouldn't be snapshotted
+			continue
+		default:
+			return fmt.Errorf(
+				"don't know how to snapshot store %q of type %T", key.Name(), store)
+		}
+	}
+	sort.Slice(stores, func(i, j int) bool {
+		return strings.Compare(stores[i].name, stores[j].name) == -1
+	})
+
+	// Export each IAVL store. Stores are serialized as a stream of SnapshotItem Protobuf
+	// messages. The first item contains a SnapshotStore with store metadata (i.e. name),
+	// and the following messages contain a SnapshotNode (i.e. an ExportNode). Store changes
+	// are demarcated by new SnapshotStore items.
+	for _, store := range stores {
+		exporter, err := store.fromStore.Export(curVersion)
+		if err != nil {
+			panic(err)
+		}
+		defer exporter.Close()
+
+		importer, err := store.toStore.Import(initVersion)
+		if err != nil {
+			panic(err)
+		}
+		defer importer.Close()
+
+		for {
+			node, err := exporter.Next()
+			if err == iavltree.ExportDone {
+				break
+			}
+
+			err = importer.Add(node)
+			if err != nil {
+				panic(err)
+			}
+		}
+
+		exporter.Close()
+		err = importer.Commit()
+		if err != nil {
+			panic(err)
+		}
+		importer.Close()
+	}
+
+	flushMetadata(to.db, initVersion, rs.buildCommitInfo(initVersion), []int64{})
+
+	return nil
+}
+
+func (rs *Store) buildCommitInfo(version int64) commitInfo {
+	storeInfos := []storeInfo{}
+	for key, store := range rs.stores {
+		if store.GetStoreType() == types.StoreTypeTransient {
+			continue
+		}
+		storeInfos = append(storeInfos, storeInfo{
+			Name:     key.Name(),
+			Core: storeCore{
+				store.LastCommitID(),
+			},
+		})
+	}
+	return commitInfo{
+		Version:    version,
+		StoreInfos: storeInfos,
 	}
 }

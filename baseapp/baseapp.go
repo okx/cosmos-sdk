@@ -692,3 +692,7 @@ func (app *BaseApp) runMsgs(ctx sdk.Context, msgs []sdk.Msg, mode runTxMode) (*s
 		Events: events,
 	}, nil
 }
+
+func (app *BaseApp) GetCms() sdk.CommitMultiStore {
+	return app.cms
+}
