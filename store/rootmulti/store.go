@@ -316,7 +316,7 @@ func (rs *Store) Commit() types.CommitID {
 	//for index := previousHeight-int64(rs.pruningOpts.KeepRecent); index < previousHeight; index++{
 	//	rs.pruneHeights = append(rs.pruneHeights, indexHeight)
 	//}
-	rs.pruneHeights = append(rs.pruneHeights, version)
+	rs.pruneHeights = append(rs.pruneHeights, previousHeight, version)
 	rs.pruneStores()
 	// Determine if pruneHeight height needs to be added to the list of heights to
 	// be pruned, where pruneHeight = (commitHeight - 1) - KeepRecent.
@@ -353,7 +353,7 @@ func (rs *Store) pruneStores() {
 	}
 
 	for key, store := range rs.stores {
-		log.Println("start delete store", key.String())
+		log.Println("[tag0] start delete store", key.String())
 		if store.GetStoreType() == types.StoreTypeIAVL {
 			// If the store is wrapped with an inter-block cache, we must first unwrap
 			// it to get the underlying IAVL store.
