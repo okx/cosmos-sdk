@@ -769,3 +769,18 @@ func flushMetadata(db dbm.DB, version int64, cInfo commitInfo, pruneHeights []in
 		panic(fmt.Errorf("error on batch write %w", err))
 	}
 }
+
+// Implements MigrateCommit
+func (rs *Store) MigrateCommit() types.CommitID {
+	previousHeight := rs.lastCommitInfo.Version
+	version := previousHeight
+	rs.lastCommitInfo = commitStores(version, rs.stores)
+
+	flushMetadata(rs.db, version, rs.lastCommitInfo, rs.pruneHeights)
+
+	return types.CommitID{
+		Version: version,
+		Hash:    rs.lastCommitInfo.Hash(),
+	}
+}
+

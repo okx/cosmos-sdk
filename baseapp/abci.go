@@ -2,6 +2,7 @@ package baseapp
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/store/rootmulti"
 	"os"
 	"sort"
 	"strings"
@@ -494,4 +495,25 @@ func splitPath(requestPath string) (path []string) {
 	}
 
 	return path
+}
+
+func (app *BaseApp) DeliverStateCtx(req abci.RequestBeginBlock) sdk.Context {
+	if app.deliverState == nil {
+		app.setDeliverState(req.Header)
+	} else {
+		// In the first block, app.deliverState.ctx will already be initialized
+		// by InitChain. Context is now updated with Header information.
+		app.deliverState.ctx = app.deliverState.ctx.
+			WithBlockHeader(req.Header).
+			WithBlockHeight(req.Header.Height)
+	}
+	return app.deliverState.ctx
+}
+
+func (app *BaseApp) MigrateCommit() {
+	// Write the DeliverTx state which is cache-wrapped and commit the MultiStore.
+	// The write to the DeliverTx state writes all state transitions to the root
+	// MultiStore (app.cms) so when Commit() is called is persists those values.
+	app.deliverState.ms.Write()
+	app.cms.(*rootmulti.Store).MigrateCommit()
 }
