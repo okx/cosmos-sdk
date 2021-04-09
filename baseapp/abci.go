@@ -510,10 +510,10 @@ func (app *BaseApp) DeliverStateCtx(req abci.RequestBeginBlock) sdk.Context {
 	return app.deliverState.ctx
 }
 
-func (app *BaseApp) MigrateCommit() {
+func (app *BaseApp) MigrateCommit() sdk.CommitID {
 	// Write the DeliverTx state which is cache-wrapped and commit the MultiStore.
 	// The write to the DeliverTx state writes all state transitions to the root
 	// MultiStore (app.cms) so when Commit() is called is persists those values.
 	app.deliverState.ms.Write()
-	app.cms.(*rootmulti.Store).MigrateCommit()
+	return app.cms.(*rootmulti.Store).MigrateCommit()
 }
