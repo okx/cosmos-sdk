@@ -817,7 +817,7 @@ func (rs *Store) Export(to *Store, initVersion int64) error {
 		}
 	}
 	sort.Slice(stores, func(i, j int) bool {
-		return strings.Compare(stores[i].name, stores[j].name) == -1
+		return strings.Compare(stores[i].name, stores[j].name) == 1
 	})
 
 	// Export each IAVL store. Stores are serialized as a stream of SnapshotItem Protobuf
