@@ -325,6 +325,12 @@ func (rs *Store) Commit() types.CommitID {
 		// a 'snapshot' height.
 		if rs.pruningOpts.KeepEvery == 0 || pruneHeight%int64(rs.pruningOpts.KeepEvery) != 0 {
 			rs.pruneHeights = append(rs.pruneHeights, pruneHeight)
+			for k, v := range rs.versions {
+				if v == pruneHeight {
+					rs.versions = append(rs.versions[:k], rs.versions[k+1:]...)
+					break
+				}
+			}
 		}
 	}
 
