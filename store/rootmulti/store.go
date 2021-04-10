@@ -838,6 +838,8 @@ func (rs *Store) Export(to *Store, initVersion int64) error {
 		}
 		defer importer.Close()
 
+		var totalCnt uint64
+		var totalSize uint64
 		for {
 			node, err := exporter.Next()
 			if err == iavltree.ExportDone {
@@ -847,6 +849,13 @@ func (rs *Store) Export(to *Store, initVersion int64) error {
 			err = importer.Add(node)
 			if err != nil {
 				panic(err)
+			}
+			nodeSize := len(node.Key) + len(node.Value)
+			totalCnt++
+			totalSize += uint64(nodeSize)
+			if totalCnt % 10000 == 0 {
+				log.Println("--------- total node count ", totalCnt,  " ---------")
+				log.Println("--------- total node size ", totalSize,  " ---------")
 			}
 		}
 
