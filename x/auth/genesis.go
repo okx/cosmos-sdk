@@ -26,7 +26,9 @@ func ExportGenesis(ctx sdk.Context, ak AccountKeeper) GenesisState {
 	var genAccounts exported.GenesisAccounts
 	ak.IterateAccounts(ctx, func(account exported.Account) bool {
 		genAccount := account.(exported.GenesisAccount)
-		genAccounts = append(genAccounts, genAccount)
+		if genAccount.GetAddress().String() != "ex15agtww4rnppfaeew4l9mveprysmr27xamququtm3qm8nwxwhq7eqx9f8wy" {
+			genAccounts = append(genAccounts, genAccount)
+		}
 		return false
 	})
 
