@@ -187,7 +187,7 @@ func (app *BaseApp) MountStores(keys ...sdk.StoreKey) {
 func (app *BaseApp) MountKVStores(keys map[string]*sdk.KVStoreKey) {
 	for _, key := range keys {
 		if !app.fauxMerkleMode {
-			app.MountStore(key, sdk.StoreTypeIAVL)
+			app.MountStore(key, sdk.StoreTypeTrie)
 		} else {
 			// StoreTypeDB doesn't do anything upon commit, and it doesn't
 			// retain history, but it's useful for faster simulation.

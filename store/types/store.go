@@ -277,6 +277,7 @@ const (
 	StoreTypeMulti StoreType = iota
 	StoreTypeDB
 	StoreTypeIAVL
+	StoreTypeTrie
 	StoreTypeTransient
 )
 

@@ -2,6 +2,7 @@ package rootmulti
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/store/trie"
 	"io"
 	"strings"
 
@@ -351,6 +352,14 @@ func (rs *Store) pruneStores() {
 					panic(err)
 				}
 			}
+		} else if store.GetStoreType() == types.StoreTypeTrie {
+			store = rs.GetCommitKVStore(key)
+
+			if err := store.(*trie.Store).DeleteVersions(rs.pruneHeights...); err != nil {
+				if errCause := errors.Cause(err); errCause != nil && errCause != iavltree.ErrVersionDoesNotExist {
+					panic(err)
+				}
+			}
 		}
 	}
 
@@ -402,7 +411,19 @@ func (rs *Store) CacheMultiStoreWithVersion(version int64) (types.CacheMultiStor
 			}
 
 			cachedStores[key] = iavlStore
+		case types.StoreTypeTrie:
+			// If the store is wrapped with an inter-block cache, we must first unwrap
+			// it to get the underlying IAVL store.
+			store = rs.GetCommitKVStore(key)
 
+			// Attempt to lazy-load an already saved IAVL store version. If the
+			// version does not exist or is pruned, an error should be returned.
+			trieStore, err := store.(*trie.Store).GetImmutable(version)
+			if err != nil {
+				return nil, err
+			}
+
+			cachedStores[key] = trieStore
 		default:
 			cachedStores[key] = store
 		}
@@ -555,6 +576,28 @@ func (rs *Store) loadCommitStoreFromParams(key types.StoreKey, id types.CommitID
 			store, err = iavl.LoadStore(db, id, rs.lazyLoading, tmtypes.GetStartBlockHeight())
 		} else {
 			store, err = iavl.LoadStoreWithInitialVersion(db, id, rs.lazyLoading, params.initialVersion)
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		if rs.interBlockCache != nil {
+			// Wrap and get a CommitKVStore with inter-block caching. Note, this should
+			// only wrap the primary CommitKVStore, not any store that is already
+			// cache-wrapped as that will create unexpected behavior.
+			store = rs.interBlockCache.GetStoreCache(key, store)
+		}
+
+		return store, err
+	case types.StoreTypeTrie:
+		var store types.CommitKVStore
+		var err error
+
+		if params.initialVersion == 0 {
+			store, err = trie.LoadStore(db, id, rs.lazyLoading, tmtypes.GetStartBlockHeight())
+		} else {
+			store, err = trie.LoadStoreWithInitialVersion(db, id, rs.lazyLoading, params.initialVersion)
 		}
 
 		if err != nil {

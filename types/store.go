@@ -75,6 +75,7 @@ const (
 	StoreTypeMulti     = types.StoreTypeMulti
 	StoreTypeDB        = types.StoreTypeDB
 	StoreTypeIAVL      = types.StoreTypeIAVL
+	StoreTypeTrie      = types.StoreTypeTrie
 	StoreTypeTransient = types.StoreTypeTransient
 )
 
