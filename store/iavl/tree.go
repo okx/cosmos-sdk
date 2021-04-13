@@ -92,3 +92,7 @@ func (it *immutableTree) GetImmutable(version int64) (*iavl.ImmutableTree, error
 
 	return it.ImmutableTree, nil
 }
+
+func (it *immutableTree) SetInitialVersion(_ uint64) {
+	panic("cannot call 'SetInitialVersion' on an immutable IAVL tree")
+}
