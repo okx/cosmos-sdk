@@ -63,6 +63,9 @@ func (po PruningOptions) Validate() error {
 	if po.KeepRecent > po.MaxRetainNum {
 		return fmt.Errorf("invalid 'KeepRecent' when pruning MaxRetainNum: %d", po.MaxRetainNum)
 	}
+	if po.KeepEvery > 0 && po.MaxRetainNum == 0 {
+		return fmt.Errorf("invalid 'KeepEvery' when pruning MaxRetainNum: %d", po.MaxRetainNum)
+	}
 
 	return nil
 }
