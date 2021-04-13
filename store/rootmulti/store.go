@@ -900,7 +900,7 @@ func (rs *Store) Export(to *Store, initVersion int64) error {
 		log.Println("--------- export ", store.name, " end ---------")
 	}
 
-	flushMetadata(to.db, initVersion, rs.buildCommitInfo(initVersion), []int64{})
+	flushMetadata(to.db, initVersion, rs.buildCommitInfo(initVersion), []int64{}, []int64{})
 
 	return nil
 }
