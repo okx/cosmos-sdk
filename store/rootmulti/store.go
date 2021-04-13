@@ -4,17 +4,17 @@ import (
 	"bufio"
 	"compress/zlib"
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/snapshots"
-	snapshottypes "github.com/cosmos/cosmos-sdk/snapshots/types"
 	"io"
+	"log"
 	"math"
 	"sort"
 	"strings"
-	"sort"
-	"log"
 
-	"github.com/pkg/errors"
+	"github.com/cosmos/cosmos-sdk/snapshots"
+	snapshottypes "github.com/cosmos/cosmos-sdk/snapshots/types"
+
 	protoio "github.com/gogo/protobuf/io"
+	"github.com/pkg/errors"
 	iavltree "github.com/tendermint/iavl"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/merkle"
@@ -877,7 +877,7 @@ func (rs *Store) buildCommitInfo(version int64) commitInfo {
 			continue
 		}
 		storeInfos = append(storeInfos, storeInfo{
-			Name:     key.Name(),
+			Name: key.Name(),
 			Core: storeCore{
 				store.LastCommitID(),
 			},
@@ -1118,7 +1118,7 @@ func (rs *Store) Export(to *Store, initVersion int64) error {
 	// and the following messages contain a SnapshotNode (i.e. an ExportNode). Store changes
 	// are demarcated by new SnapshotStore items.
 	for _, store := range stores {
-		log.Println("--------- export ", store.name,  " start ---------")
+		log.Println("--------- export ", store.name, " start ---------")
 		exporter, err := store.fromStore.Export(curVersion)
 		if err != nil {
 			panic(err)
@@ -1146,9 +1146,9 @@ func (rs *Store) Export(to *Store, initVersion int64) error {
 			nodeSize := len(node.Key) + len(node.Value)
 			totalCnt++
 			totalSize += uint64(nodeSize)
-			if totalCnt % 10000 == 0 {
-				log.Println("--------- total node count ", totalCnt,  " ---------")
-				log.Println("--------- total node size ", totalSize,  " ---------")
+			if totalCnt%10000 == 0 {
+				log.Println("--------- total node count ", totalCnt, " ---------")
+				log.Println("--------- total node size ", totalSize, " ---------")
 			}
 		}
 
@@ -1158,29 +1158,10 @@ func (rs *Store) Export(to *Store, initVersion int64) error {
 			panic(err)
 		}
 		importer.Close()
-		log.Println("--------- export ", store.name,  " end ---------")
+		log.Println("--------- export ", store.name, " end ---------")
 	}
 
 	flushMetadata(to.db, initVersion, rs.buildCommitInfo(initVersion), []int64{})
 
 	return nil
-}
-
-func (rs *Store) buildCommitInfo(version int64) commitInfo {
-	storeInfos := []storeInfo{}
-	for key, store := range rs.stores {
-		if store.GetStoreType() == types.StoreTypeTransient {
-			continue
-		}
-		storeInfos = append(storeInfos, storeInfo{
-			Name:     key.Name(),
-			Core: storeCore{
-				store.LastCommitID(),
-			},
-		})
-	}
-	return commitInfo{
-		Version:    version,
-		StoreInfos: storeInfos,
-	}
 }

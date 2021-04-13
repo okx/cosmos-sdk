@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/snapshots"
-	"github.com/cosmos/cosmos-sdk/store/rootmulti"
 	"io/ioutil"
 	"os"
 	"reflect"
 	"runtime/debug"
 	"strings"
+
+	"github.com/cosmos/cosmos-sdk/snapshots"
+	"github.com/cosmos/cosmos-sdk/store/rootmulti"
 
 	"github.com/gogo/protobuf/proto"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -19,7 +20,6 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/cosmos/cosmos-sdk/store"
-	"github.com/cosmos/cosmos-sdk/store/rootmulti"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -69,14 +69,14 @@ type BaseApp struct { // nolint: maligned
 	// set upon LoadVersion or LoadLatestVersion.
 	baseKey *sdk.KVStoreKey // Main KVStore in cms
 
-	anteHandler    sdk.AnteHandler  // ante handler for fee and auth
-	GasRefundHandler	   sdk.GasRefundHandler   // gas refund handler for gas refund
-	initChainer    sdk.InitChainer  // initialize state with validators and state blob
-	beginBlocker   sdk.BeginBlocker // logic to run before any txs
-	endBlocker     sdk.EndBlocker   // logic to run after all txs, and to determine valset changes
-	addrPeerFilter sdk.PeerFilter   // filter peers by address and port
-	idPeerFilter   sdk.PeerFilter   // filter peers by node ID
-	fauxMerkleMode bool             // if true, IAVL MountStores uses MountStoresDB for simulation speed.
+	anteHandler      sdk.AnteHandler      // ante handler for fee and auth
+	GasRefundHandler sdk.GasRefundHandler // gas refund handler for gas refund
+	initChainer      sdk.InitChainer      // initialize state with validators and state blob
+	beginBlocker     sdk.BeginBlocker     // logic to run before any txs
+	endBlocker       sdk.EndBlocker       // logic to run after all txs, and to determine valset changes
+	addrPeerFilter   sdk.PeerFilter       // filter peers by address and port
+	idPeerFilter     sdk.PeerFilter       // filter peers by node ID
+	fauxMerkleMode   bool                 // if true, IAVL MountStores uses MountStoresDB for simulation speed.
 
 	// manages snapshots, i.e. dumps of app state at certain intervals
 	snapshotManager    *snapshots.Manager
@@ -516,7 +516,7 @@ func (app *BaseApp) validateHeight(req abci.RequestBeginBlock) error {
 		expectedHeight = app.LastBlockHeight() + 1
 	}
 
-	if req.Header.Height != expectedHeight{
+	if req.Header.Height != expectedHeight {
 		return fmt.Errorf("invalid height: %d; expected: %d", req.Header.Height, expectedHeight)
 	}
 
@@ -660,7 +660,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (gInfo sdk.
 		if mode == runTxModeDeliver && app.GasRefundHandler != nil {
 			GasRefundCtx, msCache := app.cacheTxContext(ctx, txBytes)
 			err := app.GasRefundHandler(GasRefundCtx, tx)
-			if err != nil{
+			if err != nil {
 				panic(err)
 			}
 			msCache.Write()
