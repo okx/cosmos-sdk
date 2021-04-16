@@ -34,6 +34,7 @@ import (
 const (
 	latestVersionKey = "s/latest"
 	pruneHeightsKey  = "s/pruneheights"
+	versionsKey      = "s/versions"
 	commitInfoKeyFmt = "s/%d" // s/<version>
 
 	// Do not change chunk size without new snapshot format (must be uniform across nodes)
@@ -55,6 +56,7 @@ type Store struct {
 	lazyLoading    bool
 	pruneHeights   []int64
 	initialVersion int64
+	versions       []int64
 
 	traceWriter  io.Writer
 	traceContext types.TraceContext
@@ -79,6 +81,7 @@ func NewStore(db dbm.DB) *Store {
 		stores:       make(map[types.StoreKey]types.CommitKVStore),
 		keysByName:   make(map[string]types.StoreKey),
 		pruneHeights: make([]int64, 0),
+		versions:     make([]int64, 0),
 	}
 }
 
@@ -236,6 +239,11 @@ func (rs *Store) loadVersion(ver int64, upgrades *types.StoreUpgrades) error {
 		rs.pruneHeights = ph
 	}
 
+	vs, err := getVersions(rs.db)
+	if err == nil && len(vs) > 0 {
+		rs.versions = vs
+	}
+
 	return nil
 }
 
@@ -351,7 +359,18 @@ func (rs *Store) Commit() types.CommitID {
 		// a 'snapshot' height.
 		if rs.pruningOpts.KeepEvery == 0 || pruneHeight%int64(rs.pruningOpts.KeepEvery) != 0 {
 			rs.pruneHeights = append(rs.pruneHeights, pruneHeight)
+			for k, v := range rs.versions {
+				if v == pruneHeight {
+					rs.versions = append(rs.versions[:k], rs.versions[k+1:]...)
+					break
+				}
+			}
 		}
+	}
+
+	if uint64(len(rs.versions)) > rs.pruningOpts.MaxRetainNum {
+		rs.pruneHeights = append(rs.pruneHeights, rs.versions[:uint64(len(rs.versions))-rs.pruningOpts.MaxRetainNum]...)
+		rs.versions = rs.versions[uint64(len(rs.versions))-rs.pruningOpts.MaxRetainNum:]
 	}
 
 	// batch prune if the current height is a pruning interval height
@@ -359,7 +378,9 @@ func (rs *Store) Commit() types.CommitID {
 		rs.pruneStores()
 	}
 
-	flushMetadata(rs.db, version, rs.lastCommitInfo, rs.pruneHeights)
+	rs.versions = append(rs.versions, version)
+
+	flushMetadata(rs.db, version, rs.lastCommitInfo, rs.pruneHeights, rs.versions)
 
 	return types.CommitID{
 		Version: version,
@@ -866,7 +887,7 @@ func (rs *Store) Restore(
 		importer.Close()
 	}
 
-	flushMetadata(rs.db, int64(height), rs.buildCommitInfo(int64(height)), []int64{})
+	flushMetadata(rs.db, int64(height), rs.buildCommitInfo(int64(height)), []int64{}, []int64{})
 	return rs.LoadLatestVersion()
 }
 
@@ -1064,17 +1085,40 @@ func getPruningHeights(db dbm.DB) ([]int64, error) {
 	return prunedHeights, nil
 }
 
-func flushMetadata(db dbm.DB, version int64, cInfo commitInfo, pruneHeights []int64) {
+func flushMetadata(db dbm.DB, version int64, cInfo commitInfo, pruneHeights []int64, versions []int64) {
 	batch := db.NewBatch()
 	defer batch.Close()
 
 	setCommitInfo(batch, version, cInfo)
 	setLatestVersion(batch, version)
 	setPruningHeights(batch, pruneHeights)
+	setVersions(batch, versions)
 
 	if err := batch.Write(); err != nil {
 		panic(fmt.Errorf("error on batch write %w", err))
 	}
+}
+
+func setVersions(batch dbm.Batch, versions []int64) {
+	bz := cdc.MustMarshalBinaryBare(versions)
+	batch.Set([]byte(versionsKey), bz)
+}
+
+func getVersions(db dbm.DB) ([]int64, error) {
+	bz, err := db.Get([]byte(versionsKey))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get versions: %w", err)
+	}
+	if len(bz) == 0 {
+		return nil, errors.New("no versions found")
+	}
+
+	var versions []int64
+	if err := cdc.UnmarshalBinaryBare(bz, &versions); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal pruned heights: %w", err)
+	}
+
+	return versions, nil
 }
 
 // Snapshot implements snapshottypes.Snapshotter. The snapshot output for a given format must be
@@ -1161,7 +1205,7 @@ func (rs *Store) Export(to *Store, initVersion int64) error {
 		log.Println("--------- export ", store.name, " end ---------")
 	}
 
-	flushMetadata(to.db, initVersion, rs.buildCommitInfo(initVersion), []int64{})
+	flushMetadata(to.db, initVersion, rs.buildCommitInfo(initVersion), []int64{}, []int64{})
 
 	return nil
 }
