@@ -3,6 +3,8 @@ package rootmulti
 import (
 	"fmt"
 	"io"
+	"log"
+	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -25,6 +27,7 @@ import (
 const (
 	latestVersionKey = "s/latest"
 	pruneHeightsKey  = "s/pruneheights"
+	versionsKey      = "s/versions"
 	commitInfoKeyFmt = "s/%d" // s/<version>
 )
 
@@ -40,6 +43,7 @@ type Store struct {
 	keysByName     map[string]types.StoreKey
 	lazyLoading    bool
 	pruneHeights   []int64
+	versions       []int64
 
 	traceWriter  io.Writer
 	traceContext types.TraceContext
@@ -64,6 +68,7 @@ func NewStore(db dbm.DB) *Store {
 		stores:       make(map[types.StoreKey]types.CommitKVStore),
 		keysByName:   make(map[string]types.StoreKey),
 		pruneHeights: make([]int64, 0),
+		versions:     make([]int64, 0),
 	}
 }
 
@@ -216,6 +221,11 @@ func (rs *Store) loadVersion(ver int64, upgrades *types.StoreUpgrades) error {
 		rs.pruneHeights = ph
 	}
 
+	vs, err := getVersions(rs.db)
+	if err == nil && len(vs) > 0 {
+		rs.versions = vs
+	}
+
 	return nil
 }
 
@@ -317,7 +327,18 @@ func (rs *Store) Commit() types.CommitID {
 		// a 'snapshot' height.
 		if rs.pruningOpts.KeepEvery == 0 || pruneHeight%int64(rs.pruningOpts.KeepEvery) != 0 {
 			rs.pruneHeights = append(rs.pruneHeights, pruneHeight)
+			for k, v := range rs.versions {
+				if v == pruneHeight {
+					rs.versions = append(rs.versions[:k], rs.versions[k+1:]...)
+					break
+				}
+			}
 		}
+	}
+
+	if uint64(len(rs.versions)) > rs.pruningOpts.MaxRetainNum {
+		rs.pruneHeights = append(rs.pruneHeights, rs.versions[:uint64(len(rs.versions))-rs.pruningOpts.MaxRetainNum]...)
+		rs.versions = rs.versions[uint64(len(rs.versions))-rs.pruningOpts.MaxRetainNum:]
 	}
 
 	// batch prune if the current height is a pruning interval height
@@ -325,7 +346,9 @@ func (rs *Store) Commit() types.CommitID {
 		rs.pruneStores()
 	}
 
-	flushMetadata(rs.db, version, rs.lastCommitInfo, rs.pruneHeights)
+	rs.versions = append(rs.versions, version)
+
+	flushMetadata(rs.db, version, rs.lastCommitInfo, rs.pruneHeights, rs.versions)
 
 	return types.CommitID{
 		Version: version,
@@ -757,15 +780,146 @@ func getPruningHeights(db dbm.DB) ([]int64, error) {
 	return prunedHeights, nil
 }
 
-func flushMetadata(db dbm.DB, version int64, cInfo commitInfo, pruneHeights []int64) {
+func flushMetadata(db dbm.DB, version int64, cInfo commitInfo, pruneHeights []int64, versions []int64) {
 	batch := db.NewBatch()
 	defer batch.Close()
 
 	setCommitInfo(batch, version, cInfo)
 	setLatestVersion(batch, version)
 	setPruningHeights(batch, pruneHeights)
+	setVersions(batch, versions)
 
 	if err := batch.Write(); err != nil {
 		panic(fmt.Errorf("error on batch write %w", err))
+	}
+}
+
+func setVersions(batch dbm.Batch, versions []int64) {
+	bz := cdc.MustMarshalBinaryBare(versions)
+	batch.Set([]byte(versionsKey), bz)
+}
+
+func getVersions(db dbm.DB) ([]int64, error) {
+	bz, err := db.Get([]byte(versionsKey))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get versions: %w", err)
+	}
+	if len(bz) == 0 {
+		return nil, errors.New("no versions found")
+	}
+
+	var versions []int64
+	if err := cdc.UnmarshalBinaryBare(bz, &versions); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal pruned heights: %w", err)
+	}
+
+	return versions, nil
+}
+
+// Snapshot implements snapshottypes.Snapshotter. The snapshot output for a given format must be
+// identical across nodes such that chunks from different sources fit together. If the output for a
+// given format changes (at the byte level), the snapshot format must be bumped - see
+// TestMultistoreSnapshot_Checksum test.
+func (rs *Store) Export(to *Store, initVersion int64) error {
+	curVersion := rs.lastCommitInfo.Version
+	// Collect stores to snapshot (only IAVL stores are supported)
+	type namedStore struct {
+		fromStore *iavl.Store
+		toStore   *iavl.Store
+		name      string
+	}
+	stores := []namedStore{}
+	for key := range rs.stores {
+		switch store := rs.GetCommitKVStore(key).(type) {
+		case *iavl.Store:
+			var toKVStore types.CommitKVStore
+			for toKey, toValue := range to.stores {
+				if key.Name() == toKey.Name() {
+					toKVStore = toValue
+				}
+			}
+			toStore, _ := toKVStore.(*iavl.Store)
+			stores = append(stores, namedStore{name: key.Name(), fromStore: store, toStore: toStore})
+		case *transient.Store:
+			// Non-persisted stores shouldn't be snapshotted
+			continue
+		default:
+			return fmt.Errorf(
+				"don't know how to snapshot store %q of type %T", key.Name(), store)
+		}
+	}
+	sort.Slice(stores, func(i, j int) bool {
+		return strings.Compare(stores[i].name, stores[j].name) == 1
+	})
+
+	// Export each IAVL store. Stores are serialized as a stream of SnapshotItem Protobuf
+	// messages. The first item contains a SnapshotStore with store metadata (i.e. name),
+	// and the following messages contain a SnapshotNode (i.e. an ExportNode). Store changes
+	// are demarcated by new SnapshotStore items.
+	for _, store := range stores {
+		log.Println("--------- export ", store.name, " start ---------")
+		exporter, err := store.fromStore.Export(curVersion)
+		if err != nil {
+			panic(err)
+		}
+		defer exporter.Close()
+
+		importer, err := store.toStore.Import(initVersion)
+		if err != nil {
+			panic(err)
+		}
+		defer importer.Close()
+
+		var totalCnt uint64
+		var totalSize uint64
+		for {
+			node, err := exporter.Next()
+			if err == iavltree.ExportDone {
+				break
+			}
+
+			err = importer.Add(node)
+			if err != nil {
+				panic(err)
+			}
+			nodeSize := len(node.Key) + len(node.Value)
+			totalCnt++
+			totalSize += uint64(nodeSize)
+			if totalCnt%10000 == 0 {
+				log.Println("--------- total node count ", totalCnt, " ---------")
+				log.Println("--------- total node size ", totalSize, " ---------")
+			}
+		}
+
+		exporter.Close()
+		err = importer.Commit()
+		if err != nil {
+			panic(err)
+		}
+		importer.Close()
+		log.Println("--------- export ", store.name, " end ---------")
+	}
+
+	flushMetadata(to.db, initVersion, rs.buildCommitInfo(initVersion), []int64{}, []int64{})
+
+	return nil
+}
+
+func (rs *Store) buildCommitInfo(version int64) commitInfo {
+	storeInfos := []storeInfo{}
+	for key, store := range rs.stores {
+		if store.GetStoreType() == types.StoreTypeTransient {
+			continue
+		}
+		storeInfos = append(storeInfos, storeInfo{
+			Name: key.Name(),
+			Core: storeCore{
+				store.LastCommitID(),
+			},
+		})
+	}
+	return commitInfo{
+		Version:    version,
+		StoreInfos: storeInfos,
 	}
 }
