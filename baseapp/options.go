@@ -134,6 +134,13 @@ func (app *BaseApp) SetFauxMerkleMode() {
 	app.fauxMerkleMode = true
 }
 
+func (app *BaseApp) SetMempoolHandler(mh sdk.MempoolHandler) {
+	if app.sealed {
+		panic("SetMempoolHandler() on sealed BaseApp")
+	}
+	app.mempoolHandler = mh
+}
+
 // SetCommitMultiStoreTracer sets the store tracer on the BaseApp's underlying
 // CommitMultiStore.
 func (app *BaseApp) SetCommitMultiStoreTracer(w io.Writer) {

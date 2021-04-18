@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/tendermint/tendermint/rpc/client/local"
 	"io/ioutil"
 	"os"
 	"reflect"
@@ -39,7 +40,17 @@ var (
 	// mainConsensusParamsKey defines a key to store the consensus params in the
 	// main store.
 	mainConsensusParamsKey = []byte("consensus_params")
+
+	globalLocalClient *local.Local
 )
+
+func GetGlobalLocalClient () *local.Local {
+	return globalLocalClient
+}
+
+func SetGlobalLocalClient(lClient *local.Local) {
+	globalLocalClient = lClient
+}
 
 type (
 	// Enum mode for app.runTx
@@ -67,6 +78,7 @@ type BaseApp struct { // nolint: maligned
 	// set upon LoadVersion or LoadLatestVersion.
 	baseKey *sdk.KVStoreKey // Main KVStore in cms
 
+	mempoolHandler sdk.MempoolHandler
 	anteHandler    sdk.AnteHandler  // ante handler for fee and auth
 	GasRefundHandler	   sdk.GasRefundHandler   // gas refund handler for gas refund
 	initChainer    sdk.InitChainer  // initialize state with validators and state blob
@@ -652,6 +664,15 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (gInfo sdk.
 	result, err = app.runMsgs(runMsgCtx, msgs, mode)
 	if err == nil && mode == runTxModeDeliver {
 		msCache.Write()
+	}
+
+	if mode == runTxModeCheck {
+		exTxInfo := tx.GetTxInfo(ctx)
+		fmt.Println("exInfo is - address :", exTxInfo.Sender)
+		data, err := json.Marshal(exTxInfo)
+		if err == nil {
+			result.Data = data
+		}
 	}
 
 	return gInfo, result, err
