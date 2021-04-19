@@ -233,6 +233,9 @@ func startInProcess(ctx *Context, cdc *codec.Codec, appCreator AppCreator,
 		return nil, err
 	}
 
+	baseapp.SetGlobalLocalClient(local.New(tmNode))
+	baseapp.CacheMempoolConfig(cfg.Mempool.EnableSort, cfg.Mempool.Recheck)
+
 	var cpuProfileCleanup func()
 
 	if cpuProfile := viper.GetString(flagCPUProfile); cpuProfile != "" {
@@ -268,9 +271,6 @@ func startInProcess(ctx *Context, cdc *codec.Codec, appCreator AppCreator,
 	if registerRoutesFn != nil {
 		go lcd.StartRestServer(cdc, registerRoutesFn, tmNode, viper.GetString(FlagListenAddr))
 	}
-
-	baseapp.SetGlobalLocalClient(local.New(tmNode))
-	baseapp.CacheMempoolConfig(cfg.Mempool.EnableSort, cfg.Mempool.Recheck)
 
 	// run forever (the node will not be returned)
 	select {}

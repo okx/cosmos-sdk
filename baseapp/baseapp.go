@@ -42,7 +42,7 @@ var (
 	// main store.
 	mainConsensusParamsKey = []byte("consensus_params")
 
-	globalLocalClient *local.Local = nil
+	globalLocalClient *local.Local
 	mempoolEnableSort = false
 	mempoolEnableRecheck = true
 )
