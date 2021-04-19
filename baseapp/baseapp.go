@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/tendermint/tendermint/rpc/client/local"
 	"io/ioutil"
 	"os"
 	"reflect"
 	"runtime/debug"
 	"strings"
+
+	"github.com/tendermint/tendermint/rpc/client/local"
 
 	"github.com/gogo/protobuf/proto"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -44,7 +45,7 @@ var (
 	globalLocalClient *local.Local
 )
 
-func GetGlobalLocalClient () *local.Local {
+func GetGlobalLocalClient() *local.Local {
 	return globalLocalClient
 }
 
@@ -78,15 +79,14 @@ type BaseApp struct { // nolint: maligned
 	// set upon LoadVersion or LoadLatestVersion.
 	baseKey *sdk.KVStoreKey // Main KVStore in cms
 
-	mempoolHandler sdk.MempoolHandler
-	anteHandler    sdk.AnteHandler  // ante handler for fee and auth
-	GasRefundHandler	   sdk.GasRefundHandler   // gas refund handler for gas refund
-	initChainer    sdk.InitChainer  // initialize state with validators and state blob
-	beginBlocker   sdk.BeginBlocker // logic to run before any txs
-	endBlocker     sdk.EndBlocker   // logic to run after all txs, and to determine valset changes
-	addrPeerFilter sdk.PeerFilter   // filter peers by address and port
-	idPeerFilter   sdk.PeerFilter   // filter peers by node ID
-	fauxMerkleMode bool             // if true, IAVL MountStores uses MountStoresDB for simulation speed.
+	anteHandler      sdk.AnteHandler      // ante handler for fee and auth
+	GasRefundHandler sdk.GasRefundHandler // gas refund handler for gas refund
+	initChainer      sdk.InitChainer      // initialize state with validators and state blob
+	beginBlocker     sdk.BeginBlocker     // logic to run before any txs
+	endBlocker       sdk.EndBlocker       // logic to run after all txs, and to determine valset changes
+	addrPeerFilter   sdk.PeerFilter       // filter peers by address and port
+	idPeerFilter     sdk.PeerFilter       // filter peers by node ID
+	fauxMerkleMode   bool                 // if true, IAVL MountStores uses MountStoresDB for simulation speed.
 
 	// volatile states:
 	//
@@ -605,7 +605,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (gInfo sdk.
 		if mode == runTxModeDeliver && app.GasRefundHandler != nil {
 			GasRefundCtx, msCache := app.cacheTxContext(ctx, txBytes)
 			err := app.GasRefundHandler(GasRefundCtx, tx)
-			if err != nil{
+			if err != nil {
 				panic(err)
 			}
 			msCache.Write()
@@ -668,7 +668,6 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (gInfo sdk.
 
 	if mode == runTxModeCheck {
 		exTxInfo := tx.GetTxInfo(ctx)
-		fmt.Println("exInfo is - address :", exTxInfo.Sender)
 		data, err := json.Marshal(exTxInfo)
 		if err == nil {
 			result.Data = data

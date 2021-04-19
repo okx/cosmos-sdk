@@ -1,7 +1,6 @@
 package baseapp
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"sort"
@@ -78,29 +77,7 @@ func (app *BaseApp) Info(req abci.RequestInfo) abci.ResponseInfo {
 
 // SetOption implements the ABCI interface.
 func (app *BaseApp) SetOption(req abci.RequestSetOption) (res abci.ResponseSetOption) {
-	if app.mempoolHandler != nil {
-		switch req.Key {
-		case "mempool":
-			var txsPendingMap map[string]int
-			err := json.Unmarshal([]byte(req.Value), &txsPendingMap)
-			if err != nil {
-				app.logger.Error("Fail to run mempool handler: ", err)
-				break
-			}
-
-			// we just need to run in check mode, for tx in mempool is not ultimately confirmed in block
-			ctx := app.getContextForTx(runTxModeCheck, nil)
-
-			for addr, cnt := range txsPendingMap {
-				err := app.mempoolHandler(ctx, addr, cnt)
-				if err != nil {
-					app.logger.Error("Fail to run mempool handler: ", err)
-				}
-			}
-		default:
-		}
-	}
-
+	// TODO: Implement!
 	return
 }
 
