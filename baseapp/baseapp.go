@@ -63,7 +63,7 @@ func IsMempoolEnableRecheck() bool {
 	return mempoolEnableRecheck
 }
 
-func ToggleMempoolEnableSortState(enableSort bool, enableRecheck bool) {
+func CacheMempoolConfig(enableSort bool, enableRecheck bool) {
 	mempoolEnableSort = enableSort
 	mempoolEnableRecheck = enableRecheck
 }

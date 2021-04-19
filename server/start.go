@@ -270,7 +270,7 @@ func startInProcess(ctx *Context, cdc *codec.Codec, appCreator AppCreator,
 	}
 
 	baseapp.SetGlobalLocalClient(local.New(tmNode))
-	baseapp.ToggleMempoolEnableSortState(cfg.Mempool.EnableSort, cfg.Mempool.Recheck)
+	baseapp.CacheMempoolConfig(cfg.Mempool.EnableSort, cfg.Mempool.Recheck)
 
 	// run forever (the node will not be returned)
 	select {}
