@@ -42,7 +42,9 @@ var (
 	// main store.
 	mainConsensusParamsKey = []byte("consensus_params")
 
-	globalLocalClient *local.Local
+	globalLocalClient *local.Local = nil
+	mempoolEnableSort = false
+	mempoolEnableRecheck = true
 )
 
 func GetGlobalLocalClient() *local.Local {
@@ -51,6 +53,19 @@ func GetGlobalLocalClient() *local.Local {
 
 func SetGlobalLocalClient(lClient *local.Local) {
 	globalLocalClient = lClient
+}
+
+func IsMempoolEnableSort() bool {
+	return mempoolEnableSort
+}
+
+func IsMempoolEnableRecheck() bool {
+	return mempoolEnableRecheck
+}
+
+func ToggleMempoolEnableSortState(enableSort bool, enableRecheck bool) {
+	mempoolEnableSort = enableSort
+	mempoolEnableRecheck = enableRecheck
 }
 
 type (
