@@ -10,6 +10,9 @@ import (
 	"runtime/debug"
 	"strings"
 
+	"github.com/cosmos/cosmos-sdk/snapshots"
+	"github.com/cosmos/cosmos-sdk/store/rootmulti"
+
 	"github.com/gogo/protobuf/proto"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/tmhash"
@@ -17,7 +20,6 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/cosmos/cosmos-sdk/store"
-	"github.com/cosmos/cosmos-sdk/store/rootmulti"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -67,14 +69,19 @@ type BaseApp struct { // nolint: maligned
 	// set upon LoadVersion or LoadLatestVersion.
 	baseKey *sdk.KVStoreKey // Main KVStore in cms
 
-	anteHandler    sdk.AnteHandler  // ante handler for fee and auth
-	GasRefundHandler	   sdk.GasRefundHandler   // gas refund handler for gas refund
-	initChainer    sdk.InitChainer  // initialize state with validators and state blob
-	beginBlocker   sdk.BeginBlocker // logic to run before any txs
-	endBlocker     sdk.EndBlocker   // logic to run after all txs, and to determine valset changes
-	addrPeerFilter sdk.PeerFilter   // filter peers by address and port
-	idPeerFilter   sdk.PeerFilter   // filter peers by node ID
-	fauxMerkleMode bool             // if true, IAVL MountStores uses MountStoresDB for simulation speed.
+	anteHandler      sdk.AnteHandler      // ante handler for fee and auth
+	GasRefundHandler sdk.GasRefundHandler // gas refund handler for gas refund
+	initChainer      sdk.InitChainer      // initialize state with validators and state blob
+	beginBlocker     sdk.BeginBlocker     // logic to run before any txs
+	endBlocker       sdk.EndBlocker       // logic to run after all txs, and to determine valset changes
+	addrPeerFilter   sdk.PeerFilter       // filter peers by address and port
+	idPeerFilter     sdk.PeerFilter       // filter peers by node ID
+	fauxMerkleMode   bool                 // if true, IAVL MountStores uses MountStoresDB for simulation speed.
+
+	// manages snapshots, i.e. dumps of app state at certain intervals
+	snapshotManager    *snapshots.Manager
+	snapshotInterval   uint64 // block interval between state sync snapshots
+	snapshotKeepRecent uint32 // recent state sync snapshots to keep
 
 	// volatile states:
 	//
@@ -97,6 +104,9 @@ type BaseApp struct { // nolint: maligned
 	// transaction. This is mainly used for DoS and spam prevention.
 	minGasPrices sdk.DecCoins
 
+	// initialHeight is the initial height at which we start the baseapp
+	initialHeight int64
+
 	// flag for sealing options and parameters to a BaseApp
 	sealed bool
 
@@ -105,6 +115,18 @@ type BaseApp struct { // nolint: maligned
 
 	// minimum block time (in Unix seconds) at which to halt the chain and gracefully shutdown
 	haltTime uint64
+
+	// minRetainBlocks defines the minimum block height offset from the current
+	// block being committed, such that all blocks past this offset are pruned
+	// from Tendermint. It is used as part of the process of determining the
+	// ResponseCommit.RetainHeight value during ABCI Commit. A value of 0 indicates
+	// that no blocks should be pruned.
+	//
+	// Note: Tendermint block pruning is dependant on this parameter in conunction
+	// with the unbonding (safety threshold) period, state pruning and state sync
+	// snapshot parameters to determine the correct minimum value of
+	// ResponseCommit.RetainHeight.
+	minRetainBlocks uint64
 
 	// application's version string
 	appVersion string
@@ -339,7 +361,34 @@ func (app *BaseApp) initFromMainStore(baseKey *sdk.KVStoreKey) error {
 
 	// needed for the export command which inits from store but never calls initchain
 	app.setCheckState(abci.Header{})
+	app.init()
 	app.Seal()
+
+	return nil
+}
+
+func (app *BaseApp) init() error {
+	if app.sealed {
+		panic("cannot call initFromMainStore: baseapp already sealed")
+	}
+
+	// needed for the export command which inits from store but never calls initchain
+	app.setCheckState(abci.Header{})
+	app.Seal()
+
+	// make sure the snapshot interval is a multiple of the pruning KeepEvery interval
+	if app.snapshotManager != nil && app.snapshotInterval > 0 {
+		rms, ok := app.cms.(*rootmulti.Store)
+		if !ok {
+			return errors.New("state sync snapshots require a rootmulti store")
+		}
+		pruningOpts := rms.GetPruning()
+		if pruningOpts.KeepEvery > 0 && app.snapshotInterval%pruningOpts.KeepEvery != 0 {
+			return fmt.Errorf(
+				"state sync snapshot interval %v must be a multiple of pruning keep every interval %v",
+				app.snapshotInterval, pruningOpts.KeepEvery)
+		}
+	}
 
 	return nil
 }
@@ -354,6 +403,10 @@ func (app *BaseApp) setHaltHeight(haltHeight uint64) {
 
 func (app *BaseApp) setHaltTime(haltTime uint64) {
 	app.haltTime = haltTime
+}
+
+func (app *BaseApp) setMinRetainBlocks(minRetainBlocks uint64) {
+	app.minRetainBlocks = minRetainBlocks
 }
 
 func (app *BaseApp) setInterBlockCache(cache sdk.MultiStorePersistentCache) {
@@ -448,9 +501,23 @@ func (app *BaseApp) validateHeight(req abci.RequestBeginBlock) error {
 		return fmt.Errorf("invalid height: %d", req.Header.Height)
 	}
 
-	prevHeight := app.LastBlockHeight()
-	if req.Header.Height != prevHeight+1 {
-		return fmt.Errorf("invalid height: %d; expected: %d", req.Header.Height, prevHeight+1)
+	// expectedHeight holds the expected height to validate.
+	var expectedHeight int64
+	if app.LastBlockHeight() == 0 && app.initialHeight > 1 {
+		// In this case, we're validating the first block of the chain (no
+		// previous commit). The height we're expecting is the initial height.
+		expectedHeight = app.initialHeight
+	} else {
+		// This case can means two things:
+		// - either there was already a previous commit in the store, in which
+		// case we increment the version from there,
+		// - or there was no previous commit, and initial version was not set,
+		// in which case we start at version 1.
+		expectedHeight = app.LastBlockHeight() + 1
+	}
+
+	if req.Header.Height != expectedHeight {
+		return fmt.Errorf("invalid height: %d; expected: %d", req.Header.Height, expectedHeight)
 	}
 
 	return nil
@@ -593,7 +660,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (gInfo sdk.
 		if mode == runTxModeDeliver && app.GasRefundHandler != nil {
 			GasRefundCtx, msCache := app.cacheTxContext(ctx, txBytes)
 			err := app.GasRefundHandler(GasRefundCtx, tx)
-			if err != nil{
+			if err != nil {
 				panic(err)
 			}
 			msCache.Write()

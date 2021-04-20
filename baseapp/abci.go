@@ -1,7 +1,9 @@
 package baseapp
 
 import (
+	"errors"
 	"fmt"
+	snapshottypes "github.com/cosmos/cosmos-sdk/snapshots/types"
 	"os"
 	"sort"
 	"strings"
@@ -24,6 +26,17 @@ func (app *BaseApp) InitChain(req abci.RequestInitChain) (res abci.ResponseInitC
 	}
 
 	initHeader := abci.Header{ChainID: req.ChainId, Time: req.Time}
+
+	// If req.InitialHeight is > 1, then we set the initial version in the
+	// stores.
+	if req.InitialHeight > 1 {
+		app.initialHeight = req.InitialHeight
+		initHeader = abci.Header{ChainID: req.ChainId, Height: req.InitialHeight, Time: req.Time}
+		err := app.cms.SetInitialVersion(req.InitialHeight)
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	// initialize the deliver state and check state with a correct header
 	app.setDeliverState(initHeader)
@@ -227,6 +240,7 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 // height.
 func (app *BaseApp) Commit() (res abci.ResponseCommit) {
 	header := app.deliverState.ctx.BlockHeader()
+	retainHeight := app.GetBlockRetentionHeight(header.Height)
 
 	// Write the DeliverTx state which is cache-wrapped and commit the MultiStore.
 	// The write to the DeliverTx state writes all state transitions to the root
@@ -262,8 +276,13 @@ func (app *BaseApp) Commit() (res abci.ResponseCommit) {
 		app.halt()
 	}
 
+	if app.snapshotInterval > 0 && uint64(header.Height)%app.snapshotInterval == 0 {
+		go app.snapshot(header.Height)
+	}
+
 	return abci.ResponseCommit{
-		Data: commitID.Hash,
+		Data:         commitID.Hash,
+		RetainHeight: retainHeight,
 	}
 }
 
@@ -287,6 +306,160 @@ func (app *BaseApp) halt() {
 	// via SIGINT/SIGTERM signals.
 	app.logger.Info("failed to send SIGINT/SIGTERM; exiting...")
 	os.Exit(0)
+}
+
+// snapshot takes a snapshot of the current state and prunes any old snapshottypes.
+func (app *BaseApp) snapshot(height int64) {
+	if app.snapshotManager == nil {
+		app.logger.Info("snapshot manager not configured")
+		return
+	}
+
+	app.logger.Info("creating state snapshot", "height", height)
+
+	snapshot, err := app.snapshotManager.Create(uint64(height))
+	if err != nil {
+		app.logger.Error("failed to create state snapshot", "height", height, "err", err)
+		return
+	}
+
+	app.logger.Info("completed state snapshot", "height", height, "format", snapshot.Format)
+
+	if app.snapshotKeepRecent > 0 {
+		app.logger.Debug("pruning state snapshots")
+
+		pruned, err := app.snapshotManager.Prune(app.snapshotKeepRecent)
+		if err != nil {
+			app.logger.Error("Failed to prune state snapshots", "err", err)
+			return
+		}
+
+		app.logger.Debug("pruned state snapshots", "pruned", pruned)
+	}
+}
+
+// ListSnapshots implements the ABCI interface. It delegates to app.snapshotManager if set.
+func (app *BaseApp) ListSnapshots(req abci.RequestListSnapshots) abci.ResponseListSnapshots {
+	resp := abci.ResponseListSnapshots{Snapshots: []*abci.Snapshot{}}
+	if app.snapshotManager == nil {
+		return resp
+	}
+
+	snapshots, err := app.snapshotManager.List()
+	if err != nil {
+		app.logger.Error("failed to list snapshots", "err", err)
+		return resp
+	}
+
+	for _, snapshot := range snapshots {
+		abciSnapshot, err := snapshot.ToABCI()
+		if err != nil {
+			app.logger.Error("failed to list snapshots", "err", err)
+			return resp
+		}
+		resp.Snapshots = append(resp.Snapshots, &abciSnapshot)
+	}
+
+	return resp
+}
+
+// LoadSnapshotChunk implements the ABCI interface. It delegates to app.snapshotManager if set.
+func (app *BaseApp) LoadSnapshotChunk(req abci.RequestLoadSnapshotChunk) abci.ResponseLoadSnapshotChunk {
+	if app.snapshotManager == nil {
+		return abci.ResponseLoadSnapshotChunk{}
+	}
+	chunk, err := app.snapshotManager.LoadChunk(req.Height, req.Format, req.Chunk)
+	if err != nil {
+		app.logger.Error(
+			"failed to load snapshot chunk",
+			"height", req.Height,
+			"format", req.Format,
+			"chunk", req.Chunk,
+			"err", err,
+		)
+		return abci.ResponseLoadSnapshotChunk{}
+	}
+	return abci.ResponseLoadSnapshotChunk{Chunk: chunk}
+}
+
+// OfferSnapshot implements the ABCI interface. It delegates to app.snapshotManager if set.
+func (app *BaseApp) OfferSnapshot(req abci.RequestOfferSnapshot) abci.ResponseOfferSnapshot {
+	if app.snapshotManager == nil {
+		app.logger.Error("snapshot manager not configured")
+		return abci.ResponseOfferSnapshot{Result: abci.ResponseOfferSnapshot_ABORT}
+	}
+
+	if req.Snapshot == nil {
+		app.logger.Error("received nil snapshot")
+		return abci.ResponseOfferSnapshot{Result: abci.ResponseOfferSnapshot_REJECT}
+	}
+
+	snapshot, err := snapshottypes.SnapshotFromABCI(req.Snapshot)
+	if err != nil {
+		app.logger.Error("failed to decode snapshot metadata", "err", err)
+		return abci.ResponseOfferSnapshot{Result: abci.ResponseOfferSnapshot_REJECT}
+	}
+
+	err = app.snapshotManager.Restore(snapshot)
+	switch {
+	case err == nil:
+		return abci.ResponseOfferSnapshot{Result: abci.ResponseOfferSnapshot_ACCEPT}
+
+	case errors.Is(err, snapshottypes.ErrUnknownFormat):
+		return abci.ResponseOfferSnapshot{Result: abci.ResponseOfferSnapshot_REJECT_FORMAT}
+
+	case errors.Is(err, snapshottypes.ErrInvalidMetadata):
+		app.logger.Error(
+			"rejecting invalid snapshot",
+			"height", req.Snapshot.Height,
+			"format", req.Snapshot.Format,
+			"err", err,
+		)
+		return abci.ResponseOfferSnapshot{Result: abci.ResponseOfferSnapshot_REJECT}
+
+	default:
+		app.logger.Error(
+			"failed to restore snapshot",
+			"height", req.Snapshot.Height,
+			"format", req.Snapshot.Format,
+			"err", err,
+		)
+
+		// We currently don't support resetting the IAVL stores and retrying a different snapshot,
+		// so we ask Tendermint to abort all snapshot restoration.
+		return abci.ResponseOfferSnapshot{Result: abci.ResponseOfferSnapshot_ABORT}
+	}
+}
+
+// ApplySnapshotChunk implements the ABCI interface. It delegates to app.snapshotManager if set.
+func (app *BaseApp) ApplySnapshotChunk(req abci.RequestApplySnapshotChunk) abci.ResponseApplySnapshotChunk {
+	if app.snapshotManager == nil {
+		app.logger.Error("snapshot manager not configured")
+		return abci.ResponseApplySnapshotChunk{Result: abci.ResponseApplySnapshotChunk_ABORT}
+	}
+
+	_, err := app.snapshotManager.RestoreChunk(req.Chunk)
+	switch {
+	case err == nil:
+		return abci.ResponseApplySnapshotChunk{Result: abci.ResponseApplySnapshotChunk_ACCEPT}
+
+	case errors.Is(err, snapshottypes.ErrChunkHashMismatch):
+		app.logger.Error(
+			"chunk checksum mismatch; rejecting sender and requesting refetch",
+			"chunk", req.Index,
+			"sender", req.Sender,
+			"err", err,
+		)
+		return abci.ResponseApplySnapshotChunk{
+			Result:        abci.ResponseApplySnapshotChunk_RETRY,
+			RefetchChunks: []uint32{req.Index},
+			RejectSenders: []string{req.Sender},
+		}
+
+	default:
+		app.logger.Error("failed to restore snapshot", "err", err)
+		return abci.ResponseApplySnapshotChunk{Result: abci.ResponseApplySnapshotChunk_ABORT}
+	}
 }
 
 // Query implements the ABCI interface. It delegates to CommitMultiStore if it
@@ -494,4 +667,91 @@ func splitPath(requestPath string) (path []string) {
 	}
 
 	return path
+}
+
+// GetBlockRetentionHeight returns the height for which all blocks below this height
+// are pruned from Tendermint. Given a commitment height and a non-zero local
+// minRetainBlocks configuration, the retentionHeight is the smallest height that
+// satisfies:
+//
+// - Unbonding (safety threshold) time: The block interval in which validators
+// can be economically punished for misbehavior. Blocks in this interval must be
+// auditable e.g. by the light client.
+//
+// - Logical store snapshot interval: The block interval at which the underlying
+// logical store database is persisted to disk, e.g. every 10000 heights. Blocks
+// since the last IAVL snapshot must be available for replay on application restart.
+//
+// - State sync snapshots: Blocks since the oldest available snapshot must be
+// available for state sync nodes to catch up (oldest because a node may be
+// restoring an old snapshot while a new snapshot was taken).
+//
+// - Local (minRetainBlocks) config: Archive nodes may want to retain more or
+// all blocks, e.g. via a local config option min-retain-blocks. There may also
+// be a need to vary retention for other nodes, e.g. sentry nodes which do not
+// need historical blocks.
+func (app *BaseApp) GetBlockRetentionHeight(commitHeight int64) int64 {
+	// pruning is disabled if minRetainBlocks is zero
+	if app.minRetainBlocks == 0 {
+		return 0
+	}
+
+	minNonZero := func(x, y int64) int64 {
+		switch {
+		case x == 0:
+			return y
+		case y == 0:
+			return x
+		case x < y:
+			return x
+		default:
+			return y
+		}
+	}
+
+	// Define retentionHeight as the minimum value that satisfies all non-zero
+	// constraints. All blocks below (commitHeight-retentionHeight) are pruned
+	// from Tendermint.
+	var retentionHeight int64
+
+	// Define the number of blocks needed to protect against misbehaving validators
+	// which allows light clients to operate safely. Note, we piggy back of the
+	// evidence parameters instead of computing an estimated nubmer of blocks based
+	// on the unbonding period and block commitment time as the two should be
+	// equivalent.
+	cp := app.consensusParams
+	if cp != nil && cp.Evidence != nil && cp.Evidence.MaxAgeNumBlocks > 0 {
+		retentionHeight = commitHeight - cp.Evidence.MaxAgeNumBlocks
+	}
+
+	// Define the state pruning offset, i.e. the block offset at which the
+	// underlying logical database is persisted to disk.
+	statePruningOffset := int64(app.cms.GetPruning().KeepEvery)
+	if statePruningOffset > 0 {
+		if commitHeight > statePruningOffset {
+			v := commitHeight - (commitHeight % statePruningOffset)
+			retentionHeight = minNonZero(retentionHeight, v)
+		} else {
+			// Hitting this case means we have persisting enabled but have yet to reach
+			// a height in which we persist state, so we return zero regardless of other
+			// conditions. Otherwise, we could end up pruning blocks without having
+			// any state committed to disk.
+			return 0
+		}
+	}
+
+	if app.snapshotInterval > 0 && app.snapshotKeepRecent > 0 {
+		v := commitHeight - int64((app.snapshotInterval * uint64(app.snapshotKeepRecent)))
+		retentionHeight = minNonZero(retentionHeight, v)
+	}
+
+	v := commitHeight - int64(app.minRetainBlocks)
+	retentionHeight = minNonZero(retentionHeight, v)
+
+	if retentionHeight <= 0 {
+		// prune nothing in the case of a non-positive height
+		return 0
+	}
+
+	return retentionHeight
 }

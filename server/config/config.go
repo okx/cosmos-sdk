@@ -37,15 +37,43 @@ type BaseConfig struct {
 	// Note: Commitment of state will be attempted on the corresponding block.
 	HaltTime uint64 `mapstructure:"halt-time"`
 
+	// MinRetainBlocks defines the minimum block height offset from the current
+	// block being committed, such that blocks past this offset may be pruned
+	// from Tendermint. It is used as part of the process of determining the
+	// ResponseCommit.RetainHeight value during ABCI Commit. A value of 0 indicates
+	// that no blocks should be pruned.
+	//
+	// This configuration value is only responsible for pruning Tendermint blocks.
+	// It has no bearing on application state pruning which is determined by the
+	// "pruning-*" configurations.
+	//
+	// Note: Tendermint block pruning is dependant on this parameter in conunction
+	// with the unbonding (safety threshold) period, state pruning and state sync
+	// snapshot parameters to determine the correct minimum value of
+	// ResponseCommit.RetainHeight.
+	MinRetainBlocks uint64 `mapstructure:"min-retain-blocks"`
+
 	// InterBlockCache enables inter-block caching.
 	InterBlockCache bool `mapstructure:"inter-block-cache"`
+}
+
+// StateSyncConfig defines the state sync snapshot configuration.
+type StateSyncConfig struct {
+	// SnapshotInterval sets the interval at which state sync snapshots are taken.
+	// 0 disables snapshots. Must be a multiple of PruningKeepEvery.
+	SnapshotInterval uint64 `mapstructure:"snapshot-interval"`
+
+	// SnapshotKeepRecent sets the number of recent state sync snapshots to keep.
+	// 0 keeps all snapshots.
+	SnapshotKeepRecent uint32 `mapstructure:"snapshot-keep-recent"`
 }
 
 // Config defines the server's top level configuration
 type Config struct {
 	BaseConfig    `mapstructure:",squash"`
-	BackendConfig *BackendConfig `mapstructure:"backend"`
-	StreamConfig  *StreamConfig  `mapstructure:"stream"`
+	BackendConfig *BackendConfig  `mapstructure:"backend"`
+	StreamConfig  *StreamConfig   `mapstructure:"stream"`
+	StateSync     StateSyncConfig `mapstructure:"state-sync"`
 }
 
 // SetMinGasPrices sets the validator's minimum gas prices.
@@ -85,8 +113,13 @@ func DefaultConfig() *Config {
 			PruningKeepRecent: "0",
 			PruningKeepEvery:  "0",
 			PruningInterval:   "0",
+			MinRetainBlocks:   0,
 		},
 		BackendConfig: DefaultBackendConfig(),
 		StreamConfig:  DefaultStreamConfig(),
+		StateSync: StateSyncConfig{
+			SnapshotInterval:   0,
+			SnapshotKeepRecent: 2,
+		},
 	}
 }

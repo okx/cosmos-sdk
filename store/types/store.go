@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	snapshottypes "github.com/cosmos/cosmos-sdk/snapshots/types"
 	"io"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -22,6 +23,7 @@ type Committer interface {
 
 	// TODO: Deprecate after 0.38.5
 	SetPruning(PruningOptions)
+	GetPruning() PruningOptions
 }
 
 // Stores of MultiStore must implement CommitStore.
@@ -133,6 +135,7 @@ type CacheMultiStore interface {
 type CommitMultiStore interface {
 	Committer
 	MultiStore
+	snapshottypes.Snapshotter
 
 	// Mount a store of type using the given db.
 	// If db == nil, the new store will use the CommitMultiStore db.
@@ -167,6 +170,10 @@ type CommitMultiStore interface {
 	// Set an inter-block (persistent) cache that maintains a mapping from
 	// StoreKeys to CommitKVStores.
 	SetInterBlockCache(MultiStorePersistentCache)
+
+	// SetInitialVersion sets the initial version of the IAVL tree. It is used when
+	// starting a new chain at an arbitrary height.
+	SetInitialVersion(version int64) error
 }
 
 //---------subsp-------------------------------
