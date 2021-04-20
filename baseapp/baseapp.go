@@ -4,13 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/tendermint/tendermint/mempool"
 	"io/ioutil"
 	"os"
 	"reflect"
 	"runtime/debug"
 	"strings"
-
-	"github.com/tendermint/tendermint/rpc/client/local"
 
 	"github.com/gogo/protobuf/proto"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -42,17 +41,13 @@ var (
 	// main store.
 	mainConsensusParamsKey = []byte("consensus_params")
 
-	globalLocalClient *local.Local
+	globalMempool mempool.Mempool
 	mempoolEnableSort = false
 	mempoolEnableRecheck = true
 )
 
-func GetGlobalLocalClient() *local.Local {
-	return globalLocalClient
-}
-
-func SetGlobalLocalClient(lClient *local.Local) {
-	globalLocalClient = lClient
+func GetGlobalMempool() mempool.Mempool {
+	return globalMempool
 }
 
 func IsMempoolEnableSort() bool {
@@ -63,7 +58,8 @@ func IsMempoolEnableRecheck() bool {
 	return mempoolEnableRecheck
 }
 
-func CacheMempoolConfig(enableSort bool, enableRecheck bool) {
+func SetGlobalMempool(mempool mempool.Mempool, enableSort bool, enableRecheck bool) {
+	globalMempool = mempool
 	mempoolEnableSort = enableSort
 	mempoolEnableRecheck = enableRecheck
 }
