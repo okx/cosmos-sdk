@@ -4,9 +4,10 @@ package server
 
 import (
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/baseapp"
 	"os"
 	"runtime/pprof"
+
+	"github.com/cosmos/cosmos-sdk/baseapp"
 
 	"github.com/cosmos/cosmos-sdk/client/lcd"
 	"github.com/cosmos/cosmos-sdk/codec"

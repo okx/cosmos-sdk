@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/tendermint/tendermint/mempool"
 	"io/ioutil"
 	"os"
 	"reflect"
 	"runtime/debug"
 	"strings"
+
+	"github.com/tendermint/tendermint/mempool"
 
 	"github.com/gogo/protobuf/proto"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -41,8 +42,8 @@ var (
 	// main store.
 	mainConsensusParamsKey = []byte("consensus_params")
 
-	globalMempool mempool.Mempool
-	mempoolEnableSort = false
+	globalMempool        mempool.Mempool
+	mempoolEnableSort    = false
 	mempoolEnableRecheck = true
 )
 
