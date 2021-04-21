@@ -10,7 +10,7 @@ const (
 	BackendOrmEngineTypeMysql  = "mysql"
 )
 
-var defaultNodeHome = os.ExpandEnv("$HOME/.okexchaind")
+var defaultNodeHome = os.ExpandEnv("$HOME/.exchaind")
 
 // SetNodeHome sets the root directory for all data.
 func SetNodeHome(home string) {
