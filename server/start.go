@@ -4,10 +4,10 @@ package server
 
 import (
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/baseapp"
-	"github.com/tendermint/tendermint/rpc/client/local"
 	"os"
 	"runtime/pprof"
+
+	"github.com/cosmos/cosmos-sdk/baseapp"
 
 	"github.com/cosmos/cosmos-sdk/client/lcd"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -269,7 +269,7 @@ func startInProcess(ctx *Context, cdc *codec.Codec, appCreator AppCreator,
 		go lcd.StartRestServer(cdc, registerRoutesFn, tmNode, viper.GetString(FlagListenAddr))
 	}
 
-	baseapp.SetGlobalLocalClient(local.New(tmNode))
+	baseapp.SetGlobalMempool(tmNode.Mempool(), cfg.Mempool.SortTxByGp, cfg.Mempool.Recheck)
 
 	// run forever (the node will not be returned)
 	select {}
