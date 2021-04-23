@@ -259,7 +259,7 @@ func (app *BaseApp) Commit() (res abci.ResponseCommit) {
 		// response with the commit ID hash. This will allow the node to successfully
 		// restart and process blocks assuming the halt configuration has been
 		// reset or moved to a more distant value.
-		app.halt()
+		//app.halt()
 	}
 
 	return abci.ResponseCommit{
