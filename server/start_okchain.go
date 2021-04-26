@@ -60,6 +60,8 @@ const (
 	FlagStreamPushservicePulsarPrivateTopic = "stream.pushservice_pulsar_private_topic"
 	FlagStreamPushservicePulsarDepthTopic   = "stream.pushservice_pulsar_depth_topic"
 	FlagStreamRedisRequirePass              = "stream.redis_require_pass"
+
+	FlagMonitoredValidators = "test.monitored_validators"
 )
 
 const (

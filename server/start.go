@@ -142,6 +142,8 @@ which accepts a path for the resulting pprof file.
 	registerRestServerFlags(cmd)
 	registerAppFlagFn(cmd)
 	registerExChainPluginFlags(cmd)
+
+	cmd.Flags().StringSlice(FlagMonitoredValidators, []string{}, "the list of validators, used for monitoring to test")
 	// add support for all Tendermint-specific command line options
 	tcmd.AddNodeFlags(cmd)
 	return cmd
