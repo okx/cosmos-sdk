@@ -36,6 +36,10 @@ const (
 
 	// MainStoreKey is the string representation of the main store
 	MainStoreKey = "main"
+
+	// LatestSimulateTxHeight is the height to simulate tx based on the state of latest block height
+	// only for runTxModeSimulate
+	LatestSimulateTxHeight = 0
 )
 
 var (
@@ -528,14 +532,17 @@ func (app *BaseApp) getContextForTx(mode runTxMode, txBytes []byte) sdk.Context 
 
 // retrieve the context for simulating the tx w/ txBytes
 func (app *BaseApp) getContextForSimTx(txBytes []byte, height int64) (sdk.Context, error) {
-	cms := app.cms.(*rootmulti.Store)
-	simCms := *cms.Copy()
+	cms, ok := app.cms.(*rootmulti.Store)
+	if !ok {
+		return sdk.Context{}, fmt.Errorf("get context for simulate tx failed!")
+	}
 
+	simCms := *cms.Copy()
 	simCms.LoadVersion(height)
 
 	ms := simCms.CacheMultiStore()
 
-	abciHeader, err := getABCIHeader(height)
+	abciHeader, err := GetABCIHeader(height)
 	if err != nil {
 		return sdk.Context{}, err
 	}
@@ -550,7 +557,7 @@ func (app *BaseApp) getContextForSimTx(txBytes []byte, height int64) (sdk.Contex
 	return ctx, nil
 }
 
-func getABCIHeader(height int64) (abci.Header, error) {
+func GetABCIHeader(height int64) (abci.Header, error) {
 	laddr := viper.GetString("rpc.laddr")
 	splits := strings.Split(laddr, ":")
 	if len(splits) < 2 {
@@ -630,6 +637,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	// meter so we initialize upfront.
 	var gasWanted uint64
 	var ctx sdk.Context
+	// simulate tx 
 	if mode == runTxModeSimulate && height > tmtypes.GetStartBlockHeight() && height < app.LastBlockHeight() {
 		ctx, err = app.getContextForSimTx(txBytes, height)
 		if err != nil {
