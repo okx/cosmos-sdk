@@ -40,7 +40,7 @@ const (
 	// DefaultKeyPass contains the default key password for genesis transactions
 	DefaultKeyPass = "12345678"
 	flagMnemonic   = "mnemonic"
-	//flagMnemonic   = ""
+
 )
 
 // AddKeyCommand defines a keys command to add a generated or recovered private key to keybase.
