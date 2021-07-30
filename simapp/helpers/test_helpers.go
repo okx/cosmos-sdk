@@ -44,5 +44,5 @@ func GenTx(msgs []sdk.Msg, feeAmt sdk.Coins, gas uint64, chainID string, accnums
 		}
 	}
 
-	return auth.NewStdTx(msgs, fee, sigs, memo)
+	return auth.NewStdTx(msgs, fee, sigs, memo, seq[0])
 }

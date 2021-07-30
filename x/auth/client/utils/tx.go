@@ -333,7 +333,7 @@ func buildUnsignedStdTxOffline(txBldr authtypes.TxBuilder, cliCtx context.CLICon
 		return stdTx, err
 	}
 
-	return authtypes.NewStdTx(stdSignMsg.Msgs, stdSignMsg.Fee, nil, stdSignMsg.Memo), nil
+	return authtypes.NewStdTx(stdSignMsg.Msgs, stdSignMsg.Fee, nil, stdSignMsg.Memo, stdSignMsg.Sequence), nil
 }
 
 func isTxSigner(user sdk.AccAddress, signers []sdk.AccAddress) bool {

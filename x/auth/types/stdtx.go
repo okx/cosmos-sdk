@@ -29,14 +29,16 @@ type StdTx struct {
 	Fee        StdFee         `json:"fee" yaml:"fee"`
 	Signatures []StdSignature `json:"signatures" yaml:"signatures"`
 	Memo       string         `json:"memo" yaml:"memo"`
+	Nonce      uint64         `json:"nonce" yaml:"nonce"`
 }
 
-func NewStdTx(msgs []sdk.Msg, fee StdFee, sigs []StdSignature, memo string) StdTx {
+func NewStdTx(msgs []sdk.Msg, fee StdFee, sigs []StdSignature, memo string, nonce uint64) StdTx {
 	return StdTx{
 		Msgs:       msgs,
 		Fee:        fee,
 		Signatures: sigs,
 		Memo:       memo,
+		Nonce:      nonce,
 	}
 }
 
@@ -170,7 +172,7 @@ func (tx StdTx) GetTxInfo(ctx sdk.Context) mempool.ExTxInfo {
 	exInfo := mempool.ExTxInfo{
 		Sender:   "",
 		GasPrice: big.NewInt(0),
-		Nonce:    0,
+		Nonce:    tx.Nonce,
 	}
 
 	if tx.GetSigners() != nil {

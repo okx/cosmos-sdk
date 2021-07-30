@@ -115,7 +115,7 @@ func makeMultiSignCmd(cdc *codec.Codec) func(cmd *cobra.Command, args []string) 
 		}
 
 		newStdSig := types.StdSignature{Signature: cdc.MustMarshalBinaryBare(multisigSig), PubKey: multisigPub}
-		newTx := types.NewStdTx(stdTx.GetMsgs(), stdTx.Fee, []types.StdSignature{newStdSig}, stdTx.GetMemo())
+		newTx := types.NewStdTx(stdTx.GetMsgs(), stdTx.Fee, []types.StdSignature{newStdSig}, stdTx.GetMemo(), txBldr.Sequence())
 
 		sigOnly := viper.GetBool(flagSigOnly)
 		var json []byte

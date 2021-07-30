@@ -45,7 +45,7 @@ func NewTestTx(ctx sdk.Context, msgs []sdk.Msg, privs []crypto.PrivKey, accNums 
 		sigs[i] = StdSignature{PubKey: priv.PubKey(), Signature: sig}
 	}
 
-	tx := NewStdTx(msgs, fee, sigs, "")
+	tx := NewStdTx(msgs, fee, sigs, "", seqs[0])
 	return tx
 }
 
@@ -62,7 +62,7 @@ func NewTestTxWithMemo(ctx sdk.Context, msgs []sdk.Msg, privs []crypto.PrivKey, 
 		sigs[i] = StdSignature{PubKey: priv.PubKey(), Signature: sig}
 	}
 
-	tx := NewStdTx(msgs, fee, sigs, memo)
+	tx := NewStdTx(msgs, fee, sigs, memo, seqs[0])
 	return tx
 }
 
@@ -77,6 +77,6 @@ func NewTestTxWithSignBytes(msgs []sdk.Msg, privs []crypto.PrivKey, accNums []ui
 		sigs[i] = StdSignature{PubKey: priv.PubKey(), Signature: sig}
 	}
 
-	tx := NewStdTx(msgs, fee, sigs, memo)
+	tx := NewStdTx(msgs, fee, sigs, memo, seqs[0])
 	return tx
 }

@@ -215,7 +215,7 @@ func (bldr TxBuilder) Sign(name, passphrase string, msg StdSignMsg) ([]byte, err
 		return nil, err
 	}
 
-	return bldr.txEncoder(NewStdTx(msg.Msgs, msg.Fee, []StdSignature{sig}, msg.Memo))
+	return bldr.txEncoder(NewStdTx(msg.Msgs, msg.Fee, []StdSignature{sig}, msg.Memo, bldr.sequence))
 }
 
 // BuildAndSign builds a single message to be signed, and signs a transaction
@@ -239,7 +239,7 @@ func (bldr TxBuilder) BuildTxForSim(msgs []sdk.Msg) ([]byte, error) {
 
 	// the ante handler will populate with a sentinel pubkey
 	sigs := []StdSignature{{}}
-	return bldr.txEncoder(NewStdTx(signMsg.Msgs, signMsg.Fee, sigs, signMsg.Memo))
+	return bldr.txEncoder(NewStdTx(signMsg.Msgs, signMsg.Fee, sigs, signMsg.Memo, bldr.sequence))
 }
 
 // SignStdTx appends a signature to a StdTx and returns a copy of it. If append
@@ -267,7 +267,7 @@ func (bldr TxBuilder) SignStdTx(name, passphrase string, stdTx StdTx, appendSig 
 	} else {
 		sigs = append(sigs, stdSignature)
 	}
-	signedStdTx = NewStdTx(stdTx.GetMsgs(), stdTx.Fee, sigs, stdTx.GetMemo())
+	signedStdTx = NewStdTx(stdTx.GetMsgs(), stdTx.Fee, sigs, stdTx.GetMemo(), bldr.sequence)
 	return
 }
 
