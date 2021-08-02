@@ -773,7 +773,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	if mode == runTxModeCheck {
 		exTxInfo := tx.GetTxInfo(ctx)
 
-		if exTxInfo.Nonce == 0 && app.AccHandler != nil {
+		if exTxInfo.Nonce == 0 && exTxInfo.Sender != "" && app.AccHandler != nil{
 			addr, _ := sdk.AccAddressFromBech32(exTxInfo.Sender)
 			exTxInfo.Nonce =  app.AccHandler(ctx, addr)
 
