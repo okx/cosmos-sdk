@@ -174,7 +174,7 @@ func (tx StdTx) GetTxInfo(ctx sdk.Context) mempool.ExTxInfo {
 	}
 
 	if tx.GetSigners() != nil {
-		exInfo.Sender = sdk.AccAddress(tx.GetSigners()[0]).String()
+		exInfo.Sender = tx.FeePayer().String()
 	}
 	exInfo.GasPrice = tx.Fee.GasPrices()[0].Amount.BigInt()
 

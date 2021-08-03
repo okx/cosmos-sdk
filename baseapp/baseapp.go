@@ -100,6 +100,7 @@ type BaseApp struct { // nolint: maligned
 
 	anteHandler      sdk.AnteHandler      // ante handler for fee and auth
 	GasRefundHandler sdk.GasRefundHandler // gas refund handler for gas refund
+	AccHandler       sdk.AccHandler       // account handler for cm tx nonce
 	initChainer      sdk.InitChainer      // initialize state with validators and state blob
 	beginBlocker     sdk.BeginBlocker     // logic to run before any txs
 	endBlocker       sdk.EndBlocker       // logic to run after all txs, and to determine valset changes
@@ -581,27 +582,27 @@ func blockHeaderToABCIHeader(header tmtypes.Header) abci.Header {
 	return abci.Header{
 		Version: abci.Version{
 			Block: uint64(header.Version.Block),
-			App: uint64(header.Version.App),
+			App:   uint64(header.Version.App),
 		},
 		ChainID: header.ChainID,
-		Height: header.Height,
-		Time: header.Time,
+		Height:  header.Height,
+		Time:    header.Time,
 		LastBlockId: abci.BlockID{
 			Hash: header.LastBlockID.Hash,
 			PartsHeader: abci.PartSetHeader{
 				Total: int32(header.LastBlockID.PartsHeader.Total),
-				Hash: header.LastBlockID.PartsHeader.Hash,
+				Hash:  header.LastBlockID.PartsHeader.Hash,
 			},
 		},
-		LastCommitHash: header.LastCommitHash,
-		DataHash: header.DataHash,
-		ValidatorsHash: header.ValidatorsHash,
+		LastCommitHash:     header.LastCommitHash,
+		DataHash:           header.DataHash,
+		ValidatorsHash:     header.ValidatorsHash,
 		NextValidatorsHash: header.NextValidatorsHash,
-		ConsensusHash: header.ConsensusHash,
-		AppHash: header.AppHash,
-		LastResultsHash: header.LastResultsHash,
-		EvidenceHash: header.EvidenceHash,
-		ProposerAddress: header.ProposerAddress,
+		ConsensusHash:      header.ConsensusHash,
+		AppHash:            header.AppHash,
+		LastResultsHash:    header.LastResultsHash,
+		EvidenceHash:       header.EvidenceHash,
+		ProposerAddress:    header.ProposerAddress,
 	}
 }
 
@@ -775,6 +776,16 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 
 	if mode == runTxModeCheck {
 		exTxInfo := tx.GetTxInfo(ctx)
+
+		if exTxInfo.Nonce == 0 && exTxInfo.Sender != "" && app.AccHandler != nil{
+			addr, _ := sdk.AccAddressFromBech32(exTxInfo.Sender)
+			exTxInfo.Nonce =  app.AccHandler(ctx, addr)
+
+			if app.anteHandler != nil {
+				exTxInfo.Nonce -= 1 // in ante handler logical, the nonce will incress one
+			}
+		}
+
 		data, err := json.Marshal(exTxInfo)
 		if err == nil {
 			result.Data = data
