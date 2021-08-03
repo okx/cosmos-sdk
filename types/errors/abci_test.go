@@ -190,7 +190,7 @@ func TestRedact(t *testing.T) {
 		},
 		"redact stdlib error": {
 			err:     fmt.Errorf("stdlib error"),
-			changed: errInternal,
+			changed: ErrInternal,
 		},
 	}
 
