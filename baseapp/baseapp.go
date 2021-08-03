@@ -535,7 +535,7 @@ func (app *BaseApp) getContextForTx(mode runTxMode, txBytes []byte) sdk.Context 
 func (app *BaseApp) getContextForSimTx(txBytes []byte, height int64) (sdk.Context, error) {
 	cms, ok := app.cms.(*rootmulti.Store)
 	if !ok {
-		return sdk.Context{}, fmt.Errorf("get context for simulate tx failed!")
+		return sdk.Context{}, fmt.Errorf("get context for simulate tx failed")
 	}
 
 	simCms := *cms.Copy()
@@ -639,12 +639,16 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	var gasWanted uint64
 	var ctx sdk.Context
 	// simulate tx
-	if mode == runTxModeSimulate && height > tmtypes.GetStartBlockHeight() && height < app.LastBlockHeight() {
+	startHeight := tmtypes.GetStartBlockHeight()
+	if mode == runTxModeSimulate && height > startHeight && height < app.LastBlockHeight() {
 		ctx, err = app.getContextForSimTx(txBytes, height)
 		if err != nil {
-			return
+			return gInfo, result, sdkerrors.Wrap(sdkerrors.ErrInternal, err.Error())
 		}
-	} else {
+	} else if height < startHeight && height != 0 {
+		return gInfo, result, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest,
+			fmt.Sprintf("height(%d) should be greater than start block height(%d)", height, startHeight))
+	} else  {
 		ctx = app.getContextForTx(mode, txBytes)
 	}
 
