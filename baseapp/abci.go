@@ -145,6 +145,8 @@ func (app *BaseApp) BeginBlock(req abci.RequestBeginBlock) (res abci.ResponseBeg
 
 	// set the signed validators for addition to context in deliverTx
 	app.voteInfos = req.LastCommitInfo.GetVotes()
+	app.deliverCounter = 0
+	app.workgroup.Reset()
 	return res
 }
 
@@ -186,7 +188,7 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 		panic(fmt.Sprintf("unknown RequestCheckTx type: %s", req.Type))
 	}
 
-	gInfo, result, err := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight)
+	gInfo, result, _,err := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight)
 	if err != nil {
 		return sdkerrors.ResponseCheckTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
 	}
@@ -207,11 +209,47 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 // gas execution context.
 func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
 	tx, err := app.txDecoder(req.Tx)
+	defer func(){
+		app.deliverCounter++
+	}()
 	if err != nil {
 		return sdkerrors.ResponseDeliverTx(err, 0, 0, app.trace)
 	}
+	var (
+		gInfo sdk.GasInfo
+		result *sdk.Result
+	)
+	var IsAsync = true
+	if IsAsync {
+		app.workgroup.IncreaseCounter()
+		go func() {
+			var resp abci.ResponseDeliverTx
+			g, r, m,e := app.runTx(runTxModeDeliverInAsync, req.Tx, tx, LatestSimulateTxHeight)
+			if e != nil {
+				resp = sdkerrors.ResponseDeliverTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
+			}
+			resp = abci.ResponseDeliverTx{
+				GasWanted: int64(g.GasWanted), // TODO: Should type accept unsigned ints?
+				GasUsed:   int64(g.GasUsed),   // TODO: Should type accept unsigned ints?
+				Log:       r.Log,
+				Data:      r.Data,
+				Events:    r.Events.ToABCIEvents(),
+			}
+			asyncExe := NewExecuteResult(resp,m,app.deliverCounter)
+			app.workgroup.Push(asyncExe)
+		}()
+		return abci.ResponseDeliverTx{
+			GasWanted: int64(0), // TODO: Should type accept unsigned ints?
+			GasUsed:   int64(0),   // TODO: Should type accept unsigned ints?
+			Log:       "",
+			Data:      nil,
+			Events:    nil,
+		}
 
-	gInfo, result, err := app.runTx(runTxModeDeliver, req.Tx, tx, LatestSimulateTxHeight)
+	}else{
+		gInfo, result, _,err = app.runTx(runTxModeDeliverInAsync, req.Tx, tx, LatestSimulateTxHeight)
+	}
+
 	if err != nil {
 		return sdkerrors.ResponseDeliverTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
 	}
