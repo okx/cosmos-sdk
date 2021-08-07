@@ -111,3 +111,14 @@ func DefaultStreamConfig() *StreamConfig {
 		Engine: "",
 	}
 }
+
+
+type IDynamicConfig interface {
+	GetMaxOpen() int64
+}
+
+var DynamicConfig IDynamicConfig
+
+func SetConfig(c IDynamicConfig) {
+	DynamicConfig = c
+}
