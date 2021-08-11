@@ -29,11 +29,11 @@ import (
 )
 
 const (
-	runTxModeCheck    runTxMode = iota // Check a transaction
-	runTxModeReCheck                   // Recheck a (pending) transaction after a commit
-	runTxModeSimulate                  // Simulate a transaction
-	runTxModeDeliver                   // Deliver a transaction
-	runTxModeDeliverInAsync			   //Deliver a transaction in Aysnc
+	runTxModeCheck          runTxMode = iota // Check a transaction
+	runTxModeReCheck                         // Recheck a (pending) transaction after a commit
+	runTxModeSimulate                        // Simulate a transaction
+	runTxModeDeliver                         // Deliver a transaction
+	runTxModeDeliverInAsync                  //Deliver a transaction in Aysnc
 
 	// MainStoreKey is the string representation of the main store
 	MainStoreKey = "main"
@@ -150,6 +150,8 @@ type BaseApp struct { // nolint: maligned
 
 	//AsyncWorkGroup
 	workgroup *AsyncWorkGroup
+
+	isAsyncDeliverTx bool
 }
 
 // NewBaseApp returns a reference to an initialized BaseApp. It accepts a
@@ -162,18 +164,19 @@ func NewBaseApp(
 ) *BaseApp {
 
 	app := &BaseApp{
-		logger:         logger,
-		name:           name,
-		db:             db,
-		cms:            store.NewCommitMultiStore(db),
-		storeLoader:    DefaultStoreLoader,
-		router:         NewRouter(),
-		queryRouter:    NewQueryRouter(),
-		txDecoder:      txDecoder,
-		fauxMerkleMode: false,
-		trace:          false,
-		deliverCounter: 0,
-		workgroup:		NewAsyncWorkGroup(),
+		logger:           logger,
+		name:             name,
+		db:               db,
+		cms:              store.NewCommitMultiStore(db),
+		storeLoader:      DefaultStoreLoader,
+		router:           NewRouter(),
+		queryRouter:      NewQueryRouter(),
+		txDecoder:        txDecoder,
+		fauxMerkleMode:   false,
+		trace:            false,
+		deliverCounter:   0,
+		workgroup:        NewAsyncWorkGroup(),
+		isAsyncDeliverTx: false,
 	}
 	for _, option := range options {
 		option(app)
@@ -182,6 +185,8 @@ func NewBaseApp(
 	if app.interBlockCache != nil {
 		app.cms.SetInterBlockCache(app.interBlockCache)
 	}
+
+	app.workgroup.Start()
 
 	return app
 }
@@ -497,6 +502,14 @@ func (app *BaseApp) validateHeight(req abci.RequestBeginBlock) error {
 	return nil
 }
 
+func (app *BaseApp) SetAsyncDeliverTxCb(cb abci.AsyncCallBack) {
+	app.workgroup.Cb = cb
+}
+
+func (app *BaseApp) SetAsyncConfig(sw bool) {
+	app.isAsyncDeliverTx = sw
+}
+
 // validateBasicTxMsgs executes basic validator calls for messages.
 func validateBasicTxMsgs(msgs []sdk.Msg) error {
 	if len(msgs) == 0 {
@@ -516,7 +529,7 @@ func validateBasicTxMsgs(msgs []sdk.Msg) error {
 // Returns the applications's deliverState if app is in runTxModeDeliver,
 // otherwise it returns the application's checkstate.
 func (app *BaseApp) getState(mode runTxMode) *state {
-	if mode == runTxModeDeliver {
+	if mode == runTxModeDeliver || mode == runTxModeDeliverInAsync {
 		return app.deliverState
 	}
 
@@ -641,7 +654,7 @@ func (app *BaseApp) cacheTxContext(ctx sdk.Context, txBytes []byte) (sdk.Context
 // Note, gas execution info is always returned. A reference to a Result is
 // returned if the tx does not run out of gas and if all the messages are valid
 // and execute successfully. An error is returned otherwise.
-func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int64) (gInfo sdk.GasInfo, result *sdk.Result, msCache sdk.CacheMultiStore,err error) {
+func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int64) (gInfo sdk.GasInfo, result *sdk.Result, msCache sdk.CacheMultiStore, err error) {
 	// NOTE: GasWanted should be returned by the AnteHandler. GasUsed is
 	// determined by the GasMeter. We need access to the context to get the gas
 	// meter so we initialize upfront.
@@ -652,25 +665,25 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	if mode == runTxModeSimulate && height > startHeight && height < app.LastBlockHeight() {
 		ctx, err = app.getContextForSimTx(txBytes, height)
 		if err != nil {
-			return gInfo, result, nil,sdkerrors.Wrap(sdkerrors.ErrInternal, err.Error())
+			return gInfo, result, nil, sdkerrors.Wrap(sdkerrors.ErrInternal, err.Error())
 		}
 	} else if height < startHeight && height != 0 {
-		return gInfo, result, nil,sdkerrors.Wrap(sdkerrors.ErrInvalidRequest,
+		return gInfo, result, nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest,
 			fmt.Sprintf("height(%d) should be greater than start block height(%d)", height, startHeight))
-	} else  {
+	} else {
 		ctx = app.getContextForTx(mode, txBytes)
 	}
 
 	ms := ctx.MultiStore()
 
 	// only run the tx if there is block gas remaining
-	if mode == runTxModeDeliver || mode == runTxModeDeliverInAsync && ctx.BlockGasMeter().IsOutOfGas() {
+	if (mode == runTxModeDeliver || mode == runTxModeDeliverInAsync) && ctx.BlockGasMeter().IsOutOfGas() {
 		gInfo = sdk.GasInfo{GasUsed: ctx.BlockGasMeter().GasConsumed()}
 		return gInfo, nil, nil, sdkerrors.Wrap(sdkerrors.ErrOutOfGas, "no block gas left to run tx")
 	}
 
 	var startingGas uint64
-	if mode == runTxModeDeliver  || mode == runTxModeDeliverInAsync {
+	if mode == runTxModeDeliver || mode == runTxModeDeliverInAsync {
 		startingGas = ctx.BlockGasMeter().GasConsumed()
 	}
 
@@ -707,7 +720,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	// NOTE: This must exist in a separate defer function for the above recovery
 	// to recover from this one.
 	defer func() {
-		if mode == runTxModeDeliver  || mode == runTxModeDeliverInAsync {
+		if mode == runTxModeDeliver || mode == runTxModeDeliverInAsync {
 			ctx.BlockGasMeter().ConsumeGas(
 				ctx.GasMeter().GasConsumedToLimit(), "block gas meter",
 			)
@@ -719,13 +732,15 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	}()
 
 	defer func() {
-		if mode == runTxModeDeliver  || mode == runTxModeDeliverInAsync && app.GasRefundHandler != nil {
+		if (mode == runTxModeDeliver || mode == runTxModeDeliverInAsync) && app.GasRefundHandler != nil {
 			GasRefundCtx, msCache := app.cacheTxContext(ctx, txBytes)
 			err := app.GasRefundHandler(GasRefundCtx, tx)
 			if err != nil {
 				panic(err)
 			}
-			msCache.Write()
+			if mode == runTxModeDeliver {
+				msCache.Write()
+			}
 		}
 	}()
 
@@ -786,9 +801,9 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	if mode == runTxModeCheck {
 		exTxInfo := tx.GetTxInfo(ctx)
 
-		if exTxInfo.Nonce == 0 && exTxInfo.Sender != "" && app.AccHandler != nil{
+		if exTxInfo.Nonce == 0 && exTxInfo.Sender != "" && app.AccHandler != nil {
 			addr, _ := sdk.AccAddressFromBech32(exTxInfo.Sender)
-			exTxInfo.Nonce =  app.AccHandler(ctx, addr)
+			exTxInfo.Nonce = app.AccHandler(ctx, addr)
 
 			if app.anteHandler != nil {
 				exTxInfo.Nonce -= 1 // in ante handler logical, the nonce will incress one
