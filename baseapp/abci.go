@@ -106,6 +106,11 @@ func (app *BaseApp) FilterPeerByID(info string) abci.ResponseQuery {
 
 // BeginBlock implements the ABCI application interface.
 func (app *BaseApp) BeginBlock(req abci.RequestBeginBlock) (res abci.ResponseBeginBlock) {
+
+	defer func() {
+		app.deliverCounter = 0
+		app.workgroup.Reset()
+	}()
 	if app.cms.TracingEnabled() {
 		app.cms.SetTracingContext(sdk.TraceContext(
 			map[string]interface{}{"blockHeight": req.Header.Height},
@@ -145,8 +150,7 @@ func (app *BaseApp) BeginBlock(req abci.RequestBeginBlock) (res abci.ResponseBeg
 
 	// set the signed validators for addition to context in deliverTx
 	app.voteInfos = req.LastCommitInfo.GetVotes()
-	app.deliverCounter = 0
-	app.workgroup.Reset()
+
 	return res
 }
 
@@ -209,9 +213,6 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 // gas execution context.
 func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
 	tx, err := app.txDecoder(req.Tx)
-	defer func() {
-		app.deliverCounter++
-	}()
 	if err != nil {
 		return sdkerrors.ResponseDeliverTx(err, 0, 0, app.trace)
 	}
@@ -221,6 +222,9 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 	)
 	//just for test
 	if app.isAsyncDeliverTx {
+		defer func() {
+			app.deliverCounter++
+		}()
 		app.workgroup.IncreaseCounter()
 		go func() {
 			var resp abci.ResponseDeliverTx

@@ -751,7 +751,6 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 
 	if app.anteHandler != nil {
 		var anteCtx sdk.Context
-		var msCache sdk.CacheMultiStore
 
 		// Cache wrap context before AnteHandler call in case it aborts.
 		// This is required for both CheckTx and DeliverTx.
@@ -760,7 +759,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		// NOTE: Alternatively, we could require that AnteHandler ensures that
 		// writes do not happen if aborted/failed.  This may have some
 		// performance benefits, but it'll be more difficult to get right.
-		anteCtx, msCache = app.cacheTxContext(ctx, txBytes)
+		anteCtx, msc := app.cacheTxContext(ctx, txBytes)
 		anteCtx = anteCtx.WithEventManager(sdk.NewEventManager())
 		newCtx, err := app.anteHandler(anteCtx, tx, mode == runTxModeSimulate)
 
@@ -782,7 +781,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 			return gInfo, nil, nil, err
 		}
 
-		msCache.Write()
+		msc.Write()
 	}
 
 	// Create a new Context based off of the existing Context with a cache-wrapped

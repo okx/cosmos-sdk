@@ -59,13 +59,15 @@ func (a *AsyncWorkGroup) Push(item ExecuteResult) {
 func (a *AsyncWorkGroup) Start() {
 	go func() {
 		var exec ExecuteResult
-		select {
-		case exec = <-a.WorkCh:
-			a.ExecRes = append(a.ExecRes, exec)
-			if len(a.ExecRes) == a.MaxCounter {
-				//call tendermint to update the deliver tx response
-				if a.Cb != nil {
-					a.Cb(a.ExecRes)
+		for {
+			select {
+			case exec = <-a.WorkCh:
+				a.ExecRes = append(a.ExecRes, exec)
+				if len(a.ExecRes) == a.MaxCounter {
+					//call tendermint to update the deliver tx response
+					if a.Cb != nil {
+						a.Cb(a.ExecRes)
+					}
 				}
 			}
 		}
