@@ -20,7 +20,7 @@ import (
 
 var (
 	FlagIavlCacheSize = "iavl-cache-size"
-	IAVLCacheSize     = 1000000
+	IavlCacheSize     = 1000000
 )
 
 var (
@@ -46,7 +46,7 @@ func LoadStore(db dbm.DB, id types.CommitID, lazyLoading bool, startVersion int6
 // to the one given. Internally, it will load the store's version (id) from the
 // provided DB. An error is returned if the version fails to load.
 func LoadStoreWithInitialVersion(db dbm.DB, id types.CommitID, lazyLoading bool, initialVersion uint64) (types.CommitKVStore, error) {
-	tree, err := iavl.NewMutableTreeWithOpts(db, IAVLCacheSize, &iavl.Options{InitialVersion: initialVersion})
+	tree, err := iavl.NewMutableTreeWithOpts(db, IavlCacheSize, &iavl.Options{InitialVersion: initialVersion})
 	if err != nil {
 		return nil, err
 	}
