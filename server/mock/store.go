@@ -3,6 +3,7 @@ package mock
 import (
 	"io"
 
+	"github.com/tendermint/iavl"
 	dbm "github.com/tendermint/tm-db"
 
 	store "github.com/cosmos/cosmos-sdk/store/types"
@@ -43,7 +44,7 @@ func (ms multiStore) SetTracer(w io.Writer) sdk.MultiStore {
 	panic("not implemented")
 }
 
-func (ms multiStore) Commit() sdk.CommitID {
+func (ms multiStore) Commit(*iavl.TreeDelta) (store.CommitID, iavl.TreeDelta) {
 	panic("not implemented")
 }
 

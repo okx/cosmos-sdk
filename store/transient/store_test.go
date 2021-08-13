@@ -1,6 +1,7 @@
 package transient
 
 import (
+	"github.com/tendermint/iavl"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -17,7 +18,7 @@ func TestTransientStore(t *testing.T) {
 
 	require.Equal(t, v, tstore.Get(k))
 
-	tstore.Commit()
+	tstore.Commit(&iavl.TreeDelta{})
 
 	require.Nil(t, tstore.Get(k))
 }

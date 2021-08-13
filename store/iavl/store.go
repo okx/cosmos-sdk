@@ -1,10 +1,10 @@
 package iavl
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"sync"
-	"fmt"
-	"errors"
 
 	"github.com/tendermint/iavl"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -107,8 +107,9 @@ func (st *Store) GetImmutable(version int64) (*Store, error) {
 
 // Commit commits the current store state and returns a CommitID with the new
 // version and hash.
-func (st *Store) Commit() types.CommitID {
-	hash, version, err := st.tree.SaveVersion()
+func (st *Store) Commit(inDelta *iavl.TreeDelta) (types.CommitID, iavl.TreeDelta) {
+	st.tree.SetDelta(inDelta)
+	hash, version, delta, err := st.tree.SaveVersion()
 	if err != nil {
 		panic(err)
 	}
@@ -116,7 +117,7 @@ func (st *Store) Commit() types.CommitID {
 	return types.CommitID{
 		Version: version,
 		Hash:    hash,
-	}
+	}, delta
 }
 
 // Implements Committer.

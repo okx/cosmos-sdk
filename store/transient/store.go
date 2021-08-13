@@ -1,6 +1,7 @@
 package transient
 
 import (
+	"github.com/tendermint/iavl"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/cosmos/cosmos-sdk/store/types"
@@ -23,7 +24,7 @@ func NewStore() *Store {
 
 // Implements CommitStore
 // Commit cleans up Store.
-func (ts *Store) Commit() (id types.CommitID) {
+func (ts *Store) Commit(*iavl.TreeDelta) (id types.CommitID, _ iavl.TreeDelta) {
 	ts.Store = dbadapter.Store{DB: dbm.NewMemDB()}
 	return
 }

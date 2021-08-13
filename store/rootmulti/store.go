@@ -1,14 +1,21 @@
 package rootmulti
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
+	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 	iavltree "github.com/tendermint/iavl"
+	tmiavl "github.com/tendermint/iavl"
+	tmos "github.com/tendermint/tendermint/libs/os"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/merkle"
 	"github.com/tendermint/tendermint/crypto/tmhash"
@@ -311,7 +318,7 @@ func (rs *Store) LastCommitID() types.CommitID {
 }
 
 // Implements Committer/CommitStore.
-func (rs *Store) Commit() types.CommitID {
+func (rs *Store) Commit(*tmiavl.TreeDelta) (types.CommitID, tmiavl.TreeDelta) {
 	previousHeight := rs.lastCommitInfo.Version
 	version := previousHeight + 1
 	rs.lastCommitInfo = commitStores(version, rs.stores)
@@ -353,7 +360,7 @@ func (rs *Store) Commit() types.CommitID {
 	return types.CommitID{
 		Version: version,
 		Hash:    rs.lastCommitInfo.Hash(),
-	}
+	}, tmiavl.TreeDelta{}
 }
 
 // pruneStores will batch delete a list of heights from each mounted sub-store.
@@ -707,8 +714,24 @@ func getLatestVersion(db dbm.DB) int64 {
 func commitStores(version int64, storeMap map[types.StoreKey]types.CommitKVStore) commitInfo {
 	storeInfos := make([]storeInfo, 0, len(storeMap))
 
+	appliedDeltas := map[string]*tmiavl.TreeDelta{}
+	returnedDeltas := map[string]tmiavl.TreeDelta{}
+	// read state delta from file
+	if viper.GetInt32("enable-state-delta") == 2 {
+		deltaPath := filepath.Join(viper.GetString("home"),
+			fmt.Sprintf("data/state_delta/delta-%d.json", version))
+		bytes, err := ioutil.ReadFile(deltaPath)
+		if err != nil {
+			panic(err)
+		}
+		err = json.Unmarshal(bytes, &appliedDeltas)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	for key, store := range storeMap {
-		commitID := store.Commit()
+		commitID, reDelta := store.Commit(appliedDeltas[key.Name()])
 
 		if store.GetStoreType() == types.StoreTypeTransient {
 			continue
@@ -718,6 +741,36 @@ func commitStores(version int64, storeMap map[types.StoreKey]types.CommitKVStore
 		si.Name = key.Name()
 		si.Core.CommitID = commitID
 		storeInfos = append(storeInfos, si)
+		returnedDeltas[key.Name()] = reDelta
+	}
+
+	//sort.Slice(storeInfos, func(i, j int) bool {
+	//	return strings.Compare(storeInfos[i].Name, storeInfos[j].Name) == -1
+	//})
+
+	//for _, si := range storeInfos {
+	//	fmt.Printf("enable-state-delta: storename: %s, hash: %x\n", si.Name, si.Core.CommitID.Hash)
+	//}
+
+	// write state delta to file
+	if viper.GetInt32("enable-state-delta") == 1 {
+		var once sync.Once
+		once.Do(func() {
+			if err := tmos.EnsureDir(filepath.Join(viper.GetString("home"),
+				fmt.Sprintf("data/state_delta")), 0700); err != nil {
+				panic(err)
+			}
+		})
+		deltaPath := filepath.Join(viper.GetString("home"),
+			fmt.Sprintf("data/state_delta/delta-%d.json", version))
+		bytes, err := json.Marshal(returnedDeltas)
+		if err != nil {
+			panic(err)
+		}
+		err = ioutil.WriteFile(deltaPath, bytes, 0700)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	return commitInfo{

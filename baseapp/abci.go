@@ -7,7 +7,10 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/spf13/viper"
+
 	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/iavl"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -139,8 +142,10 @@ func (app *BaseApp) BeginBlock(req abci.RequestBeginBlock) (res abci.ResponseBeg
 
 	app.deliverState.ctx = app.deliverState.ctx.WithBlockGasMeter(gasMeter)
 
-	if app.beginBlocker != nil {
-		res = app.beginBlocker(app.deliverState.ctx, req)
+	if viper.GetInt32("enable-state-delta") != 2 {
+		if app.beginBlocker != nil {
+			res = app.beginBlocker(app.deliverState.ctx, req)
+		}
 	}
 
 	// set the signed validators for addition to context in deliverTx
@@ -239,7 +244,7 @@ func (app *BaseApp) Commit() (res abci.ResponseCommit) {
 	// The write to the DeliverTx state writes all state transitions to the root
 	// MultiStore (app.cms) so when Commit() is called is persists those values.
 	app.deliverState.ms.Write()
-	commitID := app.cms.Commit()
+	commitID, _ := app.cms.Commit(&iavl.TreeDelta{})
 	app.logger.Debug("Commit synced", "commit", fmt.Sprintf("%X", commitID))
 
 	// Reset the Check state to the latest committed.

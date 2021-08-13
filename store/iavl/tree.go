@@ -21,7 +21,7 @@ type (
 		Get(key []byte) (index int64, value []byte)
 		Set(key, value []byte) bool
 		Remove(key []byte) ([]byte, bool)
-		SaveVersion() ([]byte, int64, error)
+		SaveVersion() ([]byte, int64, iavl.TreeDelta, error)
 		DeleteVersion(version int64) error
 		DeleteVersions(versions ...int64) error
 		Version() int64
@@ -31,6 +31,7 @@ type (
 		GetVersionedWithProof(key []byte, version int64) ([]byte, *iavl.RangeProof, error)
 		GetImmutable(version int64) (*iavl.ImmutableTree, error)
 		SetInitialVersion(version uint64)
+		SetDelta(delta *iavl.TreeDelta)
 	}
 
 	// immutableTree is a simple wrapper around a reference to an iavl.ImmutableTree
@@ -49,7 +50,7 @@ func (it *immutableTree) Remove(_ []byte) ([]byte, bool) {
 	panic("cannot call 'Remove' on an immutable IAVL tree")
 }
 
-func (it *immutableTree) SaveVersion() ([]byte, int64, error) {
+func (it *immutableTree) SaveVersion() ([]byte, int64, iavl.TreeDelta, error) {
 	panic("cannot call 'SaveVersion' on an immutable IAVL tree")
 }
 
@@ -91,4 +92,8 @@ func (it *immutableTree) GetImmutable(version int64) (*iavl.ImmutableTree, error
 
 func (it *immutableTree) SetInitialVersion(_ uint64) {
 	panic("cannot call 'SetInitialVersion' on an immutable IAVL tree")
+}
+
+func (it *immutableTree) SetDelta(delta *iavl.TreeDelta) {
+	panic("cannot call 'SetDelta' on an immutable IAVL tree")
 }
