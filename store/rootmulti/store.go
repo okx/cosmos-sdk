@@ -96,6 +96,10 @@ func (rs *Store) GetStoreType() types.StoreType {
 	return types.StoreTypeMulti
 }
 
+func (rs *Store) GetStores() map[types.StoreKey]types.CommitKVStore {
+	return rs.stores
+}
+
 // Implements CommitMultiStore.
 func (rs *Store) MountStoreWithDB(key types.StoreKey, typ types.StoreType, db dbm.DB) {
 	if key == nil {
@@ -151,6 +155,10 @@ func (rs *Store) LoadVersionAndUpgrade(ver int64, upgrades *types.StoreUpgrades)
 func (rs *Store) LoadLatestVersion() error {
 	ver := getLatestVersion(rs.db)
 	return rs.loadVersion(ver, nil)
+}
+
+func (rs *Store) GetLatestVersion() int64 {
+	return getLatestVersion(rs.db)
 }
 
 // LoadVersion implements CommitMultiStore.
@@ -385,6 +393,10 @@ func (rs *Store) pruneStores() {
 	}
 
 	rs.pruneHeights = make([]int64, 0)
+}
+
+func (rs *Store) FlushPruneHeights(pruneHeights []int64, versions []int64) {
+	flushMetadata(rs.db, rs.lastCommitInfo.Version, rs.lastCommitInfo, pruneHeights, versions)
 }
 
 // Implements CacheWrapper/Store/CommitStore.
@@ -979,7 +991,7 @@ func (rs *Store) buildCommitInfo(version int64) commitInfo {
 
 func (src Store) Copy() *Store {
 	dst := &Store{
-		db: src.db,
+		db:           src.db,
 		pruningOpts:  src.pruningOpts,
 		storesParams: make(map[types.StoreKey]storeParams, len(src.storesParams)),
 		stores:       make(map[types.StoreKey]types.CommitKVStore, len(src.stores)),
@@ -994,7 +1006,7 @@ func (src Store) Copy() *Store {
 	}
 
 	dst.lastCommitInfo = commitInfo{
-		Version: src.lastCommitInfo.Version,
+		Version:    src.lastCommitInfo.Version,
 		StoreInfos: make([]storeInfo, 0),
 	}
 

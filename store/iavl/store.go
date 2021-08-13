@@ -18,8 +18,9 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-const (
-	defaultIAVLCacheSize = 10000
+var (
+	FlagIavlCacheSize = "iavl-cache-size"
+	IavlCacheSize     = 1000000
 )
 
 var (
@@ -45,7 +46,7 @@ func LoadStore(db dbm.DB, id types.CommitID, lazyLoading bool, startVersion int6
 // to the one given. Internally, it will load the store's version (id) from the
 // provided DB. An error is returned if the version fails to load.
 func LoadStoreWithInitialVersion(db dbm.DB, id types.CommitID, lazyLoading bool, initialVersion uint64) (types.CommitKVStore, error) {
-	tree, err := iavl.NewMutableTreeWithOpts(db, defaultIAVLCacheSize, &iavl.Options{InitialVersion: initialVersion})
+	tree, err := iavl.NewMutableTreeWithOpts(db, IavlCacheSize, &iavl.Options{InitialVersion: initialVersion})
 	if err != nil {
 		return nil, err
 	}

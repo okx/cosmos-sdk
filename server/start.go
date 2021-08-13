@@ -4,6 +4,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/store/iavl"
 	"os"
 	"runtime/pprof"
 
@@ -128,7 +129,9 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().String(FlagEvmImportMode, "default", "Select import mode for evm state (default|files|db)")
 	cmd.Flags().String(FlagEvmImportPath, "", "Evm contract & storage db or files used for InitGenesis")
 	cmd.Flags().Uint64(FlagGoroutineNum, 0, "Limit on the number of goroutines used to import evm data(ignored if evm-import-mode is 'default')")
-	cmd.Flags().Int32(FlagStateDelta, 0, "sync through state delta(0)")
+	cmd.Flags().Int32(FlagStateDelta, 0, "sync through state delta")
+	cmd.Flags().IntVar(&iavl.IavlCacheSize, iavl.FlagIavlCacheSize, 1000000, "Max size of iavl cache")
+
 	viper.BindPFlag(FlagTrace, cmd.Flags().Lookup(FlagTrace))
 	viper.BindPFlag(FlagPruning, cmd.Flags().Lookup(FlagPruning))
 	viper.BindPFlag(FlagPruningKeepRecent, cmd.Flags().Lookup(FlagPruningKeepRecent))
