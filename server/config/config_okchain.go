@@ -112,9 +112,8 @@ func DefaultStreamConfig() *StreamConfig {
 	}
 }
 
-
 type IDynamicConfig interface {
-	GetMaxOpen() int64
+	GetMempoolRecheck() bool
 }
 
 var DynamicConfig IDynamicConfig

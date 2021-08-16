@@ -10,16 +10,16 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/tendermint/tendermint/mempool"
-
 	"github.com/gogo/protobuf/proto"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/tendermint/tendermint/libs/log"
+	"github.com/tendermint/tendermint/mempool"
 	tmhttp "github.com/tendermint/tendermint/rpc/client/http"
 	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
+	cfg "github.com/cosmos/cosmos-sdk/server/config"
 	"github.com/cosmos/cosmos-sdk/store"
 	"github.com/cosmos/cosmos-sdk/store/rootmulti"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
@@ -63,13 +63,12 @@ func IsMempoolEnableSort() bool {
 }
 
 func IsMempoolEnableRecheck() bool {
-	return mempoolEnableRecheck
+	return cfg.DynamicConfig.GetMempoolRecheck()
 }
 
-func SetGlobalMempool(mempool mempool.Mempool, enableSort bool, enableRecheck bool) {
+func SetGlobalMempool(mempool mempool.Mempool, enableSort bool) {
 	globalMempool = mempool
 	mempoolEnableSort = enableSort
-	mempoolEnableRecheck = enableRecheck
 }
 
 type (
@@ -648,7 +647,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	} else if height < startHeight && height != 0 {
 		return gInfo, result, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest,
 			fmt.Sprintf("height(%d) should be greater than start block height(%d)", height, startHeight))
-	} else  {
+	} else {
 		ctx = app.getContextForTx(mode, txBytes)
 	}
 
@@ -777,9 +776,9 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	if mode == runTxModeCheck {
 		exTxInfo := tx.GetTxInfo(ctx)
 
-		if exTxInfo.Nonce == 0 && exTxInfo.Sender != "" && app.AccHandler != nil{
+		if exTxInfo.Nonce == 0 && exTxInfo.Sender != "" && app.AccHandler != nil {
 			addr, _ := sdk.AccAddressFromBech32(exTxInfo.Sender)
-			exTxInfo.Nonce =  app.AccHandler(ctx, addr)
+			exTxInfo.Nonce = app.AccHandler(ctx, addr)
 
 			if app.anteHandler != nil {
 				exTxInfo.Nonce -= 1 // in ante handler logical, the nonce will incress one
