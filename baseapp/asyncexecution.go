@@ -9,6 +9,7 @@ type ExecuteResult struct {
 	Resp    abci.ResponseDeliverTx
 	Ms      sdk.CacheMultiStore
 	Counter uint32
+	err     error
 }
 
 func (e ExecuteResult) GetResponse() abci.ResponseDeliverTx {
@@ -16,6 +17,10 @@ func (e ExecuteResult) GetResponse() abci.ResponseDeliverTx {
 }
 
 func (e ExecuteResult) Recheck() bool {
+	//only succeed tx result will be commit
+	if e.err != nil {
+		return false
+	}
 	return true
 }
 

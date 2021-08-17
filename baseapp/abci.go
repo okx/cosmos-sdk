@@ -220,7 +220,7 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 		gInfo  sdk.GasInfo
 		result *sdk.Result
 	)
-	//just for test
+	//just for asynchronous deliver tx
 	if app.isAsyncDeliverTx {
 		defer func() {
 			app.deliverCounter++
@@ -242,6 +242,7 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 			}
 
 			asyncExe := NewExecuteResult(resp, m, app.deliverCounter)
+			asyncExe.err = e
 			app.workgroup.Push(asyncExe)
 		}()
 		return abci.ResponseDeliverTx{
