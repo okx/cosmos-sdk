@@ -115,6 +115,27 @@ func (cms Store) Write() {
 	}
 }
 
+func (cms Store) IsDirty(key []byte) bool {
+	dirty := cms.db.IsDirty(key)
+	if dirty {
+		return dirty
+	}
+	for _, store := range cms.stores {
+		dirty = store.IsDirty(key)
+		if dirty {
+			return dirty
+		}
+	}
+	return false
+}
+
+func (cms Store) IteratorCache(cb func(key, value []byte, isDirty bool) bool) {
+	cms.db.IteratorCache(cb)
+	for _, store := range cms.stores {
+		store.IteratorCache(cb)
+	}
+}
+
 // Implements CacheWrapper.
 func (cms Store) CacheWrap() types.CacheWrap {
 	return cms.CacheMultiStore().(types.CacheWrap)

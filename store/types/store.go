@@ -126,6 +126,7 @@ type MultiStore interface { //nolint
 // From MultiStore.CacheMultiStore()....
 type CacheMultiStore interface {
 	MultiStore
+	CacheManager
 	Write() // Writes operations to underlying KVStore
 }
 
@@ -204,6 +205,11 @@ type KVStore interface {
 	ReverseIterator(start, end []byte) Iterator
 }
 
+type CacheManager interface {
+	IsDirty(key []byte) bool
+	IteratorCache(cb func(key, value []byte, isDirty bool) bool)
+}
+
 // Alias iterator to db's Iterator for convenience.
 type Iterator = dbm.Iterator
 
@@ -212,7 +218,7 @@ type Iterator = dbm.Iterator
 // object expire.
 type CacheKVStore interface {
 	KVStore
-
+	CacheManager
 	// Writes operations to underlying KVStore
 	Write()
 }
@@ -231,6 +237,8 @@ type CommitKVStore interface {
 // a Committer, since Commit cache-wraps make no sense. It can return KVStore,
 // HeapStore, SpaceStore, etc.
 type CacheWrap interface {
+	CacheManager
+
 	// Write syncs with the underlying store.
 	Write()
 
