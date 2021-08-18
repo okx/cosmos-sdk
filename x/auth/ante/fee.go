@@ -20,7 +20,7 @@ type FeeTx interface {
 	sdk.Tx
 	GetGas() uint64
 	GetFee() sdk.Coins
-	FeePayer() sdk.AccAddress
+	FeePayer(ctx sdk.Context) sdk.AccAddress
 }
 
 // MempoolFeeDecorator will check if the transaction's fee is at least as large
@@ -94,7 +94,7 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 		panic(fmt.Sprintf("%s module account has not been set", types.FeeCollectorName))
 	}
 
-	feePayer := feeTx.FeePayer()
+	feePayer := feeTx.FeePayer(ctx)
 	feePayerAcc := dfd.ak.GetAccount(ctx, feePayer)
 
 	if feePayerAcc == nil {
