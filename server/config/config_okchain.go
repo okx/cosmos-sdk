@@ -111,13 +111,3 @@ func DefaultStreamConfig() *StreamConfig {
 		Engine: "",
 	}
 }
-
-type IDynamicConfig interface {
-	GetMempoolRecheck() bool
-}
-
-var DynamicConfig IDynamicConfig
-
-func SetConfig(c IDynamicConfig) {
-	DynamicConfig = c
-}

@@ -4,14 +4,14 @@ package server
 
 import (
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/store/iavl"
 	"os"
 	"runtime/pprof"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
-
 	"github.com/cosmos/cosmos-sdk/client/lcd"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/store/iavl"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/abci/server"
@@ -21,8 +21,6 @@ import (
 	"github.com/tendermint/tendermint/p2p"
 	pvm "github.com/tendermint/tendermint/privval"
 	"github.com/tendermint/tendermint/proxy"
-
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 )
 
 // Tendermint full-node start flags
@@ -56,7 +54,8 @@ const (
 func StartCmd(ctx *Context,
 	cdc *codec.Codec, appCreator AppCreator,
 	registerRoutesFn func(restServer *lcd.RestServer),
-	registerAppFlagFn func(cmd *cobra.Command)) *cobra.Command {
+	registerAppFlagFn func(cmd *cobra.Command),
+	registerDynamicConfigFn func()) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start",
 		Short: "Run the full node",
@@ -83,6 +82,8 @@ For profiling and benchmarking purposes, CPU profiling can be enabled via the '-
 which accepts a path for the resulting pprof file.
 `,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
+			registerDynamicConfigFn()
+
 			_, err := GetPruningOptionsFromFlags()
 			return err
 		},
