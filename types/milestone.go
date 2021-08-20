@@ -41,7 +41,7 @@ func init() {
 //depracate homstead signer support
 func HigherThanMercury(height int64) bool {
 	if milestoneMercuryHeight == 0 {
-		// milestoneMarsHeight not enabled
+		// milestoneMercuryHeight not enabled
 		return false
 	}
 	return height > milestoneMercuryHeight
