@@ -29,11 +29,12 @@ import (
 )
 
 const (
-	runTxModeCheck          runTxMode = iota // Check a transaction
-	runTxModeReCheck                         // Recheck a (pending) transaction after a commit
-	runTxModeSimulate                        // Simulate a transaction
-	runTxModeDeliver                         // Deliver a transaction
-	runTxModeDeliverInAsync                  //Deliver a transaction in Aysnc
+	runTxModeCheck              runTxMode = iota // Check a transaction
+	runTxModeReCheck                             // Recheck a (pending) transaction after a commit
+	runTxModeSimulate                            // Simulate a transaction
+	runTxModeDeliver                             // Deliver a transaction
+	runTxModeDeliverInAsync                      //Deliver a transaction in Aysnc
+	runTxModeDeliverWithoutAnte                  //deliver a tx with ante, the cache will be commit after delivered and will rerun the antehandler
 
 	// MainStoreKey is the string representation of the main store
 	MainStoreKey = "main"
@@ -529,7 +530,7 @@ func validateBasicTxMsgs(msgs []sdk.Msg) error {
 // Returns the applications's deliverState if app is in runTxModeDeliver,
 // otherwise it returns the application's checkstate.
 func (app *BaseApp) getState(mode runTxMode) *state {
-	if mode == runTxModeDeliver || mode == runTxModeDeliverInAsync {
+	if mode == runTxModeDeliver || mode == runTxModeDeliverInAsync || mode == runTxModeDeliverWithoutAnte {
 		return app.deliverState
 	}
 
@@ -677,13 +678,13 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	ms := ctx.MultiStore()
 
 	// only run the tx if there is block gas remaining
-	if (mode == runTxModeDeliver || mode == runTxModeDeliverInAsync) && ctx.BlockGasMeter().IsOutOfGas() {
+	if (mode == runTxModeDeliver || mode == runTxModeDeliverInAsync || mode == runTxModeDeliverWithoutAnte) && ctx.BlockGasMeter().IsOutOfGas() {
 		gInfo = sdk.GasInfo{GasUsed: ctx.BlockGasMeter().GasConsumed()}
 		return gInfo, nil, nil, sdkerrors.Wrap(sdkerrors.ErrOutOfGas, "no block gas left to run tx")
 	}
 
 	var startingGas uint64
-	if mode == runTxModeDeliver || mode == runTxModeDeliverInAsync {
+	if mode == runTxModeDeliver || mode == runTxModeDeliverInAsync || mode == runTxModeDeliverWithoutAnte {
 		startingGas = ctx.BlockGasMeter().GasConsumed()
 	}
 
@@ -720,7 +721,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	// NOTE: This must exist in a separate defer function for the above recovery
 	// to recover from this one.
 	defer func() {
-		if mode == runTxModeDeliver || mode == runTxModeDeliverInAsync {
+		if mode == runTxModeDeliver || mode == runTxModeDeliverInAsync || mode == runTxModeDeliverWithoutAnte {
 			ctx.BlockGasMeter().ConsumeGas(
 				ctx.GasMeter().GasConsumedToLimit(), "block gas meter",
 			)
@@ -732,7 +733,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	}()
 
 	defer func() {
-		if (mode == runTxModeDeliver || mode == runTxModeDeliverInAsync) && app.GasRefundHandler != nil {
+		if (mode == runTxModeDeliver || mode == runTxModeDeliverInAsync || mode == runTxModeDeliverWithoutAnte) && app.GasRefundHandler != nil {
 			GasRefundCtx, msCache := app.cacheTxContext(ctx, txBytes)
 			err := app.GasRefundHandler(GasRefundCtx, tx)
 			if err != nil {
@@ -749,9 +750,10 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		return sdk.GasInfo{}, nil, nil, err
 	}
 
-	if app.anteHandler != nil {
+	if app.anteHandler != nil && mode != runTxModeDeliverWithoutAnte {
 		var anteCtx sdk.Context
 
+		fmt.Println("call antehandler in deliverTx with async")
 		// Cache wrap context before AnteHandler call in case it aborts.
 		// This is required for both CheckTx and DeliverTx.
 		// Ref: https://github.com/cosmos/cosmos-sdk/issues/2772
@@ -782,6 +784,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		}
 
 		msc.Write()
+
 	}
 
 	// Create a new Context based off of the existing Context with a cache-wrapped
@@ -815,7 +818,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		}
 	}
 
-	if mode == runTxModeDeliverInAsync && err == nil {
+	if (mode == runTxModeDeliverInAsync || mode == runTxModeDeliverWithoutAnte) && err == nil {
 		return gInfo, result, msCache, err
 	}
 	return gInfo, result, nil, err

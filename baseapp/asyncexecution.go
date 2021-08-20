@@ -10,18 +10,49 @@ type ExecuteResult struct {
 	Ms      sdk.CacheMultiStore
 	Counter uint32
 	err     error
+	reAnte  bool
 }
 
 func (e ExecuteResult) GetResponse() abci.ResponseDeliverTx {
 	return e.Resp
 }
 
-func (e ExecuteResult) Recheck() bool {
-	//only succeed tx result will be commit
-	if e.err != nil {
+func (e ExecuteResult) Recheck(cache abci.AsyncCacheInterface) bool {
+	rerun := false
+	if e.reAnte {
+		//if ante failed, it means one from address has sent multi tx in on block , ante may using wrong nonce
+		//so we rerun this tx in directly
+		return true
+	}
+	if e.Ms == nil { //means tx was failed
 		return false
 	}
-	return true
+	e.Ms.IteratorCache(func(key, value []byte, isDirty bool) bool {
+		//the key we have read was wrote by pre txs
+		if cache.Has(key) {
+			rerun = true
+		}
+		return true
+	})
+
+	return rerun
+}
+
+func (e ExecuteResult) Collect(cache abci.AsyncCacheInterface) {
+	if e.Ms == nil {
+		return
+	}
+	e.Ms.IteratorCache(func(key, value []byte, isDirty bool) bool {
+		if isDirty {
+			//push every data we have wrote in current tx
+			cache.Push(key, value)
+		}
+		return true
+	})
+}
+
+func (e ExecuteResult) Error() error {
+	return e.err
 }
 
 func (e ExecuteResult) GetCounter() uint32 {
@@ -29,8 +60,15 @@ func (e ExecuteResult) GetCounter() uint32 {
 }
 
 func (e ExecuteResult) Commit() bool {
+	if e.Ms == nil {
+		return false
+	}
 	e.Ms.Write()
 	return true
+}
+
+func (e ExecuteResult) NeedAnte() bool {
+	return e.reAnte
 }
 
 func NewExecuteResult(r abci.ResponseDeliverTx, ms sdk.CacheMultiStore, counter uint32) ExecuteResult {
@@ -38,12 +76,13 @@ func NewExecuteResult(r abci.ResponseDeliverTx, ms sdk.CacheMultiStore, counter 
 		Resp:    r,
 		Ms:      ms,
 		Counter: counter,
+		reAnte:  false,
 	}
 }
 
 type AsyncWorkGroup struct {
 	WorkCh     chan ExecuteResult
-	ExecRes    []abci.ExecuteRes
+	ExecRes    map[int]abci.ExecuteRes
 	MaxCounter int
 	Cb         abci.AsyncCallBack
 }
@@ -51,7 +90,7 @@ type AsyncWorkGroup struct {
 func NewAsyncWorkGroup() *AsyncWorkGroup {
 	return &AsyncWorkGroup{
 		WorkCh:     make(chan ExecuteResult, 1),
-		ExecRes:    make([]abci.ExecuteRes, 0),
+		ExecRes:    make(map[int]abci.ExecuteRes, 0),
 		MaxCounter: 0,
 		Cb:         nil,
 	}
@@ -67,7 +106,7 @@ func (a *AsyncWorkGroup) Start() {
 		for {
 			select {
 			case exec = <-a.WorkCh:
-				a.ExecRes = append(a.ExecRes, exec)
+				a.ExecRes[int(exec.Counter)] = exec
 				if len(a.ExecRes) == a.MaxCounter {
 					//call tendermint to update the deliver tx response
 					if a.Cb != nil {
@@ -84,6 +123,6 @@ func (a *AsyncWorkGroup) IncreaseCounter() {
 }
 
 func (a *AsyncWorkGroup) Reset() {
-	a.ExecRes = make([]abci.ExecuteRes, 0)
+	a.ExecRes = make(map[int]abci.ExecuteRes, 0)
 	a.MaxCounter = 0
 }

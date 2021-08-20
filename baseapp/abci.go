@@ -206,6 +206,40 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 	}
 }
 
+//we reuse the nonce that changed by the last async call
+//if last ante handler has been failed, we need rerun it ? or not?
+func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx, needAnte bool) abci.ExecuteRes {
+	tx, err := app.txDecoder(req.Tx)
+	if err != nil {
+		return nil
+	}
+	var (
+		gInfo sdk.GasInfo
+		resp  abci.ResponseDeliverTx
+		mode  runTxMode
+	)
+	mode = runTxModeDeliverInAsync
+	if !needAnte {
+		mode = runTxModeDeliverWithoutAnte
+	}
+	g, r, m, e := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight)
+	if e != nil {
+		resp = sdkerrors.ResponseDeliverTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
+	} else {
+		resp = abci.ResponseDeliverTx{
+			GasWanted: int64(g.GasWanted), // TODO: Should type accept unsigned ints?
+			GasUsed:   int64(g.GasUsed),   // TODO: Should type accept unsigned ints?
+			Log:       r.Log,
+			Data:      r.Data,
+			Events:    r.Events.ToABCIEvents(),
+		}
+	}
+
+	asyncExe := NewExecuteResult(resp, m, app.deliverCounter)
+	asyncExe.err = e
+	return asyncExe
+}
+
 // DeliverTx implements the ABCI interface and executes a tx in DeliverTx mode.
 // State only gets persisted if all messages are valid and get executed successfully.
 // Otherwise, the ResponseDeliverTx will contain releveant error information.
@@ -225,6 +259,8 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 		defer func() {
 			app.deliverCounter++
 		}()
+		counter := app.deliverCounter
+		//todo: maybe losing tx
 		app.workgroup.IncreaseCounter()
 		go func() {
 			var resp abci.ResponseDeliverTx
@@ -241,8 +277,12 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 				}
 			}
 
-			asyncExe := NewExecuteResult(resp, m, app.deliverCounter)
+			asyncExe := NewExecuteResult(resp, m, counter)
 			asyncExe.err = e
+			if r == nil {
+				//means failed to execute ante handler, may need to rerun antehandler in serial deliver
+				asyncExe.reAnte = true
+			}
 			app.workgroup.Push(asyncExe)
 		}()
 		return abci.ResponseDeliverTx{
