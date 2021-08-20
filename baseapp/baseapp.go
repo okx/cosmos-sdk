@@ -781,7 +781,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 			addr, _ := sdk.AccAddressFromBech32(exTxInfo.Sender)
 			exTxInfo.Nonce =  app.AccHandler(ctx, addr)
 
-			if app.anteHandler != nil {
+			if app.anteHandler != nil && exTxInfo.Nonce > 0{
 				exTxInfo.Nonce -= 1 // in ante handler logical, the nonce will incress one
 			}
 		}

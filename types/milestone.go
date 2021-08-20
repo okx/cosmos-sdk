@@ -13,6 +13,7 @@ import (
 var (
 	MILESTONE_MERCURY_HEIGHT     string
 	milestoneMercuryHeight       int64
+
 	once                         sync.Once
 )
 
@@ -37,7 +38,7 @@ func init() {
 	initVersionBlockHeight()
 }
 
-//disable transfer tokens to contract address by cli
+//depracate homstead signer support
 func HigherThanMercury(height int64) bool {
 	if milestoneMercuryHeight == 0 {
 		// milestoneMercuryHeight not enabled
