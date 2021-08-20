@@ -14,9 +14,6 @@ var (
 	MILESTONE_MERCURY_HEIGHT     string
 	milestoneMercuryHeight       int64
 
-	MILESTONE_MARS_HEIGHT     string
-	milestoneMarsHeight       int64
-
 	once                         sync.Once
 )
 
@@ -34,7 +31,6 @@ func string2number(input string) int64 {
 func initVersionBlockHeight() {
 	once.Do(func() {
 		milestoneMercuryHeight = string2number(MILESTONE_MERCURY_HEIGHT)
-		milestoneMarsHeight = string2number(MILESTONE_MARS_HEIGHT)
 	})
 }
 
@@ -42,22 +38,13 @@ func init() {
 	initVersionBlockHeight()
 }
 
-//disable transfer tokens to contract address by cli
+//depracate homstead signer support
 func HigherThanMercury(height int64) bool {
 	if milestoneMercuryHeight == 0 {
-		// milestoneMercuryHeight not enabled
-		return false
-	}
-	return height > milestoneMercuryHeight
-}
-
-//depracate homstead signer support
-func HigherThanMars(height int64) bool {
-	if milestoneMarsHeight == 0 {
 		// milestoneMarsHeight not enabled
 		return false
 	}
-	return height > milestoneMarsHeight
+	return height > milestoneMercuryHeight
 }
 
 ////disable transfer tokens to contract address by cli
