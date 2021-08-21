@@ -14,6 +14,14 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
+type ParseAppTxHandler func (cdc *codec.Codec, txBytes []byte) (sdk.Tx, error)
+
+var paresAppTx ParseAppTxHandler
+
+func SetParseAppTx(hanlder ParseAppTxHandler) {
+	paresAppTx = hanlder
+}
+
 // QueryTxsByEvents performs a search for transactions for a given set of events
 // via the Tendermint RPC. An event takes the form of:
 // "{eventAttribute}.{attributeKey} = '{attributeValue}'". Each event is
@@ -74,6 +82,11 @@ func QueryTxsByEvents(cliCtx context.CLIContext, events []string, page, limit in
 // QueryTx queries for a single transaction by a hash string in hex format. An
 // error is returned if the transaction does not exist or cannot be queried.
 func QueryTx(cliCtx context.CLIContext, hashHexStr string) (sdk.TxResponse, error) {
+	// strip 0x prefix
+	if strings.HasPrefix(hashHexStr, "0x") {
+		hashHexStr = hashHexStr[2:]
+	}
+
 	hash, err := hex.DecodeString(hashHexStr)
 	if err != nil {
 		return sdk.TxResponse{}, err
@@ -172,8 +185,8 @@ func parseTx(cdc *codec.Codec, txBytes []byte) (sdk.Tx, error) {
 	var tx types.StdTx
 
 	err := cdc.UnmarshalBinaryLengthPrefixed(txBytes, &tx)
-	if err != nil {
-		return nil, err
+	if err != nil && paresAppTx != nil {
+		return paresAppTx(cdc, txBytes)
 	}
 
 	return tx, nil

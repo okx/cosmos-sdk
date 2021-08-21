@@ -3,6 +3,8 @@ package types
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/tendermint/tendermint/mempool"
+	"math/big"
 
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/multisig"
@@ -156,11 +158,27 @@ func (tx StdTx) GetFee() sdk.Coins { return tx.Fee.Amount }
 // FeePayer returns the address that is responsible for paying fee
 // StdTx returns the first signer as the fee payer
 // If no signers for tx, return empty address
-func (tx StdTx) FeePayer() sdk.AccAddress {
+func (tx StdTx) FeePayer(ctx sdk.Context) sdk.AccAddress {
 	if tx.GetSigners() != nil {
 		return tx.GetSigners()[0]
 	}
 	return sdk.AccAddress{}
+}
+
+// GetTxInfo return tx sender and gas price
+func (tx StdTx) GetTxInfo(ctx sdk.Context) mempool.ExTxInfo {
+	exInfo := mempool.ExTxInfo{
+		Sender:   "",
+		GasPrice: big.NewInt(0),
+		Nonce:    0,
+	}
+
+	if tx.GetSigners() != nil {
+		exInfo.Sender = tx.FeePayer(ctx).String()
+	}
+	exInfo.GasPrice = tx.Fee.GasPrices()[0].Amount.BigInt()
+
+	return exInfo
 }
 
 //__________________________________________________________

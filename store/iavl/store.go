@@ -1,6 +1,8 @@
 package iavl
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"sync"
 
@@ -16,8 +18,9 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-const (
-	defaultIAVLCacheSize = 10000
+var (
+	FlagIavlCacheSize = "iavl-cache-size"
+	IavlCacheSize     = 1000000
 )
 
 var (
@@ -43,7 +46,7 @@ func LoadStore(db dbm.DB, id types.CommitID, lazyLoading bool, startVersion int6
 // to the one given. Internally, it will load the store's version (id) from the
 // provided DB. An error is returned if the version fails to load.
 func LoadStoreWithInitialVersion(db dbm.DB, id types.CommitID, lazyLoading bool, initialVersion uint64) (types.CommitKVStore, error) {
-	tree, err := iavl.NewMutableTreeWithOpts(db, defaultIAVLCacheSize, &iavl.Options{InitialVersion: initialVersion})
+	tree, err := iavl.NewMutableTreeWithOpts(db, IavlCacheSize, &iavl.Options{InitialVersion: initialVersion})
 	if err != nil {
 		return nil, err
 	}
@@ -81,15 +84,23 @@ func UnsafeNewStore(tree *iavl.MutableTree) *Store {
 // been pruned, an empty immutable IAVL tree will be used.
 // Any mutable operations executed will result in a panic.
 func (st *Store) GetImmutable(version int64) (*Store, error) {
-	if !st.VersionExists(version) {
-		return &Store{tree: &immutableTree{&iavl.ImmutableTree{}}}, nil
-	}
+	var iTree *iavl.ImmutableTree
+	var err error
+	if !abci.GetCloseMutex() {
+		if !st.VersionExists(version) {
+			return &Store{tree: &immutableTree{&iavl.ImmutableTree{}}}, nil
+		}
 
-	iTree, err := st.tree.GetImmutable(version)
-	if err != nil {
-		return nil, err
+		iTree, err = st.tree.GetImmutable(version)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		iTree, err = st.tree.GetImmutable(version)
+		if err != nil {
+			return &Store{tree: &immutableTree{&iavl.ImmutableTree{}}}, nil
+		}
 	}
-
 	return &Store{
 		tree: &immutableTree{iTree},
 	}, nil
@@ -458,4 +469,32 @@ func (iter *iavlIterator) assertIsValid(unlockMutex bool) {
 		}
 		panic("invalid iterator")
 	}
+}
+
+// SetInitialVersion sets the initial version of the IAVL tree. It is used when
+// starting a new chain at an arbitrary height.
+func (st *Store) SetInitialVersion(version int64) {
+	st.tree.SetInitialVersion(uint64(version))
+}
+
+// Exports the IAVL store at the given version, returning an iavl.Exporter for the tree.
+func (st *Store) Export(version int64) (*iavl.Exporter, error) {
+	istore, err := st.GetImmutable(version)
+	if err != nil {
+		return nil, fmt.Errorf("iavl export failed for version %v: %w", version, err)
+	}
+	tree, ok := istore.tree.(*immutableTree)
+	if !ok || tree == nil {
+		return nil, fmt.Errorf("iavl export failed: unable to fetch tree for version %v", version)
+	}
+	return tree.Export(), nil
+}
+
+// Import imports an IAVL tree at the given version, returning an iavl.Importer for importing.
+func (st *Store) Import(version int64) (*iavl.Importer, error) {
+	tree, ok := st.tree.(*iavl.MutableTree)
+	if !ok {
+		return nil, errors.New("iavl import failed: unable to find mutable tree")
+	}
+	return tree.Import(version)
 }

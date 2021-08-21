@@ -5,9 +5,12 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"os"
 	"sync"
 	"testing"
+
+	"github.com/tendermint/tendermint/mempool"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -576,6 +579,14 @@ func (tx *txTest) setFailOnHandler(fail bool) {
 func (tx txTest) GetMsgs() []sdk.Msg   { return tx.Msgs }
 func (tx txTest) ValidateBasic() error { return nil }
 
+func (tx txTest) GetTxInfo(ctx sdk.Context) mempool.ExTxInfo {
+	return mempool.ExTxInfo{
+		Sender:   "",
+		GasPrice: big.NewInt(0),
+		Nonce:    0,
+	}
+}
+
 const (
 	routeMsgCounter  = "msgCounter"
 	routeMsgCounter2 = "msgCounter2"
@@ -952,13 +963,13 @@ func TestSimulateTx(t *testing.T) {
 		require.Nil(t, err)
 
 		// simulate a message, check gas reported
-		gInfo, result, err := app.Simulate(txBytes, tx)
+		gInfo, result, err := app.Simulate(txBytes, tx, 0)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, gasConsumed, gInfo.GasUsed)
 
 		// simulate again, same result
-		gInfo, result, err = app.Simulate(txBytes, tx)
+		gInfo, result, err = app.Simulate(txBytes, tx, 0)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, gasConsumed, gInfo.GasUsed)

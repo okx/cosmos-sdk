@@ -106,6 +106,20 @@ func (app *BaseApp) SetAnteHandler(ah sdk.AnteHandler) {
 	app.anteHandler = ah
 }
 
+func (app *BaseApp) SetGasRefundHandler(gh sdk.GasRefundHandler) {
+	if app.sealed {
+		panic("SetGasHandler() on sealed BaseApp")
+	}
+	app.GasRefundHandler = gh
+}
+
+func (app *BaseApp) SetAccHandler(ah sdk.AccHandler) {
+	if app.sealed {
+		panic("SetAccHandler() on sealed BaseApp")
+	}
+	app.AccHandler = ah
+}
+
 func (app *BaseApp) SetAddrPeerFilter(pf sdk.PeerFilter) {
 	if app.sealed {
 		panic("SetAddrPeerFilter() on sealed BaseApp")
