@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -149,12 +148,9 @@ func (rs *Store) LoadVersionAndUpgrade(ver int64, upgrades *types.StoreUpgrades)
 // LoadLatestVersion implements CommitMultiStore.
 func (rs *Store) LoadLatestVersion() error {
 	ver := getLatestVersion(rs.db)
-	assignedStartHeight := viper.GetString("start_height")
-	if assignedStartHeight != "0" {
-		height, err := strconv.Atoi(assignedStartHeight)
-		if err == nil {
-			ver = int64(height - 1)
-		}
+	assignedStartHeight := viper.GetInt64("start_height")
+	if assignedStartHeight > 0 {
+		ver = int64(assignedStartHeight - 1)
 	}
 	return rs.loadVersion(ver, nil)
 }
