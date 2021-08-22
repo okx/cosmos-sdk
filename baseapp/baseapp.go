@@ -793,8 +793,10 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	}
 
 	if err != nil {
-		codeSpace, code, info := sdkerrors.ABCIInfo(err, app.trace)
-		err = sdkerrors.New(codeSpace, abci.CodeTypeNonceInc + code, info)
+		if sdk.HigherThanMercury(ctx.BlockHeight()) {
+			codeSpace, code, info := sdkerrors.ABCIInfo(err, app.trace)
+			err = sdkerrors.New(codeSpace, abci.CodeTypeNonceInc + code, info)
+		}
 	}
 
 	return gInfo, result, err
