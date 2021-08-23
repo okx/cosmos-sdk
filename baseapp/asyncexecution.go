@@ -8,11 +8,12 @@ import (
 )
 
 type ExecuteResult struct {
-	Resp    abci.ResponseDeliverTx
-	Ms      sdk.CacheMultiStore
-	Counter uint32
-	err     error
-	reAnte  bool
+	Resp       abci.ResponseDeliverTx
+	Ms         sdk.CacheMultiStore
+	Counter    uint32
+	err        error
+	reAnte     bool
+	evmCounter uint32
 }
 
 func (e ExecuteResult) GetResponse() abci.ResponseDeliverTx {
@@ -70,16 +71,21 @@ func (e ExecuteResult) Commit() bool {
 	return true
 }
 
+func (e ExecuteResult) GetEvmTxCounter() uint32 {
+	return e.evmCounter
+}
+
 func (e ExecuteResult) NeedAnte() bool {
 	return e.reAnte
 }
 
-func NewExecuteResult(r abci.ResponseDeliverTx, ms sdk.CacheMultiStore, counter uint32) ExecuteResult {
+func NewExecuteResult(r abci.ResponseDeliverTx, ms sdk.CacheMultiStore, counter uint32, evmCounter uint32) ExecuteResult {
 	return ExecuteResult{
-		Resp:    r,
-		Ms:      ms,
-		Counter: counter,
-		reAnte:  false,
+		Resp:       r,
+		Ms:         ms,
+		Counter:    counter,
+		reAnte:     false,
+		evmCounter: evmCounter,
 	}
 }
 

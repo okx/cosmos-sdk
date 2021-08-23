@@ -78,6 +78,13 @@ func (app *BaseApp) SetCMS(cms store.CommitMultiStore) {
 	app.cms = cms
 }
 
+func (app *BaseApp) SetTxChecker(ch sdk.CheckTxType) {
+	if app.sealed {
+		panic("SetTxChecker() on sealed BaseApp")
+	}
+	app.txChecker = ch
+}
+
 func (app *BaseApp) SetInitChainer(initChainer sdk.InitChainer) {
 	if app.sealed {
 		panic("SetInitChainer() on sealed BaseApp")

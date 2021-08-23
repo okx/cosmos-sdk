@@ -209,7 +209,7 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 
 //we reuse the nonce that changed by the last async call
 //if last ante handler has been failed, we need rerun it ? or not?
-func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx, needAnte bool) abci.ExecuteRes {
+func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx, needAnte bool, evmIdx uint32) abci.ExecuteRes {
 	tx, err := app.txDecoder(req.Tx)
 	if err != nil {
 		return nil
@@ -223,7 +223,7 @@ func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx, needAnte bool)
 	if !needAnte {
 		mode = runTxModeDeliverWithoutAnte
 	}
-	g, r, m, e := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight, 0)
+	g, r, m, e := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight, evmIdx)
 	if e != nil {
 		resp = sdkerrors.ResponseDeliverTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
 	} else {
@@ -236,7 +236,7 @@ func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx, needAnte bool)
 		}
 	}
 
-	asyncExe := NewExecuteResult(resp, m, app.deliverCounter)
+	asyncExe := NewExecuteResult(resp, m, app.deliverCounter, evmIdx)
 	asyncExe.err = e
 	return asyncExe
 }
@@ -255,7 +255,7 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 		gInfo  sdk.GasInfo
 		result *sdk.Result
 	)
-	counterofEvm := app.evmCounter
+	counterOfEvm := app.evmCounter
 	if app.txChecker(tx) {
 		app.evmCounter++
 	}
@@ -271,7 +271,7 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 		app.workgroup.IncreaseCounter()
 		go func() {
 			var resp abci.ResponseDeliverTx
-			g, r, m, e := app.runTx(runTxModeDeliverInAsync, req.Tx, tx, LatestSimulateTxHeight, counterofEvm)
+			g, r, m, e := app.runTx(runTxModeDeliverInAsync, req.Tx, tx, LatestSimulateTxHeight, counterOfEvm)
 			if e != nil {
 				resp = sdkerrors.ResponseDeliverTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
 			} else {
@@ -284,7 +284,7 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 				}
 			}
 
-			asyncExe := NewExecuteResult(resp, m, counter)
+			asyncExe := NewExecuteResult(resp, m, counter, counterOfEvm)
 			asyncExe.err = e
 			if r == nil {
 				//means failed to execute ante handler, may need to rerun antehandler in serial deliver
@@ -301,7 +301,7 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 		}
 
 	} else {
-		gInfo, result, _, err = app.runTx(runTxModeDeliver, req.Tx, tx, LatestSimulateTxHeight, counterofEvm)
+		gInfo, result, _, err = app.runTx(runTxModeDeliver, req.Tx, tx, LatestSimulateTxHeight, counterOfEvm)
 	}
 
 	if err != nil {
