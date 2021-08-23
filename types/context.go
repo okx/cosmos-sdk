@@ -35,6 +35,7 @@ type Context struct {
 	minGasPrice   DecCoins
 	consParams    *abci.ConsensusParams
 	eventManager  *EventManager
+	evmTxIndex    uint32
 }
 
 // Proposed rename, not done to avoid API breakage
@@ -55,6 +56,7 @@ func (c Context) IsCheckTx() bool             { return c.checkTx }
 func (c Context) IsReCheckTx() bool           { return c.recheckTx }
 func (c Context) MinGasPrices() DecCoins      { return c.minGasPrice }
 func (c Context) EventManager() *EventManager { return c.eventManager }
+func (c Context) EvmTransactionIndex() uint32 { return c.evmTxIndex }
 
 // clone the header before returning
 func (c Context) BlockHeader() abci.Header {
@@ -90,6 +92,11 @@ func (c Context) WithContext(ctx context.Context) Context {
 
 func (c Context) WithMultiStore(ms MultiStore) Context {
 	c.ms = ms
+	return c
+}
+
+func (c Context) WithEvmCounter(counter uint32) Context {
+	c.evmTxIndex = counter
 	return c
 }
 

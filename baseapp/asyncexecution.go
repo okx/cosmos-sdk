@@ -1,6 +1,8 @@
 package baseapp
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -61,6 +63,7 @@ func (e ExecuteResult) GetCounter() uint32 {
 
 func (e ExecuteResult) Commit() bool {
 	if e.Ms == nil {
+		fmt.Println("commiting a nil res")
 		return false
 	}
 	e.Ms.Write()

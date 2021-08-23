@@ -1,6 +1,8 @@
 package types
 
-import abci "github.com/tendermint/tendermint/abci/types"
+import (
+	abci "github.com/tendermint/tendermint/abci/types"
+)
 
 // InitChainer initializes application state at genesis
 type InitChainer func(ctx Context, req abci.RequestInitChain) abci.ResponseInitChain
@@ -19,3 +21,6 @@ type EndBlocker func(ctx Context, req abci.RequestEndBlock) abci.ResponseEndBloc
 
 // PeerFilter responds to p2p filtering queries from Tendermint
 type PeerFilter func(info string) abci.ResponseQuery
+
+// CheckTxType will return true if target tx is a type of evm transaction
+type CheckTxType func(Tx) bool

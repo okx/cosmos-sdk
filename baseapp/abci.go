@@ -110,6 +110,7 @@ func (app *BaseApp) BeginBlock(req abci.RequestBeginBlock) (res abci.ResponseBeg
 	defer func() {
 		app.deliverCounter = 0
 		app.workgroup.Reset()
+		app.evmCounter = 0
 	}()
 	if app.cms.TracingEnabled() {
 		app.cms.SetTracingContext(sdk.TraceContext(
@@ -192,7 +193,7 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 		panic(fmt.Sprintf("unknown RequestCheckTx type: %s", req.Type))
 	}
 
-	gInfo, result, _, err := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight)
+	gInfo, result, _, err := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight, 0)
 	if err != nil {
 		return sdkerrors.ResponseCheckTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
 	}
@@ -222,7 +223,7 @@ func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx, needAnte bool)
 	if !needAnte {
 		mode = runTxModeDeliverWithoutAnte
 	}
-	g, r, m, e := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight)
+	g, r, m, e := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight, 0)
 	if e != nil {
 		resp = sdkerrors.ResponseDeliverTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
 	} else {
@@ -254,17 +255,23 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 		gInfo  sdk.GasInfo
 		result *sdk.Result
 	)
+	counterofEvm := app.evmCounter
+	if app.txChecker(tx) {
+		app.evmCounter++
+	}
+
 	//just for asynchronous deliver tx
 	if app.isAsyncDeliverTx {
 		defer func() {
 			app.deliverCounter++
 		}()
 		counter := app.deliverCounter
+
 		//todo: maybe losing tx
 		app.workgroup.IncreaseCounter()
 		go func() {
 			var resp abci.ResponseDeliverTx
-			g, r, m, e := app.runTx(runTxModeDeliverInAsync, req.Tx, tx, LatestSimulateTxHeight)
+			g, r, m, e := app.runTx(runTxModeDeliverInAsync, req.Tx, tx, LatestSimulateTxHeight, counterofEvm)
 			if e != nil {
 				resp = sdkerrors.ResponseDeliverTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
 			} else {
@@ -294,7 +301,7 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 		}
 
 	} else {
-		gInfo, result, _, err = app.runTx(runTxModeDeliver, req.Tx, tx, LatestSimulateTxHeight)
+		gInfo, result, _, err = app.runTx(runTxModeDeliver, req.Tx, tx, LatestSimulateTxHeight, counterofEvm)
 	}
 
 	if err != nil {

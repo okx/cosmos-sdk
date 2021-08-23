@@ -108,7 +108,8 @@ type BaseApp struct { // nolint: maligned
 	endBlocker       sdk.EndBlocker       // logic to run after all txs, and to determine valset changes
 	addrPeerFilter   sdk.PeerFilter       // filter peers by address and port
 	idPeerFilter     sdk.PeerFilter       // filter peers by node ID
-	fauxMerkleMode   bool                 // if true, IAVL MountStores uses MountStoresDB for simulation speed.
+	txChecker        sdk.CheckTxType
+	fauxMerkleMode   bool // if true, IAVL MountStores uses MountStoresDB for simulation speed.
 
 	// volatile states:
 	//
@@ -149,6 +150,9 @@ type BaseApp struct { // nolint: maligned
 	//counter of latest delivered tx
 	deliverCounter uint32
 
+	//counting the type of evm transactions
+	evmCounter uint32
+
 	//AsyncWorkGroup
 	workgroup *AsyncWorkGroup
 
@@ -176,6 +180,7 @@ func NewBaseApp(
 		fauxMerkleMode:   false,
 		trace:            false,
 		deliverCounter:   0,
+		evmCounter:       0,
 		workgroup:        NewAsyncWorkGroup(),
 		isAsyncDeliverTx: false,
 	}
@@ -655,7 +660,7 @@ func (app *BaseApp) cacheTxContext(ctx sdk.Context, txBytes []byte) (sdk.Context
 // Note, gas execution info is always returned. A reference to a Result is
 // returned if the tx does not run out of gas and if all the messages are valid
 // and execute successfully. An error is returned otherwise.
-func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int64) (gInfo sdk.GasInfo, result *sdk.Result, msCache sdk.CacheMultiStore, err error) {
+func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int64, evmTxIndex uint32) (gInfo sdk.GasInfo, result *sdk.Result, msCache sdk.CacheMultiStore, err error) {
 	// NOTE: GasWanted should be returned by the AnteHandler. GasUsed is
 	// determined by the GasMeter. We need access to the context to get the gas
 	// meter so we initialize upfront.
@@ -675,6 +680,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		ctx = app.getContextForTx(mode, txBytes)
 	}
 
+	ctx = ctx.WithEvmCounter(evmTxIndex)
 	ms := ctx.MultiStore()
 
 	// only run the tx if there is block gas remaining
@@ -753,7 +759,10 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	if app.anteHandler != nil && mode != runTxModeDeliverWithoutAnte {
 		var anteCtx sdk.Context
 
-		fmt.Println("call antehandler in deliverTx with async")
+		if mode == runTxModeDeliverInAsync {
+			fmt.Println("call antehandler in deliverTx with async")
+		}
+
 		// Cache wrap context before AnteHandler call in case it aborts.
 		// This is required for both CheckTx and DeliverTx.
 		// Ref: https://github.com/cosmos/cosmos-sdk/issues/2772
@@ -780,6 +789,9 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		gasWanted = ctx.GasMeter().Limit()
 
 		if err != nil {
+			if mode == runTxModeDeliverInAsync {
+				fmt.Printf("Failed to call antehandler in deliverTx with async ： %v\n", err)
+			}
 			return gInfo, nil, nil, err
 		}
 
