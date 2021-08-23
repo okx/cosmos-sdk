@@ -186,7 +186,7 @@ func Stop() {
 func registerRestServerFlags(cmd *cobra.Command) *cobra.Command {
 	cmd.Flags().String(FlagListenAddr, "tcp://0.0.0.0:26659", "The address for the rest-server to listen on. (0.0.0.0:0 means any interface, any port)")
 	cmd.Flags().String(FlagUlockKey, "", "Select the keys to unlock on the RPC server")
-	cmd.Flags().String(FlagUlockKeyHome, "", "The keybase home path")
+	cmd.Flags().String(FlagUlockKeyHome, os.ExpandEnv("$HOME/.exchaincli"), "The keybase home path")
 	cmd.Flags().String(FlagRestPathPrefix, "exchain", "Path prefix for registering rest api route.")
 	cmd.Flags().String(flags.FlagKeyringBackend, flags.DefaultKeyringBackend, "Select keyring's backend (os|file|test)")
 	cmd.Flags().String(FlagCORS, "", "Set the rest-server domains that can make CORS requests (* for all)")

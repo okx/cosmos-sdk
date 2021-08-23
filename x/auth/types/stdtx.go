@@ -158,7 +158,7 @@ func (tx StdTx) GetFee() sdk.Coins { return tx.Fee.Amount }
 // FeePayer returns the address that is responsible for paying fee
 // StdTx returns the first signer as the fee payer
 // If no signers for tx, return empty address
-func (tx StdTx) FeePayer() sdk.AccAddress {
+func (tx StdTx) FeePayer(ctx sdk.Context) sdk.AccAddress {
 	if tx.GetSigners() != nil {
 		return tx.GetSigners()[0]
 	}
@@ -174,7 +174,7 @@ func (tx StdTx) GetTxInfo(ctx sdk.Context) mempool.ExTxInfo {
 	}
 
 	if tx.GetSigners() != nil {
-		exInfo.Sender = tx.FeePayer().String()
+		exInfo.Sender = tx.FeePayer(ctx).String()
 	}
 	exInfo.GasPrice = tx.Fee.GasPrices()[0].Amount.BigInt()
 
