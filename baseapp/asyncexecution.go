@@ -23,11 +23,11 @@ func (e ExecuteResult) GetResponse() abci.ResponseDeliverTx {
 func (e ExecuteResult) Recheck(cache abci.AsyncCacheInterface) bool {
 	rerun := false
 	if e.reAnte {
-		//if ante failed, it means one from address has sent multi tx in on block , ante may using wrong nonce
+		//if ante failed, it means the same `from` address has sent multi tx in one block , ante may using wrong nonce
 		//so we rerun this tx in directly
 		return true
 	}
-	if e.Ms == nil { //means tx was failed
+	if e.Ms == nil { //means tx was failed, nothing need to commit
 		return false
 	}
 	e.Ms.IteratorCache(func(key, value []byte, isDirty bool) bool {
