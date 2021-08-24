@@ -3,24 +3,19 @@ package rootmulti
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"log"
-	"path/filepath"
-	"sort"
-	"strings"
-	"sync"
-
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 	iavltree "github.com/tendermint/iavl"
 	tmiavl "github.com/tendermint/iavl"
-	tmos "github.com/tendermint/tendermint/libs/os"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/merkle"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
+	"io"
+	"log"
+	"sort"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/store/cachemulti"
 	"github.com/cosmos/cosmos-sdk/store/dbadapter"
@@ -326,10 +321,10 @@ func (rs *Store) LastCommitID() types.CommitID {
 }
 
 // Implements Committer/CommitStore.
-func (rs *Store) Commit(*tmiavl.TreeDelta) (types.CommitID, tmiavl.TreeDelta) {
+func (rs *Store) Commit(td *tmiavl.TreeDelta, deltaBytes []byte) (types.CommitID, tmiavl.TreeDelta) {
 	previousHeight := rs.lastCommitInfo.Version
 	version := previousHeight + 1
-	rs.lastCommitInfo = commitStores(version, rs.stores)
+	rs.lastCommitInfo, deltaBytes = commitStores(version, rs.stores, deltaBytes)
 
 	// Determine if pruneHeight height needs to be added to the list of heights to
 	// be pruned, where pruneHeight = (commitHeight - 1) - KeepRecent.
@@ -723,27 +718,36 @@ func getLatestVersion(db dbm.DB) int64 {
 }
 
 // Commits each store and returns a new commitInfo.
-func commitStores(version int64, storeMap map[types.StoreKey]types.CommitKVStore) commitInfo {
+func commitStores(version int64, storeMap map[types.StoreKey]types.CommitKVStore, inputDeltaBytes []byte) (commitInfo, []byte) {
 	storeInfos := make([]storeInfo, 0, len(storeMap))
 
 	appliedDeltas := map[string]*tmiavl.TreeDelta{}
 	returnedDeltas := map[string]tmiavl.TreeDelta{}
-	// read state delta from file
+	var deltaBytes []byte
+	var err error
+
 	if viper.GetInt32("enable-state-delta") == 2 {
+		/*
+		// read state delta from file
 		deltaPath := filepath.Join(viper.GetString("home"),
 			fmt.Sprintf("data/state_delta/delta-%d.json", version))
-		bytes, err := ioutil.ReadFile(deltaPath)
+		deltaBytes, err = ioutil.ReadFile(deltaPath)
 		if err != nil {
 			panic(err)
 		}
-		err = json.Unmarshal(bytes, &appliedDeltas)
+		err = json.Unmarshal(deltaBytes, &appliedDeltas)
+		if err != nil {
+			panic(err)
+		}
+		*/
+		err = json.Unmarshal(inputDeltaBytes, &appliedDeltas)
 		if err != nil {
 			panic(err)
 		}
 	}
 
 	for key, store := range storeMap {
-		commitID, reDelta := store.Commit(appliedDeltas[key.Name()])
+		commitID, reDelta := store.Commit(appliedDeltas[key.Name()], inputDeltaBytes)
 
 		if store.GetStoreType() == types.StoreTypeTransient {
 			continue
@@ -756,16 +760,9 @@ func commitStores(version int64, storeMap map[types.StoreKey]types.CommitKVStore
 		returnedDeltas[key.Name()] = reDelta
 	}
 
-	//sort.Slice(storeInfos, func(i, j int) bool {
-	//	return strings.Compare(storeInfos[i].Name, storeInfos[j].Name) == -1
-	//})
-
-	//for _, si := range storeInfos {
-	//	fmt.Printf("enable-state-delta: storename: %s, hash: %x\n", si.Name, si.Core.CommitID.Hash)
-	//}
-
-	// write state delta to file
 	if viper.GetInt32("enable-state-delta") == 1 {
+		/*
+		// write state delta to file
 		var once sync.Once
 		once.Do(func() {
 			if err := tmos.EnsureDir(filepath.Join(viper.GetString("home"),
@@ -775,11 +772,16 @@ func commitStores(version int64, storeMap map[types.StoreKey]types.CommitKVStore
 		})
 		deltaPath := filepath.Join(viper.GetString("home"),
 			fmt.Sprintf("data/state_delta/delta-%d.json", version))
-		bytes, err := json.Marshal(returnedDeltas)
+		deltaBytes, err = json.Marshal(returnedDeltas)
 		if err != nil {
 			panic(err)
 		}
-		err = ioutil.WriteFile(deltaPath, bytes, 0700)
+		err = ioutil.WriteFile(deltaPath, deltaBytes, 0700)
+		if err != nil {
+			panic(err)
+		}
+		*/
+		deltaBytes, err = json.Marshal(returnedDeltas)
 		if err != nil {
 			panic(err)
 		}
@@ -788,7 +790,7 @@ func commitStores(version int64, storeMap map[types.StoreKey]types.CommitKVStore
 	return commitInfo{
 		Version:    version,
 		StoreInfos: storeInfos,
-	}
+	}, deltaBytes
 }
 
 // Gets commitInfo from disk.

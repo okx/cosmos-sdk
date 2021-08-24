@@ -108,7 +108,7 @@ func (st *Store) GetImmutable(version int64) (*Store, error) {
 
 // Commit commits the current store state and returns a CommitID with the new
 // version and hash.
-func (st *Store) Commit(inDelta *iavl.TreeDelta) (types.CommitID, iavl.TreeDelta) {
+func (st *Store) Commit(inDelta *iavl.TreeDelta, inDeltasBytes []byte) (types.CommitID, iavl.TreeDelta) {
 	st.tree.SetDelta(inDelta)
 	hash, version, delta, err := st.tree.SaveVersion()
 	if err != nil {

@@ -17,7 +17,7 @@ type commitDBStoreAdapter struct {
 	dbadapter.Store
 }
 
-func (cdsa commitDBStoreAdapter) Commit(*iavl.TreeDelta) (types.CommitID, iavl.TreeDelta) {
+func (cdsa commitDBStoreAdapter) Commit(*iavl.TreeDelta, []byte) (types.CommitID, iavl.TreeDelta) {
 	return types.CommitID{
 		Version: -1,
 		Hash:    commithash,

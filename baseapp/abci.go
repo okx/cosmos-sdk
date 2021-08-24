@@ -244,7 +244,8 @@ func (app *BaseApp) Commit() (res abci.ResponseCommit) {
 	// The write to the DeliverTx state writes all state transitions to the root
 	// MultiStore (app.cms) so when Commit() is called is persists those values.
 	app.deliverState.ms.Write()
-	commitID, _ := app.cms.Commit(&iavl.TreeDelta{})
+	var deltasBytes []byte
+	commitID, _ := app.cms.Commit(&iavl.TreeDelta{}, deltasBytes)
 	app.logger.Debug("Commit synced", "commit", fmt.Sprintf("%X", commitID))
 
 	// Reset the Check state to the latest committed.
