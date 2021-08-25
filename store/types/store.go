@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"fmt"
 	"io"
 
@@ -18,7 +19,7 @@ type Store interface { //nolint
 
 // something that can persist to disk
 type Committer interface {
-	Commit(inDelta *iavl.TreeDelta, inDeltasBytes []byte) (CommitID, iavl.TreeDelta)
+	Commit(ctx context.Context, inDelta *iavl.TreeDelta) (context.Context, CommitID, iavl.TreeDelta)
 	LastCommitID() CommitID
 
 	// TODO: Deprecate after 0.38.5

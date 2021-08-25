@@ -1,6 +1,7 @@
 package baseapp
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sort"
@@ -237,15 +238,14 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 // defined in config, Commit will execute a deferred function call to check
 // against that height and gracefully halt if it matches the latest committed
 // height.
-func (app *BaseApp) Commit() (res abci.ResponseCommit) {
+func (app *BaseApp) Commit(ctx context.Context) (context.Context, abci.ResponseCommit) {
 	header := app.deliverState.ctx.BlockHeader()
 
 	// Write the DeliverTx state which is cache-wrapped and commit the MultiStore.
 	// The write to the DeliverTx state writes all state transitions to the root
 	// MultiStore (app.cms) so when Commit() is called is persists those values.
 	app.deliverState.ms.Write()
-	var deltasBytes []byte
-	commitID, _ := app.cms.Commit(&iavl.TreeDelta{}, deltasBytes)
+	ctxNew, commitID, _ := app.cms.Commit(ctx, &iavl.TreeDelta{})
 	app.logger.Debug("Commit synced", "commit", fmt.Sprintf("%X", commitID))
 
 	// Reset the Check state to the latest committed.
@@ -275,7 +275,7 @@ func (app *BaseApp) Commit() (res abci.ResponseCommit) {
 		app.halt()
 	}
 
-	return abci.ResponseCommit{
+	return ctxNew, abci.ResponseCommit{
 		Data: commitID.Hash,
 	}
 }

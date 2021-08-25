@@ -1,6 +1,7 @@
 package rootmulti
 
 import (
+	"context"
 	"github.com/cosmos/cosmos-sdk/store/dbadapter"
 	"github.com/cosmos/cosmos-sdk/store/types"
 	"github.com/tendermint/iavl"
@@ -17,8 +18,8 @@ type commitDBStoreAdapter struct {
 	dbadapter.Store
 }
 
-func (cdsa commitDBStoreAdapter) Commit(*iavl.TreeDelta, []byte) (types.CommitID, iavl.TreeDelta) {
-	return types.CommitID{
+func (cdsa commitDBStoreAdapter) Commit(context.Context, *iavl.TreeDelta) (context.Context, types.CommitID, iavl.TreeDelta) {
+	return context.Background(), types.CommitID{
 		Version: -1,
 		Hash:    commithash,
 	}, iavl.TreeDelta{}

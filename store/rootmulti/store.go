@@ -1,6 +1,7 @@
 package rootmulti
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
@@ -321,10 +322,11 @@ func (rs *Store) LastCommitID() types.CommitID {
 }
 
 // Implements Committer/CommitStore.
-func (rs *Store) Commit(td *tmiavl.TreeDelta, deltaBytes []byte) (types.CommitID, tmiavl.TreeDelta) {
+func (rs *Store) Commit(ctx context.Context, td *tmiavl.TreeDelta) (context.Context, types.CommitID, tmiavl.TreeDelta) {
 	previousHeight := rs.lastCommitInfo.Version
 	version := previousHeight + 1
-	rs.lastCommitInfo, deltaBytes = commitStores(version, rs.stores, deltaBytes)
+	var ctxNew context.Context
+	ctxNew, rs.lastCommitInfo = commitStores(ctx, version, rs.stores)
 
 	// Determine if pruneHeight height needs to be added to the list of heights to
 	// be pruned, where pruneHeight = (commitHeight - 1) - KeepRecent.
@@ -360,7 +362,7 @@ func (rs *Store) Commit(td *tmiavl.TreeDelta, deltaBytes []byte) (types.CommitID
 
 	flushMetadata(rs.db, version, rs.lastCommitInfo, rs.pruneHeights, rs.versions)
 
-	return types.CommitID{
+	return ctxNew, types.CommitID{
 		Version: version,
 		Hash:    rs.lastCommitInfo.Hash(),
 	}, tmiavl.TreeDelta{}
@@ -718,36 +720,23 @@ func getLatestVersion(db dbm.DB) int64 {
 }
 
 // Commits each store and returns a new commitInfo.
-func commitStores(version int64, storeMap map[types.StoreKey]types.CommitKVStore, inputDeltaBytes []byte) (commitInfo, []byte) {
+func commitStores(ctx context.Context, version int64, storeMap map[types.StoreKey]types.CommitKVStore) (context.Context, commitInfo) {
+	inDeltasBytes, _ := ctx.Value("inDeltasBytes").([]byte)
 	storeInfos := make([]storeInfo, 0, len(storeMap))
-
 	appliedDeltas := map[string]*tmiavl.TreeDelta{}
 	returnedDeltas := map[string]tmiavl.TreeDelta{}
 	var deltaBytes []byte
 	var err error
 
 	if viper.GetInt32("enable-state-delta") == 2 {
-		/*
-		// read state delta from file
-		deltaPath := filepath.Join(viper.GetString("home"),
-			fmt.Sprintf("data/state_delta/delta-%d.json", version))
-		deltaBytes, err = ioutil.ReadFile(deltaPath)
-		if err != nil {
-			panic(err)
-		}
-		err = json.Unmarshal(deltaBytes, &appliedDeltas)
-		if err != nil {
-			panic(err)
-		}
-		*/
-		err = json.Unmarshal(inputDeltaBytes, &appliedDeltas)
+		err = json.Unmarshal(inDeltasBytes, &appliedDeltas)
 		if err != nil {
 			panic(err)
 		}
 	}
 
 	for key, store := range storeMap {
-		commitID, reDelta := store.Commit(appliedDeltas[key.Name()], inputDeltaBytes)
+		_, commitID, reDelta := store.Commit(ctx, appliedDeltas[key.Name()])
 
 		if store.GetStoreType() == types.StoreTypeTransient {
 			continue
@@ -761,36 +750,17 @@ func commitStores(version int64, storeMap map[types.StoreKey]types.CommitKVStore
 	}
 
 	if viper.GetInt32("enable-state-delta") == 1 {
-		/*
-		// write state delta to file
-		var once sync.Once
-		once.Do(func() {
-			if err := tmos.EnsureDir(filepath.Join(viper.GetString("home"),
-				fmt.Sprintf("data/state_delta")), 0700); err != nil {
-				panic(err)
-			}
-		})
-		deltaPath := filepath.Join(viper.GetString("home"),
-			fmt.Sprintf("data/state_delta/delta-%d.json", version))
-		deltaBytes, err = json.Marshal(returnedDeltas)
-		if err != nil {
-			panic(err)
-		}
-		err = ioutil.WriteFile(deltaPath, deltaBytes, 0700)
-		if err != nil {
-			panic(err)
-		}
-		*/
 		deltaBytes, err = json.Marshal(returnedDeltas)
 		if err != nil {
 			panic(err)
 		}
 	}
 
-	return commitInfo{
+	ctxNew := context.WithValue(ctx, "outDeltasBytes", deltaBytes)
+	return ctxNew, commitInfo{
 		Version:    version,
 		StoreInfos: storeInfos,
-	}, deltaBytes
+	}
 }
 
 // Gets commitInfo from disk.
