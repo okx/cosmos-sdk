@@ -648,8 +648,10 @@ type commitInfo struct {
 func (ci commitInfo) Hash() []byte {
 	// TODO: cache to ci.hash []byte
 	m := make(map[string][]byte, len(ci.StoreInfos))
+	//	fmt.Println("######Committing######")
 	for _, storeInfo := range ci.StoreInfos {
 		m[storeInfo.Name] = storeInfo.Hash()
+		//		fmt.Printf("%s:%s\n", storeInfo.Name, hexutils.BytesToHex(storeInfo.Hash()))
 	}
 
 	return merkle.SimpleHashFromMap(m)

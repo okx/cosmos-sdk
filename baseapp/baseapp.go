@@ -666,6 +666,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	// meter so we initialize upfront.
 	var gasWanted uint64
 	var ctx sdk.Context
+	var runMsgCtx sdk.Context
 	// simulate tx
 	startHeight := tmtypes.GetStartBlockHeight()
 	if mode == runTxModeSimulate && height > startHeight && height < app.LastBlockHeight() {
@@ -740,7 +741,16 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 
 	defer func() {
 		if (mode == runTxModeDeliver || mode == runTxModeDeliverInAsync || mode == runTxModeDeliverWithoutAnte) && app.GasRefundHandler != nil {
-			GasRefundCtx, msCache := app.cacheTxContext(ctx, txBytes)
+			var GasRefundCtx sdk.Context
+			if mode == runTxModeDeliver {
+				GasRefundCtx, msCache = app.cacheTxContext(ctx, txBytes)
+			} else if mode == runTxModeDeliverInAsync || mode == runTxModeDeliverWithoutAnte {
+				GasRefundCtx = runMsgCtx
+				if msCache == nil {
+					return
+				}
+			}
+
 			err := app.GasRefundHandler(GasRefundCtx, tx)
 			if err != nil {
 				panic(err)
@@ -795,6 +805,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 			return gInfo, nil, nil, err
 		}
 
+		fmt.Println("After Ante Handler")
 		msc.Write()
 
 	}
@@ -802,13 +813,15 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	// Create a new Context based off of the existing Context with a cache-wrapped
 	// MultiStore in case message processing fails. At this point, the MultiStore
 	// is doubly cached-wrapped.
-	runMsgCtx, msCache := app.cacheTxContext(ctx, txBytes)
+	runMsgCtx, msCache = app.cacheTxContext(ctx, txBytes)
 
 	// Attempt to execute all messages and only update state if all messages pass
 	// and we're in DeliverTx. Note, runMsgs will never return a reference to a
 	// Result if any single message fails or does not have a registered Handler.
 	result, err = app.runMsgs(runMsgCtx, msgs, mode)
+	fmt.Println("After runMsgs")
 	if err == nil && mode == runTxModeDeliver {
+		fmt.Println("Write msCache in txModeDeliver Mode")
 		msCache.Write()
 	}
 
