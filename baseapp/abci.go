@@ -1,7 +1,6 @@
 package baseapp
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"sort"
@@ -10,8 +9,8 @@ import (
 
 	"github.com/spf13/viper"
 
-	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/iavl"
+	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -238,14 +237,14 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 // defined in config, Commit will execute a deferred function call to check
 // against that height and gracefully halt if it matches the latest committed
 // height.
-func (app *BaseApp) Commit(ctx context.Context) (context.Context, abci.ResponseCommit) {
+func (app *BaseApp) Commit(req abci.RequestCommit) abci.ResponseCommit {
 	header := app.deliverState.ctx.BlockHeader()
 
 	// Write the DeliverTx state which is cache-wrapped and commit the MultiStore.
 	// The write to the DeliverTx state writes all state transitions to the root
 	// MultiStore (app.cms) so when Commit() is called is persists those values.
 	app.deliverState.ms.Write()
-	ctxNew, commitID, _ := app.cms.Commit(ctx, &iavl.TreeDelta{})
+	commitID, _, deltas := app.cms.Commit(&iavl.TreeDelta{}, req.Deltas.DeltasByte)
 	app.logger.Debug("Commit synced", "commit", fmt.Sprintf("%X", commitID))
 
 	// Reset the Check state to the latest committed.
@@ -275,8 +274,9 @@ func (app *BaseApp) Commit(ctx context.Context) (context.Context, abci.ResponseC
 		app.halt()
 	}
 
-	return ctxNew, abci.ResponseCommit{
+	return abci.ResponseCommit{
 		Data: commitID.Hash,
+		Deltas: &abci.Deltas{DeltasByte: deltas},
 	}
 }
 

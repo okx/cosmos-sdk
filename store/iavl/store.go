@@ -1,7 +1,6 @@
 package iavl
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -109,17 +108,17 @@ func (st *Store) GetImmutable(version int64) (*Store, error) {
 
 // Commit commits the current store state and returns a CommitID with the new
 // version and hash.
-func (st *Store) Commit(ctx context.Context, inDelta *iavl.TreeDelta) (context.Context, types.CommitID, iavl.TreeDelta) {
+func (st *Store) Commit(inDelta *iavl.TreeDelta, deltas []byte) (types.CommitID, iavl.TreeDelta, []byte) {
 	st.tree.SetDelta(inDelta)
 	hash, version, delta, err := st.tree.SaveVersion()
 	if err != nil {
 		panic(err)
 	}
 
-	return ctx, types.CommitID{
+	return types.CommitID{
 		Version: version,
 		Hash:    hash,
-	}, delta
+	}, delta, nil
 }
 
 // Implements Committer.

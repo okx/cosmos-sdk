@@ -1,7 +1,6 @@
 package rootmulti
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
@@ -322,11 +321,10 @@ func (rs *Store) LastCommitID() types.CommitID {
 }
 
 // Implements Committer/CommitStore.
-func (rs *Store) Commit(ctx context.Context, td *tmiavl.TreeDelta) (context.Context, types.CommitID, tmiavl.TreeDelta) {
+func (rs *Store) Commit(td *tmiavl.TreeDelta, deltas []byte) (types.CommitID, tmiavl.TreeDelta, []byte) {
 	previousHeight := rs.lastCommitInfo.Version
 	version := previousHeight + 1
-	var ctxNew context.Context
-	ctxNew, rs.lastCommitInfo = commitStores(ctx, version, rs.stores)
+	rs.lastCommitInfo, deltas = commitStores(version, rs.stores, deltas)
 
 	// Determine if pruneHeight height needs to be added to the list of heights to
 	// be pruned, where pruneHeight = (commitHeight - 1) - KeepRecent.
@@ -362,10 +360,10 @@ func (rs *Store) Commit(ctx context.Context, td *tmiavl.TreeDelta) (context.Cont
 
 	flushMetadata(rs.db, version, rs.lastCommitInfo, rs.pruneHeights, rs.versions)
 
-	return ctxNew, types.CommitID{
+	return types.CommitID{
 		Version: version,
 		Hash:    rs.lastCommitInfo.Hash(),
-	}, tmiavl.TreeDelta{}
+	}, tmiavl.TreeDelta{}, deltas
 }
 
 // pruneStores will batch delete a list of heights from each mounted sub-store.
@@ -720,23 +718,22 @@ func getLatestVersion(db dbm.DB) int64 {
 }
 
 // Commits each store and returns a new commitInfo.
-func commitStores(ctx context.Context, version int64, storeMap map[types.StoreKey]types.CommitKVStore) (context.Context, commitInfo) {
-	inDeltasBytes, _ := ctx.Value("inDeltasBytes").([]byte)
+func commitStores(version int64, storeMap map[types.StoreKey]types.CommitKVStore, deltas []byte) (commitInfo, []byte) {
 	storeInfos := make([]storeInfo, 0, len(storeMap))
 	appliedDeltas := map[string]*tmiavl.TreeDelta{}
 	returnedDeltas := map[string]tmiavl.TreeDelta{}
-	var deltaBytes []byte
+
 	var err error
 
 	if viper.GetInt32("enable-state-delta") == 2 {
-		err = json.Unmarshal(inDeltasBytes, &appliedDeltas)
+		err = json.Unmarshal(deltas, &appliedDeltas)
 		if err != nil {
 			panic(err)
 		}
 	}
 
 	for key, store := range storeMap {
-		_, commitID, reDelta := store.Commit(ctx, appliedDeltas[key.Name()])
+		commitID, reDelta, _ := store.Commit(appliedDeltas[key.Name()], deltas)
 
 		if store.GetStoreType() == types.StoreTypeTransient {
 			continue
@@ -750,17 +747,16 @@ func commitStores(ctx context.Context, version int64, storeMap map[types.StoreKe
 	}
 
 	if viper.GetInt32("enable-state-delta") == 1 {
-		deltaBytes, err = json.Marshal(returnedDeltas)
+		deltas, err = json.Marshal(returnedDeltas)
 		if err != nil {
 			panic(err)
 		}
 	}
 
-	ctxNew := context.WithValue(ctx, "outDeltasBytes", deltaBytes)
-	return ctxNew, commitInfo{
+	return commitInfo{
 		Version:    version,
 		StoreInfos: storeInfos,
-	}
+	}, deltas
 }
 
 // Gets commitInfo from disk.

@@ -1,7 +1,6 @@
 package transient
 
 import (
-	"context"
 	"github.com/tendermint/iavl"
 	dbm "github.com/tendermint/tm-db"
 
@@ -25,7 +24,7 @@ func NewStore() *Store {
 
 // Implements CommitStore
 // Commit cleans up Store.
-func (ts *Store) Commit(context.Context, *iavl.TreeDelta) (ctx context.Context, id types.CommitID, _ iavl.TreeDelta) {
+func (ts *Store) Commit(*iavl.TreeDelta, []byte) (id types.CommitID, _ iavl.TreeDelta, _ []byte) {
 	ts.Store = dbadapter.Store{DB: dbm.NewMemDB()}
 	return
 }
