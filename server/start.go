@@ -54,8 +54,7 @@ const (
 func StartCmd(ctx *Context,
 	cdc *codec.Codec, appCreator AppCreator,
 	registerRoutesFn func(restServer *lcd.RestServer),
-	registerAppFlagFn func(cmd *cobra.Command),
-	registerDynamicConfigFn func()) *cobra.Command {
+	registerAppFlagFn func(cmd *cobra.Command)) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start",
 		Short: "Run the full node",
@@ -82,8 +81,6 @@ For profiling and benchmarking purposes, CPU profiling can be enabled via the '-
 which accepts a path for the resulting pprof file.
 `,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			registerDynamicConfigFn()
-
 			_, err := GetPruningOptionsFromFlags()
 			return err
 		},
