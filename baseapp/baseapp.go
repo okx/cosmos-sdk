@@ -10,12 +10,12 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/tendermint/tendermint/mempool"
-
 	"github.com/gogo/protobuf/proto"
 	abci "github.com/tendermint/tendermint/abci/types"
+	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/tendermint/tendermint/libs/log"
+	"github.com/tendermint/tendermint/mempool"
 	tmhttp "github.com/tendermint/tendermint/rpc/client/http"
 	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
@@ -64,17 +64,16 @@ func IsMempoolEnableSort() bool {
 }
 
 func IsMempoolEnableRecheck() bool {
-	return mempoolEnableRecheck
+	return cfg.DynamicConfig.GetMempoolRecheck()
 }
 
 func IsMempoolEnablePendingPool() bool {
 	return mempoolEnablePendingPool
 }
 
-func SetGlobalMempool(mempool mempool.Mempool, enableSort bool, enableRecheck bool, enablePendingPool bool) {
+func SetGlobalMempool(mempool mempool.Mempool, enableSort bool, enablePendingPool bool) {
 	globalMempool = mempool
 	mempoolEnableSort = enableSort
-	mempoolEnableRecheck = enableRecheck
 	mempoolEnablePendingPool = enablePendingPool
 }
 
@@ -784,6 +783,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	if mode == runTxModeCheck {
 		exTxInfo := tx.GetTxInfo(ctx)
 		exTxInfo.SenderNonce = accountNonce
+
 		if exTxInfo.Nonce == 0 && exTxInfo.Sender != "" && app.AccHandler != nil {
 			addr, _ := sdk.AccAddressFromBech32(exTxInfo.Sender)
 			exTxInfo.Nonce = app.AccHandler(ctx, addr)
