@@ -49,10 +49,9 @@ var (
 	// main store.
 	mainConsensusParamsKey = []byte("consensus_params")
 
-	globalMempool            mempool.Mempool
-	mempoolEnableSort        = false
-	mempoolEnableRecheck     = true
-	mempoolEnablePendingPool = false
+	globalMempool        mempool.Mempool
+	mempoolEnableSort    = false
+	mempoolEnableRecheck = true
 )
 
 func GetGlobalMempool() mempool.Mempool {
@@ -67,14 +66,9 @@ func IsMempoolEnableRecheck() bool {
 	return cfg.DynamicConfig.GetMempoolRecheck()
 }
 
-func IsMempoolEnablePendingPool() bool {
-	return mempoolEnablePendingPool
-}
-
-func SetGlobalMempool(mempool mempool.Mempool, enableSort bool, enablePendingPool bool) {
+func SetGlobalMempool(mempool mempool.Mempool, enableSort bool) {
 	globalMempool = mempool
 	mempoolEnableSort = enableSort
-	mempoolEnablePendingPool = enablePendingPool
 }
 
 type (
@@ -730,7 +724,6 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		return sdk.GasInfo{}, nil, err
 	}
 
-	accountNonce := uint64(0)
 	if app.anteHandler != nil {
 		var anteCtx sdk.Context
 		var msCache sdk.CacheMultiStore
@@ -745,7 +738,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		anteCtx, msCache = app.cacheTxContext(ctx, txBytes)
 		anteCtx = anteCtx.WithEventManager(sdk.NewEventManager())
 		newCtx, err := app.anteHandler(anteCtx, tx, mode == runTxModeSimulate)
-		accountNonce = newCtx.AccountNonce()
+
 		if !newCtx.IsZero() {
 			// At this point, newCtx.MultiStore() is cache-wrapped, or something else
 			// replaced by the AnteHandler. We want the original multistore, not one
@@ -782,13 +775,12 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 
 	if mode == runTxModeCheck {
 		exTxInfo := tx.GetTxInfo(ctx)
-		exTxInfo.SenderNonce = accountNonce
 
 		if exTxInfo.Nonce == 0 && exTxInfo.Sender != "" && app.AccHandler != nil {
 			addr, _ := sdk.AccAddressFromBech32(exTxInfo.Sender)
 			exTxInfo.Nonce = app.AccHandler(ctx, addr)
 
-			if app.anteHandler != nil && exTxInfo.Nonce > 0 {
+			if app.anteHandler != nil && exTxInfo.Nonce > 0{
 				exTxInfo.Nonce -= 1 // in ante handler logical, the nonce will incress one
 			}
 		}
@@ -802,7 +794,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	if err != nil {
 		if sdk.HigherThanMercury(ctx.BlockHeight()) {
 			codeSpace, code, info := sdkerrors.ABCIInfo(err, app.trace)
-			err = sdkerrors.New(codeSpace, abci.CodeTypeNonceInc+code, info)
+			err = sdkerrors.New(codeSpace, abci.CodeTypeNonceInc + code, info)
 		}
 	}
 

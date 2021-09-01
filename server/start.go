@@ -273,7 +273,7 @@ func startInProcess(ctx *Context, cdc *codec.Codec, appCreator AppCreator,
 		go lcd.StartRestServer(cdc, registerRoutesFn, tmNode, viper.GetString(FlagListenAddr))
 	}
 
-	baseapp.SetGlobalMempool(tmNode.Mempool(), cfg.Mempool.SortTxByGp, cfg.Mempool.EnablePendingPool)
+	baseapp.SetGlobalMempool(tmNode.Mempool(), cfg.Mempool.SortTxByGp)
 
 	// run forever (the node will not be returned)
 	select {}
