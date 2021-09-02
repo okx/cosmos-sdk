@@ -326,14 +326,6 @@ func (rs *Store) Commit(td *tmiavl.TreeDelta, deltas []byte) (types.CommitID, tm
 	version := previousHeight + 1
 	rs.lastCommitInfo, deltas = commitStores(version, rs.stores, deltas)
 
-	for _, v := range rs.lastCommitInfo.StoreInfos {
-		fmt.Printf("********fsc:si:[%v],[%v]\n", v.Name, v.Core.CommitID)
-	}
-
-	fmt.Printf("********fsc:commitInfo-version:%v\n", rs.lastCommitInfo.Version)
-	fmt.Printf("********fsc:commitInfo-hash:%v\n", rs.lastCommitInfo.Hash())
-	fmt.Printf("********fsc:storeInfo[0]-hash:%v\n", rs.lastCommitInfo.StoreInfos[0].Hash())
-
 	// Determine if pruneHeight height needs to be added to the list of heights to
 	// be pruned, where pruneHeight = (commitHeight - 1) - KeepRecent.
 	if int64(rs.pruningOpts.KeepRecent) < previousHeight {
@@ -751,7 +743,6 @@ func commitStores(version int64, storeMap map[types.StoreKey]types.CommitKVStore
 		si := storeInfo{}
 		si.Name = key.Name()
 		si.Core.CommitID = commitID
-		fmt.Printf("********fsc:si:[%v],[%v]\n", si.Name, si.Core.CommitID)
 		storeInfos = append(storeInfos, si)
 		returnedDeltas[key.Name()] = reDelta
 	}

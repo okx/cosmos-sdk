@@ -7,8 +7,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/spf13/viper"
-
 	"github.com/tendermint/iavl"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -142,7 +140,7 @@ func (app *BaseApp) BeginBlock(req abci.RequestBeginBlock) (res abci.ResponseBeg
 
 	app.deliverState.ctx = app.deliverState.ctx.WithBlockGasMeter(gasMeter)
 
-	if viper.GetInt32("enable-state-delta") != 2 {
+	if !req.UseDeltas {
 		if app.beginBlocker != nil {
 			res = app.beginBlocker(app.deliverState.ctx, req)
 		}
