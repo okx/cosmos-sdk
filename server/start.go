@@ -4,6 +4,9 @@ package server
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/tendermint/tendermint/rpc/client/local"
 	"os"
 	"runtime/pprof"
 
@@ -274,6 +277,14 @@ func startInProcess(ctx *Context, cdc *codec.Codec, appCreator AppCreator,
 	}
 
 	baseapp.SetGlobalMempool(tmNode.Mempool(), cfg.Mempool.SortTxByGp, cfg.Mempool.EnablePendingPool)
+
+	if cfg.Mempool.EnablePendingPool {
+		cliCtx := context.NewCLIContext().WithCodec(cdc)
+		cliCtx.Client = local.New(tmNode)
+		cliCtx.TrustNode = true
+		accRetriever := types.NewAccountRetriever(cliCtx)
+		tmNode.Mempool().SetAccountRetriever(accRetriever)
+	}
 
 	// run forever (the node will not be returned)
 	select {}
