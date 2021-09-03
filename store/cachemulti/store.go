@@ -131,7 +131,7 @@ func (cms Store) IsDirty(key []byte) bool {
 
 func (cms Store) IteratorCache(cb func(key, value []byte, isDirty bool) bool) {
 	cms.db.IteratorCache(cb)
-	for k, store := range cms.stores {
+	for _, store := range cms.stores {
 		store.IteratorCache(cb)
 	}
 }

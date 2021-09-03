@@ -127,8 +127,8 @@ func (a *AsyncWorkGroup) Start() {
 	}()
 }
 
-func (a *AsyncWorkGroup) IncreaseCounter() {
-	a.MaxCounter++
+func (a *AsyncWorkGroup) SetMaxCounter(MaxCounter int) {
+	a.MaxCounter = MaxCounter
 }
 
 func (a *AsyncWorkGroup) Reset() {

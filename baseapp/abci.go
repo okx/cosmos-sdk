@@ -111,6 +111,7 @@ func (app *BaseApp) BeginBlock(req abci.RequestBeginBlock) (res abci.ResponseBeg
 		app.deliverCounter = 0
 		app.workgroup.Reset()
 		app.evmCounter = 0
+		app.senders = make(map[string]int, 0)
 	}()
 	if app.cms.TracingEnabled() {
 		app.cms.SetTracingContext(sdk.TraceContext(
@@ -247,6 +248,7 @@ func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx, needAnte bool,
 // Regardless of tx execution outcome, the ResponseDeliverTx will contain relevant
 // gas execution context.
 func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
+	NeedRerun := false
 	tx, err := app.txDecoder(req.Tx)
 	if err != nil {
 		return sdkerrors.ResponseDeliverTx(err, 0, 0, app.trace)
@@ -266,31 +268,48 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 			app.deliverCounter++
 		}()
 		counter := app.deliverCounter
+		ctx := app.getContextForTx(runTxModeDeliverInAsync, req.Tx)
+		sender := tx.GetTxInfo(ctx).Sender
+		_, ok := app.senders[sender]
+		if ok {
+			//target address has more than one tx in block per
+			NeedRerun = true
+		} else {
+			//record to map for next txs
+			app.senders[sender] = 0
+		}
 
-		//todo: maybe losing tx
-		app.workgroup.IncreaseCounter()
 		go func() {
 			var resp abci.ResponseDeliverTx
-			g, r, m, e := app.runTx(runTxModeDeliverInAsync, req.Tx, tx, LatestSimulateTxHeight, counterOfEvm)
-			if e != nil {
-				resp = sdkerrors.ResponseDeliverTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
+			if NeedRerun {
+				//must rerun after async deliver
+				resp = sdkerrors.ResponseDeliverTx(sdk.ErrInvalidAddress("nil"), gInfo.GasWanted, gInfo.GasUsed, app.trace)
+				rerunRes := NewExecuteResult(resp, nil, counter, counterOfEvm)
+				rerunRes.reAnte = true
+				rerunRes.err = sdk.ErrInvalidAddress("nil")
+				app.workgroup.Push(rerunRes)
 			} else {
-				resp = abci.ResponseDeliverTx{
-					GasWanted: int64(g.GasWanted), // TODO: Should type accept unsigned ints?
-					GasUsed:   int64(g.GasUsed),   // TODO: Should type accept unsigned ints?
-					Log:       r.Log,
-					Data:      r.Data,
-					Events:    r.Events.ToABCIEvents(),
+				g, r, m, e := app.runTx(runTxModeDeliverInAsync, req.Tx, tx, LatestSimulateTxHeight, counterOfEvm)
+				if e != nil {
+					resp = sdkerrors.ResponseDeliverTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
+				} else {
+					resp = abci.ResponseDeliverTx{
+						GasWanted: int64(g.GasWanted), // TODO: Should type accept unsigned ints?
+						GasUsed:   int64(g.GasUsed),   // TODO: Should type accept unsigned ints?
+						Log:       r.Log,
+						Data:      r.Data,
+						Events:    r.Events.ToABCIEvents(),
+					}
 				}
-			}
 
-			asyncExe := NewExecuteResult(resp, m, counter, counterOfEvm)
-			asyncExe.err = e
-			if r == nil {
-				//means failed to execute ante handler, may need to rerun antehandler in serial deliver
-				asyncExe.reAnte = true
+				asyncExe := NewExecuteResult(resp, m, counter, counterOfEvm)
+				asyncExe.err = e
+				if r == nil {
+					//means failed to execute ante handler, may need to rerun antehandler in serial deliver
+					asyncExe.reAnte = true
+				}
+				app.workgroup.Push(asyncExe)
 			}
-			app.workgroup.Push(asyncExe)
 		}()
 		return abci.ResponseDeliverTx{
 			GasWanted: int64(0), // TODO: Should type accept unsigned ints?

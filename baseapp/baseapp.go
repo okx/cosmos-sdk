@@ -157,6 +157,9 @@ type BaseApp struct { // nolint: maligned
 	workgroup *AsyncWorkGroup
 
 	isAsyncDeliverTx bool
+
+	//address of tx sender in per block
+	senders map[string]int
 }
 
 // NewBaseApp returns a reference to an initialized BaseApp. It accepts a
@@ -183,6 +186,7 @@ func NewBaseApp(
 		evmCounter:       0,
 		workgroup:        NewAsyncWorkGroup(),
 		isAsyncDeliverTx: false,
+		senders:          make(map[string]int, 0),
 	}
 	for _, option := range options {
 		option(app)
@@ -512,8 +516,9 @@ func (app *BaseApp) SetAsyncDeliverTxCb(cb abci.AsyncCallBack) {
 	app.workgroup.Cb = cb
 }
 
-func (app *BaseApp) SetAsyncConfig(sw bool) {
+func (app *BaseApp) SetAsyncConfig(sw bool, maxDeliverCounter int) {
 	app.isAsyncDeliverTx = sw
+	app.workgroup.SetMaxCounter(maxDeliverCounter)
 }
 
 // validateBasicTxMsgs executes basic validator calls for messages.
