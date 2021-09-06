@@ -110,7 +110,7 @@ func (st *Store) GetImmutable(version int64) (*Store, error) {
 // version and hash.
 func (st *Store) Commit(inDelta *iavl.TreeDelta, deltas []byte) (types.CommitID, iavl.TreeDelta, []byte) {
 	st.tree.SetDelta(inDelta)
-	hash, version, delta, err := st.tree.SaveVersion(false)
+	hash, version, delta, err := st.tree.SaveVersion(len(deltas) != 0)
 	if err != nil {
 		panic(err)
 	}

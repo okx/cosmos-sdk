@@ -734,7 +734,7 @@ func commitStores(version int64, storeMap map[types.StoreKey]types.CommitKVStore
 	}
 
 	for key, store := range storeMap {
-		commitID, reDelta, _ := store.Commit(nil, deltas)
+		commitID, reDelta, _ := store.Commit(appliedDeltas[key.Name()], deltas)
 
 		if store.GetStoreType() == types.StoreTypeTransient {
 			continue
