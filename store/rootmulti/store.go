@@ -983,3 +983,15 @@ func (src Store) Copy() *Store {
 
 	return dst
 }
+
+func (rs *Store) StopStore() {
+	for _, store := range rs.stores {
+		if store.GetStoreType() == types.StoreTypeIAVL {
+			s := store.(*iavl.Store)
+			s.StopStore()
+		} else {
+			panic("not iavl tree")
+		}
+	}
+
+}

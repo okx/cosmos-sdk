@@ -35,6 +35,10 @@ type Store struct {
 	tree Tree
 }
 
+func (st *Store) StopStore() {
+	st.StopTree()
+}
+
 // LoadStore returns an IAVL Store as a CommitKVStore. Internally, it will load the
 // store's version (id) from the provided DB. An error is returned if the version
 // fails to load.

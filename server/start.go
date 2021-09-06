@@ -54,7 +54,7 @@ const (
 // StartCmd runs the service passed in, either stand-alone or in-process with
 // Tendermint.
 func StartCmd(ctx *Context,
-	cdc *codec.Codec, appCreator AppCreator,
+	cdc *codec.Codec, appCreator AppCreator, appStop AppStop,
 	registerRoutesFn func(restServer *lcd.RestServer),
 	registerAppFlagFn func(cmd *cobra.Command)) *cobra.Command {
 	cmd := &cobra.Command{
@@ -95,7 +95,7 @@ which accepts a path for the resulting pprof file.
 			ctx.Logger.Info("starting ABCI with Tendermint")
 
 			setPID(ctx)
-			_, err := startInProcess(ctx, cdc, appCreator, registerRoutesFn)
+			_, err := startInProcess(ctx, cdc, appCreator, appStop, registerRoutesFn)
 			if err != nil {
 				tmos.Exit(err.Error())
 			}
@@ -190,7 +190,7 @@ func startStandAlone(ctx *Context, appCreator AppCreator) error {
 	select {}
 }
 
-func startInProcess(ctx *Context, cdc *codec.Codec, appCreator AppCreator,
+func startInProcess(ctx *Context, cdc *codec.Codec, appCreator AppCreator, appStop AppStop,
 	registerRoutesFn func(restServer *lcd.RestServer)) (*node.Node, error) {
 
 	cfg := ctx.Config
@@ -260,6 +260,7 @@ func startInProcess(ctx *Context, cdc *codec.Codec, appCreator AppCreator,
 		if tmNode.IsRunning() {
 			_ = tmNode.Stop()
 		}
+		appStop(app)
 
 		if cpuProfileCleanup != nil {
 			cpuProfileCleanup()
