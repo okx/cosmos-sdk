@@ -36,7 +36,7 @@ type Store struct {
 }
 
 func (st *Store) StopStore() {
-	st.StopTree()
+	st.tree.StopTree()
 }
 
 // LoadStore returns an IAVL Store as a CommitKVStore. Internally, it will load the
