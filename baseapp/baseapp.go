@@ -857,3 +857,7 @@ func (app *BaseApp) Export(toApp *BaseApp, version int64) error {
 
 	return fromCms.Export(toCms, version)
 }
+
+func (app *BaseApp) StopStore() {
+	app.cms.StopStore()
+}
