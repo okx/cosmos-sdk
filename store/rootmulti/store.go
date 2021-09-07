@@ -1,8 +1,8 @@
 package rootmulti
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 	iavltree "github.com/tendermint/iavl"
@@ -25,6 +25,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/store/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
+
+var itjs = jsoniter.ConfigCompatibleWithStandardLibrary
 
 const (
 	latestVersionKey = "s/latest"
@@ -727,7 +729,7 @@ func commitStores(version int64, storeMap map[types.StoreKey]types.CommitKVStore
 	var err error
 
 	if viper.GetInt32("enable-state-delta") == 2 && len(deltas) != 0 {
-		err = json.Unmarshal(deltas, &appliedDeltas)
+		err = itjs.Unmarshal(deltas, &appliedDeltas)
 		if err != nil {
 			panic(err)
 		}
@@ -748,7 +750,7 @@ func commitStores(version int64, storeMap map[types.StoreKey]types.CommitKVStore
 	}
 
 	if viper.GetInt32("enable-state-delta") == 1 {
-		deltas, err = json.Marshal(returnedDeltas)
+		deltas, err = itjs.Marshal(returnedDeltas)
 		if err != nil {
 			panic(err)
 		}
