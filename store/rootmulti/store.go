@@ -986,12 +986,16 @@ func (src Store) Copy() *Store {
 
 func (rs *Store) StopStore() {
 	for _, store := range rs.stores {
-		if store.GetStoreType() == types.StoreTypeIAVL {
+		switch store.GetStoreType() {
+		case types.StoreTypeIAVL:
 			s := store.(*iavl.Store)
 			s.StopStore()
-		} else {
-			fmt.Println("store type: ", store.GetStoreType())
-			panic("not iavl tree")
+		case types.StoreTypeDB:
+			panic("unexpected db store")
+		case types.StoreTypeMulti:
+			panic("unexpected multi store")
+		case types.StoreTypeTransient:
+		default:
 		}
 	}
 
