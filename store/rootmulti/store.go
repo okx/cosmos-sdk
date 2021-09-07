@@ -990,6 +990,7 @@ func (rs *Store) StopStore() {
 			s := store.(*iavl.Store)
 			s.StopStore()
 		} else {
+			fmt.Println("store type: ", store.GetStoreType())
 			panic("not iavl tree")
 		}
 	}
