@@ -749,7 +749,7 @@ func commitStores(version int64, storeMap map[types.StoreKey]types.CommitKVStore
 		returnedDeltas[key.Name()] = reDelta
 	}
 
-	if viper.GetInt32("enable-state-delta") == 1 {
+	if viper.GetInt32("enable-state-delta") != 0 {
 		deltas, err = itjs.Marshal(returnedDeltas)
 		if err != nil {
 			panic(err)
