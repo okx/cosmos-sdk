@@ -3,6 +3,7 @@ package iavl
 import (
 	"errors"
 	"fmt"
+	"github.com/spf13/viper"
 	"io"
 	"sync"
 
@@ -110,7 +111,11 @@ func (st *Store) GetImmutable(version int64) (*Store, error) {
 // version and hash.
 func (st *Store) Commit(inDelta *iavl.TreeDelta, deltas []byte) (types.CommitID, iavl.TreeDelta, []byte) {
 	st.tree.SetDelta(inDelta)
-	hash, version, delta, err := st.tree.SaveVersion(len(deltas) != 0)
+	flag := false
+	if viper.GetInt32("enable-state-delta") == 2 && len(deltas) != 0 {
+		flag = true
+	}
+	hash, version, delta, err := st.tree.SaveVersion(flag)
 	if err != nil {
 		panic(err)
 	}
