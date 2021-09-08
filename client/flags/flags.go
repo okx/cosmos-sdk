@@ -23,7 +23,7 @@ const (
 	GasFlagAuto          = "auto"
 
 	// DefaultKeyringBackend
-	DefaultKeyringBackend = keys.BackendOS
+	DefaultKeyringBackend = keys.BackendTest
 )
 
 const (

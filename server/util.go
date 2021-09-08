@@ -49,7 +49,7 @@ func NewContext(config *cfg.Config, logger log.Logger) *Context {
 // PersistentPreRunEFn returns a PersistentPreRunE function for cobra
 // that initailizes the passed in context with a properly configured
 // logger and config object.
-func PersistentPreRunEFn(context *Context) func(*cobra.Command, []string) error {
+func PersistentPreRunEFn(context *Context, registerDynamicConfigFn func()) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		if cmd.Name() == version.Cmd.Name() {
 			return nil
@@ -78,6 +78,8 @@ func PersistentPreRunEFn(context *Context) func(*cobra.Command, []string) error 
 		logger = logger.With("module", "main")
 		context.Config = config
 		context.Logger = logger
+
+		registerDynamicConfigFn()
 		return nil
 	}
 }
