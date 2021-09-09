@@ -4,11 +4,12 @@ package server
 
 import (
 	"fmt"
+	"os"
+	"runtime/pprof"
+
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/tendermint/tendermint/rpc/client/local"
-	"os"
-	"runtime/pprof"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
@@ -20,6 +21,7 @@ import (
 	"github.com/tendermint/tendermint/abci/server"
 	tcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
 	tmos "github.com/tendermint/tendermint/libs/os"
+	"github.com/tendermint/tendermint/mempool"
 	"github.com/tendermint/tendermint/node"
 	"github.com/tendermint/tendermint/p2p"
 	pvm "github.com/tendermint/tendermint/privval"
@@ -284,6 +286,10 @@ func startInProcess(ctx *Context, cdc *codec.Codec, appCreator AppCreator,
 		cliCtx.TrustNode = true
 		accRetriever := types.NewAccountRetriever(cliCtx)
 		tmNode.Mempool().SetAccountRetriever(accRetriever)
+	}
+
+	if parser, ok := app.(mempool.TxInfoParser); ok {
+		tmNode.Mempool().SetTxInfoParser(parser)
 	}
 
 	// run forever (the node will not be returned)
