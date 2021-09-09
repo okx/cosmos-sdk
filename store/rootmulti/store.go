@@ -97,6 +97,14 @@ func (rs *Store) GetStores() map[types.StoreKey]types.CommitKVStore {
 	return rs.stores
 }
 
+func (rs *Store) GetVersions() []int64 {
+	return rs.versions
+}
+
+func (rs *Store) GetPruningHeights() []int64 {
+	return rs.pruneHeights
+}
+
 // Implements CommitMultiStore.
 func (rs *Store) MountStoreWithDB(key types.StoreKey, typ types.StoreType, db dbm.DB) {
 	if key == nil {
