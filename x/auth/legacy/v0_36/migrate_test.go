@@ -15,7 +15,7 @@ func TestMigrate(t *testing.T) {
 		genesisState = Migrate(v034auth.GenesisState{
 			CollectedFees: types.Coins{
 				{
-					Amount: types.NewInt(10),
+					Amount: types.NewDec(10),
 					Denom:  "stake",
 				},
 			},

@@ -3,8 +3,9 @@ package types
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/tendermint/tendermint/mempool"
 	"math/big"
+
+	"github.com/tendermint/tendermint/mempool"
 
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/multisig"

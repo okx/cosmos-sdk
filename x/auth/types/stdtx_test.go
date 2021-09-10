@@ -74,7 +74,7 @@ func TestTxValidateBasic(t *testing.T) {
 
 	// require to fail validation upon invalid fee
 	badFee := NewTestStdFee()
-	badFee.Amount[0].Amount = sdk.NewInt(-5)
+	badFee.Amount[0].Amount = sdk.NewDec(-5)
 	tx := NewTestTx(ctx, nil, nil, nil, nil, badFee)
 
 	err := tx.ValidateBasic()

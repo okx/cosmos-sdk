@@ -44,7 +44,7 @@ func TestBalances(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, res)
 	require.NoError(t, app.Codec().UnmarshalJSON(res, &coins))
-	require.True(t, coins.AmountOf("foo").Equal(sdk.NewInt(10)))
+	require.True(t, coins.AmountOf("foo").Equal(sdk.NewDec(10)))
 }
 
 func TestQuerierRouteNotFound(t *testing.T) {

@@ -224,7 +224,7 @@ func TestTallyDelgatorOverride(t *testing.T) {
 	val1, found := sk.GetValidator(ctx, valOpAddr1)
 	require.True(t, found)
 
-	_, err := sk.Delegate(ctx, TestAddrs[0], delTokens, sdk.Unbonded, val1, true)
+	_, err := sk.Delegate(ctx, TestAddrs[0], sdk.NewDecFromInt(delTokens), sdk.Unbonded, val1, true)
 	require.NoError(t, err)
 
 	_ = staking.EndBlocker(ctx, sk)
@@ -258,7 +258,7 @@ func TestTallyDelgatorInherit(t *testing.T) {
 	val3, found := sk.GetValidator(ctx, valOpAddr3)
 	require.True(t, found)
 
-	_, err := sk.Delegate(ctx, TestAddrs[0], delTokens, sdk.Unbonded, val3, true)
+	_, err := sk.Delegate(ctx, TestAddrs[0], sdk.NewDecFromInt(delTokens), sdk.Unbonded, val3, true)
 	require.NoError(t, err)
 
 	_ = staking.EndBlocker(ctx, sk)
@@ -293,9 +293,9 @@ func TestTallyDelgatorMultipleOverride(t *testing.T) {
 	val2, found := sk.GetValidator(ctx, valOpAddr2)
 	require.True(t, found)
 
-	_, err := sk.Delegate(ctx, TestAddrs[0], delTokens, sdk.Unbonded, val1, true)
+	_, err := sk.Delegate(ctx, TestAddrs[0], sdk.NewDecFromInt(delTokens), sdk.Unbonded, val1, true)
 	require.NoError(t, err)
-	_, err = sk.Delegate(ctx, TestAddrs[0], delTokens, sdk.Unbonded, val2, true)
+	_, err = sk.Delegate(ctx, TestAddrs[0], sdk.NewDecFromInt(delTokens), sdk.Unbonded, val2, true)
 	require.NoError(t, err)
 
 	_ = staking.EndBlocker(ctx, sk)
@@ -331,9 +331,9 @@ func TestTallyDelgatorMultipleInherit(t *testing.T) {
 	val3, found := sk.GetValidator(ctx, valOpAddr3)
 	require.True(t, found)
 
-	_, err := sk.Delegate(ctx, TestAddrs[0], delTokens, sdk.Unbonded, val2, true)
+	_, err := sk.Delegate(ctx, TestAddrs[0], sdk.NewDecFromInt(delTokens), sdk.Unbonded, val2, true)
 	require.NoError(t, err)
-	_, err = sk.Delegate(ctx, TestAddrs[0], delTokens, sdk.Unbonded, val3, true)
+	_, err = sk.Delegate(ctx, TestAddrs[0], sdk.NewDecFromInt(delTokens), sdk.Unbonded, val3, true)
 	require.NoError(t, err)
 
 	_ = staking.EndBlocker(ctx, sk)
@@ -368,9 +368,9 @@ func TestTallyJailedValidator(t *testing.T) {
 	val3, found := sk.GetValidator(ctx, valOpAddr3)
 	require.True(t, found)
 
-	_, err := sk.Delegate(ctx, TestAddrs[0], delTokens, sdk.Unbonded, val2, true)
+	_, err := sk.Delegate(ctx, TestAddrs[0], sdk.NewDecFromInt(delTokens), sdk.Unbonded, val2, true)
 	require.NoError(t, err)
-	_, err = sk.Delegate(ctx, TestAddrs[0], delTokens, sdk.Unbonded, val3, true)
+	_, err = sk.Delegate(ctx, TestAddrs[0], sdk.NewDecFromInt(delTokens), sdk.Unbonded, val3, true)
 	require.NoError(t, err)
 
 	_ = staking.EndBlocker(ctx, sk)
@@ -405,7 +405,7 @@ func TestTallyValidatorMultipleDelegations(t *testing.T) {
 	val2, found := sk.GetValidator(ctx, valOpAddr2)
 	require.True(t, found)
 
-	_, err := sk.Delegate(ctx, valAccAddr1, delTokens, sdk.Unbonded, val2, true)
+	_, err := sk.Delegate(ctx, valAccAddr1, sdk.NewDecFromInt(delTokens), sdk.Unbonded, val2, true)
 	require.NoError(t, err)
 
 	tp := TestProposal

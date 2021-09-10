@@ -39,16 +39,16 @@ func TestNewDecCoinFromDec(t *testing.T) {
 
 func TestNewDecCoinFromCoin(t *testing.T) {
 	require.NotPanics(t, func() {
-		NewDecCoinFromCoin(Coin{testDenom1, NewInt(5)})
+		NewDecCoinFromCoin(Coin{testDenom1, NewDec(5)})
 	})
 	require.NotPanics(t, func() {
-		NewDecCoinFromCoin(Coin{testDenom1, NewInt(0)})
+		NewDecCoinFromCoin(Coin{testDenom1, NewDec(0)})
 	})
-	require.Panics(t, func() {
-		NewDecCoinFromCoin(Coin{strings.ToUpper(testDenom1), NewInt(5)})
+	require.NotPanics(t, func() {
+		NewDecCoinFromCoin(Coin{strings.ToUpper(testDenom1), NewDec(5)})
 	})
-	require.Panics(t, func() {
-		NewDecCoinFromCoin(Coin{testDenom1, NewInt(-5)})
+	require.NotPanics(t, func() {
+		NewDecCoinFromCoin(Coin{testDenom1, NewDec(-5)})
 	})
 }
 

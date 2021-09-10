@@ -116,8 +116,8 @@ func checkDelegation(
 func TestStakingMsgs(t *testing.T) {
 	mApp, keeper := getMockApp(t)
 
-	genTokens := sdk.TokensFromConsensusPower(42)
-	bondTokens := sdk.TokensFromConsensusPower(10)
+	genTokens := sdk.NewInt(42)
+	bondTokens := sdk.NewInt(10)
 	genCoin := sdk.NewCoin(sdk.DefaultBondDenom, genTokens)
 	bondCoin := sdk.NewCoin(sdk.DefaultBondDenom, bondTokens)
 
@@ -150,7 +150,7 @@ func TestStakingMsgs(t *testing.T) {
 
 	validator := checkValidator(t, mApp, keeper, sdk.ValAddress(addr1), true)
 	require.Equal(t, sdk.ValAddress(addr1), validator.OperatorAddress)
-	require.Equal(t, sdk.Bonded, validator.Status)
+	require.Equal(t, sdk.Unbonded, validator.Status)
 	require.True(sdk.IntEq(t, bondTokens, validator.BondedTokens()))
 
 	header = abci.Header{Height: mApp.LastBlockHeight() + 1}
