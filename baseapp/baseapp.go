@@ -781,17 +781,8 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	}
 
 	if mode == runTxModeCheck {
-		exTxInfo := tx.GetTxInfo(ctx)
+		exTxInfo := app.GetTxInfo(ctx, tx)
 		exTxInfo.SenderNonce = accountNonce
-
-		if exTxInfo.Nonce == 0 && exTxInfo.Sender != "" && app.AccHandler != nil {
-			addr, _ := sdk.AccAddressFromBech32(exTxInfo.Sender)
-			exTxInfo.Nonce = app.AccHandler(ctx, addr)
-
-			if app.anteHandler != nil && exTxInfo.Nonce > 0 {
-				exTxInfo.Nonce -= 1 // in ante handler logical, the nonce will incress one
-			}
-		}
 
 		data, err := json.Marshal(exTxInfo)
 		if err == nil {
@@ -870,4 +861,27 @@ func (app *BaseApp) Export(toApp *BaseApp, version int64) error {
 	}
 
 	return fromCms.Export(toCms, version)
+}
+
+func (app *BaseApp) GetTxInfo(ctx sdk.Context, tx sdk.Tx) mempool.ExTxInfo {
+	exTxInfo := tx.GetTxInfo(ctx)
+	if exTxInfo.Nonce == 0 && exTxInfo.Sender != "" && app.AccHandler != nil {
+		addr, _ := sdk.AccAddressFromBech32(exTxInfo.Sender)
+		exTxInfo.Nonce = app.AccHandler(ctx, addr)
+
+		if app.anteHandler != nil && exTxInfo.Nonce > 0 {
+			exTxInfo.Nonce -= 1 // in ante handler logical, the nonce will incress one
+		}
+	}
+
+	return exTxInfo
+}
+
+func (app *BaseApp) GetRawTxInfo(rawTx tmtypes.Tx) mempool.ExTxInfo {
+	tx, err := app.txDecoder(rawTx)
+	if err != nil {
+		return mempool.ExTxInfo{}
+	}
+
+	return app.GetTxInfo(app.checkState.ctx, tx)
 }
