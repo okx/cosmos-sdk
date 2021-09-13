@@ -209,7 +209,7 @@ func (svd SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 
 		// verify signature
 		if !simulate && !pubKey.VerifyBytes(signBytes, sig) {
-			return ctx, sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "signature verification failed; verify correct account sequence and chain-id, sign msg:" + string(signBytes))
+			return ctx, sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "signature verification failed; verify correct account sequence and chain-id, sign msg:"+string(signBytes))
 		}
 	}
 
@@ -242,8 +242,11 @@ func (isd IncrementSequenceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, sim
 	}
 
 	// increment sequence of all signers
-	for _, addr := range sigTx.GetSigners() {
+	for index, addr := range sigTx.GetSigners() {
 		acc := isd.ak.GetAccount(ctx, addr)
+		if ctx.IsCheckTx() && index == 0 { // context with the nonce of fee payer
+			ctx = ctx.WithAccountNonce(acc.GetSequence())
+		}
 		if err := acc.SetSequence(acc.GetSequence() + 1); err != nil {
 			panic(err)
 		}
