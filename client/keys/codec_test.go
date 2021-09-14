@@ -30,7 +30,7 @@ func getTestCases() testCases {
 			[]byte(`{"name":"A","type":"B","address":"C","eth_address":"D","pubkey":"E","mnemonic":"F"}`),
 			[]byte(`{"name":"A","type":"B","address":"C","eth_address":"D","pubkey":"E"}`),
 			[]byte(`{"name":"","type":"B","address":"C","eth_address":"D","pubkey":"E"}`),
-			[]byte(`{"name":"","type":"","address":"","eth_address":""}`),
+			[]byte(`{"name":"","type":"","address":"","eth_address":"","pubkey":""}`),
 		},
 	}
 }

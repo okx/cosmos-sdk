@@ -59,7 +59,7 @@ func TestCoinIsValid(t *testing.T) {
 		{Coin{testDenom1, NewDec(0)}, true},
 		{Coin{testDenom1, NewDec(1)}, true},
 		{Coin{"Atom", NewDec(1)}, false},
-		{Coin{"a", NewDec(1)}, false},
+		{Coin{"a", NewDec(1)}, true},
 		{Coin{"a very long coin denom", NewDec(1)}, false},
 		{Coin{"atOm", NewDec(1)}, false},
 		{Coin{"     ", NewDec(1)}, false},
@@ -81,11 +81,11 @@ func TestCustomValidation(t *testing.T) {
 		coin       Coin
 		expectPass bool
 	}{
-		{Coin{"🙂", NewDec(1)}, true},
-		{Coin{"😃", NewDec(1)}, true},
-		{Coin{"😄", NewDec(1)}, true},
+		{Coin{"🙂", NewDec(1)}, false},
+		{Coin{"😃", NewDec(1)}, false},
+		{Coin{"😄", NewDec(1)}, false},
 		{Coin{"🌶", NewDec(1)}, false}, // outside the unicode range listed above
-		{Coin{"asdf", NewDec(1)}, false},
+		{Coin{"asdf", NewDec(1)}, true},
 		{Coin{"", NewDec(1)}, false},
 	}
 
@@ -434,7 +434,7 @@ func TestParse(t *testing.T) {
 		{"5 mycoin,", false, nil},             // no empty coins in a list
 		{"2 3foo, 97 bar", false, nil},        // 3foo is invalid coin name
 		{"11me coin, 12you coin", false, nil}, // no spaces in coin names
-		{"1.2btc", false, nil},                // amount must be integer
+		{"1.2btc", true, Coins{{"btc", MustNewDecFromStr("1.2")}}},                // amount must be integer
 		{"5foo-bar", false, nil},              // once more, only letters in coin name
 	}
 
@@ -689,7 +689,7 @@ func TestMarshalJSONCoins(t *testing.T) {
 	}{
 		{"nil coins", nil, `[]`},
 		{"empty coins", Coins{}, `[]`},
-		{"non-empty coins", NewCoins(NewInt64Coin("foo", 50)), `[{"denom":"foo","amount":"50"}]`},
+		{"non-empty coins", NewCoins(NewInt64Coin("foo", 50)), `[{"denom":"foo","amount":"50.000000000000000000"}]`},
 	}
 
 	for _, tc := range testCases {

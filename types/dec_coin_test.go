@@ -279,8 +279,8 @@ func TestParseDecCoins(t *testing.T) {
 		expectedErr    bool
 	}{
 		{"", nil, false},
-		{"4stake", nil, true},
-		{"5.5atom,4stake", nil, true},
+		{"4stake", NewDecCoinsFromDec("stake", NewDec(4)), false},
+		{"5.5atom,4stake", NewDecCoins(NewDecCoinFromDec("atom", MustNewDecFromStr("5.5")), NewDecCoinFromDec("stake", NewDec(4))), false},
 		{"0.0stake", nil, true},
 		{"0.004STAKE", nil, true},
 		{
