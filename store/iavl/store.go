@@ -110,10 +110,10 @@ func (st *Store) GetImmutable(version int64) (*Store, error) {
 // Commit commits the current store state and returns a CommitID with the new
 // version and hash.
 func (st *Store) Commit(inDelta *iavl.TreeDelta, deltas []byte) (types.CommitID, iavl.TreeDelta, []byte) {
-	st.tree.SetDelta(inDelta)
 	flag := false
 	if viper.GetInt32("enable-state-delta") == 2 && len(deltas) != 0 {
 		flag = true
+		st.tree.SetDelta(inDelta)
 	}
 	hash, version, delta, err := st.tree.SaveVersion(flag)
 	if err != nil {
