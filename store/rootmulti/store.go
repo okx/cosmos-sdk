@@ -331,7 +331,7 @@ func (rs *Store) LastCommitID() types.CommitID {
 }
 
 // Implements Committer/CommitStore.
-func (rs *Store) Commit(td *tmiavl.TreeDelta, deltas []byte) (types.CommitID, tmiavl.TreeDelta, []byte) {
+func (rs *Store) Commit(_ *tmiavl.TreeDelta, deltas []byte) (types.CommitID, tmiavl.TreeDelta, []byte) {
 	previousHeight := rs.lastCommitInfo.Version
 	version := previousHeight + 1
 	rs.lastCommitInfo, deltas = commitStores(version, rs.stores, deltas)
@@ -735,8 +735,9 @@ func commitStores(version int64, storeMap map[types.StoreKey]types.CommitKVStore
 	returnedDeltas := map[string]tmiavl.TreeDelta{}
 
 	var err error
+	deltaMode := viper.GetString(tmtypes.FlagStateDelta)
 
-	if viper.GetInt32("enable-state-delta") == 2 && len(deltas) != 0 {
+	if deltaMode == tmtypes.ConsumeDelta && len(deltas) != 0 {
 		err = itjs.Unmarshal(deltas, &appliedDeltas)
 		if err != nil {
 			panic(err)
@@ -757,7 +758,7 @@ func commitStores(version int64, storeMap map[types.StoreKey]types.CommitKVStore
 		returnedDeltas[key.Name()] = reDelta
 	}
 
-	if viper.GetInt32("enable-state-delta") != 0 {
+	if deltaMode != tmtypes.NoDelta {
 		deltas, err = itjs.Marshal(returnedDeltas)
 		if err != nil {
 			panic(err)

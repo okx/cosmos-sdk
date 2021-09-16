@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/tendermint/iavl"
+	tmtypes "github.com/tendermint/tendermint/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/merkle"
 	tmkv "github.com/tendermint/tendermint/libs/kv"
@@ -111,7 +112,7 @@ func (st *Store) GetImmutable(version int64) (*Store, error) {
 // version and hash.
 func (st *Store) Commit(inDelta *iavl.TreeDelta, deltas []byte) (types.CommitID, iavl.TreeDelta, []byte) {
 	flag := false
-	if viper.GetInt32("enable-state-delta") == 2 && len(deltas) != 0 {
+	if viper.GetString(tmtypes.FlagStateDelta) == tmtypes.ConsumeDelta && len(deltas) != 0 {
 		flag = true
 		st.tree.SetDelta(inDelta)
 	}

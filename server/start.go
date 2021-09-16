@@ -26,6 +26,7 @@ import (
 	"github.com/tendermint/tendermint/p2p"
 	pvm "github.com/tendermint/tendermint/privval"
 	"github.com/tendermint/tendermint/proxy"
+	tmtypes "github.com/tendermint/tendermint/types"
 	tmdb "github.com/tendermint/tm-db"
 )
 
@@ -53,7 +54,6 @@ const (
 	FlagGoroutineNum      = "goroutine-num"
 
 	FlagPruningMaxWsNum = "pruning-max-worldstate-num"
-	FlagStateDelta      = "enable-state-delta"
 )
 
 // StartCmd runs the service passed in, either stand-alone or in-process with
@@ -133,7 +133,7 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().String(FlagEvmImportMode, "default", "Select import mode for evm state (default|files|db)")
 	cmd.Flags().String(FlagEvmImportPath, "", "Evm contract & storage db or files used for InitGenesis")
 	cmd.Flags().Uint64(FlagGoroutineNum, 0, "Limit on the number of goroutines used to import evm data(ignored if evm-import-mode is 'default')")
-	cmd.Flags().Int32(FlagStateDelta, 0, "sync through state delta")
+	cmd.Flags().String(tmtypes.FlagStateDelta, tmtypes.NoDelta, "sync through state delta")
 	cmd.Flags().IntVar(&iavl.IavlCacheSize, iavl.FlagIavlCacheSize, 1000000, "Max size of iavl cache")
 	cmd.Flags().IntVar(&tmdb.LevelDBCacheSize, tmdb.FlagLevelDBCacheSize, 128, "The amount of memory in megabytes to allocate to leveldb")
 	cmd.Flags().IntVar(&tmdb.LevelDBHandlersNum, tmdb.FlagLevelDBHandlersNum, 1024, "The number of files handles to allocate to the open database files")

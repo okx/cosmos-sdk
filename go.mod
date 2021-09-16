@@ -41,5 +41,5 @@ replace github.com/keybase/go-keychain => github.com/99designs/go-keychain v0.0.
 
 replace (
 	github.com/tendermint/iavl => github.com/okex/iavl v0.14.4-0.20210916022503-b902f8bd2d0f
-	github.com/tendermint/tendermint => github.com/okex/tendermint v0.33.9-okexchain6.0.20210915092618-717eb155f8bb
+	github.com/tendermint/tendermint => github.com/okex/tendermint v0.33.9-okexchain6.0.20210916042129-6c1f83c469d5
 )
