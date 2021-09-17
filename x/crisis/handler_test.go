@@ -115,7 +115,7 @@ func TestHandleMsgVerifyInvariantWithInvariantBrokenAndNotEnoughPoolCoins(t *tes
 	msg := crisis.NewMsgVerifyInvariant(sender, testModuleName, dummyRouteWhichFails.Route)
 
 	var res *sdk.Result
-	require.Panics(t, func() {
+	require.NotPanics(t, func() {
 		res, _ = h(ctx, msg)
 	}, fmt.Sprintf("%v", res))
 }
