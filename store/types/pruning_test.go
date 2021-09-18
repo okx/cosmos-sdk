@@ -1,6 +1,7 @@
 package types
 
 import (
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -22,7 +23,7 @@ func TestPruningOptions_Validate(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		po := NewPruningOptions(tc.keepRecent, tc.keepEvery, tc.interval)
+		po := NewPruningOptions(tc.keepRecent, tc.keepEvery, tc.interval, math.MaxInt64)
 		err := po.Validate()
 		require.Equal(t, tc.expectErr, err != nil, "options: %v, err: %s", po, err)
 	}

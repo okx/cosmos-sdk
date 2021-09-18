@@ -75,7 +75,7 @@ func TestTxBuilderBuild(t *testing.T) {
 				Sequence:      1,
 				Memo:          "hello from Voyager 2!",
 				Msgs:          defaultMsg,
-				Fee:           NewStdFee(200000, sdk.Coins{sdk.NewCoin(sdk.DefaultBondDenom, sdk.NewInt(1))}),
+				Fee:           NewStdFee(200000, sdk.Coins{sdk.NewCoin(sdk.DefaultBondDenom, sdk.NewDecWithPrec(200000*10000, sdk.Precision))}),
 			},
 			false,
 		},
@@ -99,7 +99,7 @@ func TestTxBuilderBuild(t *testing.T) {
 				Sequence:      1,
 				Memo:          "hello from Voyager 1!",
 				Msgs:          defaultMsg,
-				Fee:           NewStdFee(200000, sdk.Coins{sdk.NewCoin(sdk.DefaultBondDenom, sdk.NewInt(1))}),
+				Fee:           NewStdFee(200000, sdk.Coins{sdk.NewCoin(sdk.DefaultBondDenom, sdk.NewDec(1))}),
 			},
 			true,
 		},
@@ -141,7 +141,8 @@ func TestTxBuilderBuild(t *testing.T) {
 			got, err := bldr.BuildSignMsg(tt.msgs)
 			require.Equal(t, tt.wantErr, (err != nil))
 			if err == nil {
-				require.True(t, reflect.DeepEqual(tt.want, got))
+				boolean := reflect.DeepEqual(tt.want, got)
+				require.True(t, boolean)
 			}
 		})
 	}

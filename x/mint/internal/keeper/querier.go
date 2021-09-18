@@ -16,12 +16,6 @@ func NewQuerier(k Keeper) sdk.Querier {
 		case types.QueryParameters:
 			return queryParams(ctx, k)
 
-		case types.QueryInflation:
-			return queryInflation(ctx, k)
-
-		case types.QueryAnnualProvisions:
-			return queryAnnualProvisions(ctx, k)
-
 		default:
 			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unknown query path: %s", path[0])
 		}

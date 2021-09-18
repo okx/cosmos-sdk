@@ -178,7 +178,7 @@ func TestRedact(t *testing.T) {
 	}{
 		"panic looses message": {
 			err:     Wrap(ErrPanic, "some secret stack trace"),
-			changed: ErrPanic,
+			untouched: true,
 		},
 		"sdk errors untouched": {
 			err:       Wrap(ErrUnauthorized, "cannot drop db"),
