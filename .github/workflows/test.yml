@@ -20,4 +20,4 @@ jobs:
           echo "GOBIN=$(go env GOPATH)/bin" >> $GITHUB_ENV
 
       - name: Go Test
-        run: go test -count=1 $(go list ./...)
+        run: go test -count=1 $(go list ./...) -tags='norace ledger test_ledger_mock'
