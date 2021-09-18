@@ -241,8 +241,8 @@ func TestUnbondingDelegationsMaxEntries(t *testing.T) {
 
 	bondedPool := keeper.GetBondedPool(ctx)
 	notBondedPool = keeper.GetNotBondedPool(ctx)
-	require.True(sdk.IntEq(t, bondedPool.GetCoins().AmountOf(bondDenom), oldBonded.SubRaw(int64(maxEntries))))
-	require.True(sdk.IntEq(t, notBondedPool.GetCoins().AmountOf(bondDenom), oldNotBonded.AddRaw(int64(maxEntries))))
+	require.True(sdk.DecEq(t, bondedPool.GetCoins().AmountOf(bondDenom), oldBonded.Sub(sdk.NewDec(int64(maxEntries)))))
+	require.True(sdk.DecEq(t, notBondedPool.GetCoins().AmountOf(bondDenom), oldNotBonded.Add(sdk.NewDec(int64(maxEntries)))))
 
 	oldBonded = bondedPool.GetCoins().AmountOf(bondDenom)
 	oldNotBonded = notBondedPool.GetCoins().AmountOf(bondDenom)
@@ -253,8 +253,8 @@ func TestUnbondingDelegationsMaxEntries(t *testing.T) {
 
 	bondedPool = keeper.GetBondedPool(ctx)
 	notBondedPool = keeper.GetNotBondedPool(ctx)
-	require.True(sdk.IntEq(t, bondedPool.GetCoins().AmountOf(bondDenom), oldBonded))
-	require.True(sdk.IntEq(t, notBondedPool.GetCoins().AmountOf(bondDenom), oldNotBonded))
+	require.True(sdk.DecEq(t, bondedPool.GetCoins().AmountOf(bondDenom), oldBonded))
+	require.True(sdk.DecEq(t, notBondedPool.GetCoins().AmountOf(bondDenom), oldNotBonded))
 
 	// mature unbonding delegations
 	ctx = ctx.WithBlockTime(completionTime)
@@ -263,8 +263,8 @@ func TestUnbondingDelegationsMaxEntries(t *testing.T) {
 
 	bondedPool = keeper.GetBondedPool(ctx)
 	notBondedPool = keeper.GetNotBondedPool(ctx)
-	require.True(sdk.IntEq(t, bondedPool.GetCoins().AmountOf(bondDenom), oldBonded))
-	require.True(sdk.IntEq(t, notBondedPool.GetCoins().AmountOf(bondDenom), oldNotBonded.SubRaw(int64(maxEntries))))
+	require.True(sdk.DecEq(t, bondedPool.GetCoins().AmountOf(bondDenom), oldBonded))
+	require.True(sdk.DecEq(t, notBondedPool.GetCoins().AmountOf(bondDenom), oldNotBonded.Sub(sdk.NewDec(int64(maxEntries)))))
 
 	oldNotBonded = notBondedPool.GetCoins().AmountOf(bondDenom)
 
@@ -275,8 +275,8 @@ func TestUnbondingDelegationsMaxEntries(t *testing.T) {
 	bondedPool = keeper.GetBondedPool(ctx)
 
 	notBondedPool = keeper.GetNotBondedPool(ctx)
-	require.True(sdk.IntEq(t, bondedPool.GetCoins().AmountOf(bondDenom), oldBonded.SubRaw(1)))
-	require.True(sdk.IntEq(t, notBondedPool.GetCoins().AmountOf(bondDenom), oldNotBonded.AddRaw(1)))
+	require.True(sdk.DecEq(t, bondedPool.GetCoins().AmountOf(bondDenom), oldBonded.Sub(sdk.NewDec(int64(1)))))
+	require.True(sdk.DecEq(t, notBondedPool.GetCoins().AmountOf(bondDenom), oldNotBonded.Add(sdk.NewDec(int64(1)))))
 }
 
 // test undelegating self delegation from a validator pushing it below MinSelfDelegation

@@ -3,11 +3,11 @@ package types
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/tendermint/tendermint/mempool"
 	"math/big"
 
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/multisig"
+	"github.com/tendermint/tendermint/mempool"
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/cosmos/cosmos-sdk/codec"

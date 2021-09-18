@@ -104,9 +104,9 @@ func TestQuerySupply(t *testing.T) {
 	res, err = querier(ctx, []string{types.QuerySupplyOf}, query)
 	require.Nil(t, err)
 
-	var supply sdk.Int
+	var supply sdk.Dec
 	errRes = supply.UnmarshalJSON(res)
 	require.Nil(t, errRes)
-	require.True(sdk.IntEq(t, sdk.NewInt(100), supply))
+	require.True(sdk.DecEq(t, sdk.NewDec(100), supply))
 
 }

@@ -40,17 +40,17 @@ func TestLazyKeyManagement(t *testing.T) {
 	require.Nil(t, err)
 	assert.Empty(t, l)
 
-	_, _, err = kb.CreateMnemonic(n1, English, p1, Ed25519)
+	_, _, err = kb.CreateMnemonic(n1, English, p1, Ed25519, "")
 	require.Error(t, err, "ed25519 keys are currently not supported by keybase")
 
 	// create some keys
 	_, err = kb.Get(n1)
 	require.Error(t, err)
-	i, _, err := kb.CreateMnemonic(n1, English, p1, algo)
+	i, _, err := kb.CreateMnemonic(n1, English, p1, algo, "")
 
 	require.NoError(t, err)
 	require.Equal(t, n1, i.GetName())
-	_, _, err = kb.CreateMnemonic(n2, English, p2, algo)
+	_, _, err = kb.CreateMnemonic(n2, English, p2, algo, "")
 	require.NoError(t, err)
 
 	// we can get these keys
@@ -119,10 +119,10 @@ func TestLazySignVerify(t *testing.T) {
 	p1, p2, p3 := nums, foobar, foobar
 
 	// create two users and get their info
-	i1, _, err := kb.CreateMnemonic(n1, English, p1, algo)
+	i1, _, err := kb.CreateMnemonic(n1, English, p1, algo, "")
 	require.Nil(t, err)
 
-	i2, _, err := kb.CreateMnemonic(n2, English, p2, algo)
+	i2, _, err := kb.CreateMnemonic(n2, English, p2, algo, "")
 	require.Nil(t, err)
 
 	// Import a public key
@@ -189,7 +189,7 @@ func TestLazyExportImport(t *testing.T) {
 	defer cleanup()
 	kb := New("keybasename", dir)
 
-	info, _, err := kb.CreateMnemonic("john", English, "secretcpw", Secp256k1)
+	info, _, err := kb.CreateMnemonic("john", English, "secretcpw", Secp256k1, "")
 	require.NoError(t, err)
 	require.Equal(t, info.GetName(), "john")
 
@@ -217,7 +217,7 @@ func TestLazyExportImportPrivKey(t *testing.T) {
 	defer cleanup()
 	kb := New("keybasename", dir)
 
-	info, _, err := kb.CreateMnemonic("john", English, "secretcpw", Secp256k1)
+	info, _, err := kb.CreateMnemonic("john", English, "secretcpw", Secp256k1, "")
 	require.NoError(t, err)
 	require.Equal(t, info.GetName(), "john")
 	priv1, err := kb.Get("john")
@@ -249,7 +249,7 @@ func TestLazyExportImportPubKey(t *testing.T) {
 
 	// CreateMnemonic a private-public key pair and ensure consistency
 	notPasswd := "n9y25ah7"
-	info, _, err := kb.CreateMnemonic("john", English, notPasswd, algo)
+	info, _, err := kb.CreateMnemonic("john", English, notPasswd, algo, "")
 	require.Nil(t, err)
 	require.NotEqual(t, info, "")
 	require.Equal(t, info.GetName(), "john")
@@ -286,7 +286,7 @@ func TestLazyExportPrivateKeyObject(t *testing.T) {
 	defer cleanup()
 	kb := New("keybasename", dir)
 
-	info, _, err := kb.CreateMnemonic("john", English, "secretcpw", Secp256k1)
+	info, _, err := kb.CreateMnemonic("john", English, "secretcpw", Secp256k1, "")
 	require.NoError(t, err)
 	require.Equal(t, info.GetName(), "john")
 
@@ -308,7 +308,7 @@ func TestLazyAdvancedKeyManagement(t *testing.T) {
 	p1, p2 := nums, foobar
 
 	// make sure key works with initial password
-	_, _, err := kb.CreateMnemonic(n1, English, p1, algo)
+	_, _, err := kb.CreateMnemonic(n1, English, p1, algo, "")
 	require.Nil(t, err, "%+v", err)
 	assertPassword(t, kb, n1, p1, p2)
 
@@ -356,7 +356,7 @@ func TestLazySeedPhrase(t *testing.T) {
 	p1, p2 := nums, foobar
 
 	// make sure key works with initial password
-	info, mnemonic, err := kb.CreateMnemonic(n1, English, p1, algo)
+	info, mnemonic, err := kb.CreateMnemonic(n1, English, p1, algo, "")
 	require.Nil(t, err, "%+v", err)
 	require.Equal(t, n1, info.GetName())
 	assert.NotEmpty(t, mnemonic)
@@ -433,7 +433,7 @@ func TestKeygenOverride(t *testing.T) {
 	testName, pw := "name", "testPassword"
 
 	// create new key which will generate with
-	info, _, err := kb.CreateMnemonic(testName, English, pw, Secp256k1)
+	info, _, err := kb.CreateMnemonic(testName, English, pw, Secp256k1, "")
 	require.NoError(t, err)
 	require.Equal(t, info.GetName(), testName)
 
