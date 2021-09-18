@@ -543,10 +543,10 @@ func (app *BaseApp) getContextForSimTx(txBytes []byte, height int64) (sdk.Contex
 		return sdk.Context{}, fmt.Errorf("get context for simulate tx failed")
 	}
 
-	simCms := *cms.Copy()
-	simCms.LoadVersion(height)
-
-	ms := simCms.CacheMultiStore()
+	ms, err := cms.CacheMultiStoreWithVersion(height)
+	if err != nil {
+		return sdk.Context{}, err
+	}
 
 	abciHeader, err := GetABCIHeader(height)
 	if err != nil {
