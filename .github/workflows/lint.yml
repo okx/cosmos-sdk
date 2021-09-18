@@ -1,5 +1,10 @@
 name: Lint
-on: [pull_request]
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - release/**
 jobs:
   golangci-lint:
     runs-on: ubuntu-latest
@@ -10,4 +15,3 @@ jobs:
         with:
           github_token: ${{ secrets.github_token }}
           reporter: github-pr-review
-
