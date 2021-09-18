@@ -69,6 +69,15 @@ jobs:
       - name: Set GOBIN
         run: |
           echo "GOBIN=$(go env GOPATH)/bin" >> $GITHUB_ENV
-
+      - uses: technote-space/get-diff-action@v5
+        with:
+          PATTERNS: |
+            **/**.go
+            go.mod
+            go.sum
+      - uses: actions/download-artifact@v2
+        with:
+          name: "${{ github.sha }}-${{ matrix.part }}"
+        if: env.GIT_DIFF
       - name: Go Test
         run: cat pkgs.txt.part.${{ matrix.part }} | xargs go test -count=1 -tags='norace ledger test_ledger_mock'
