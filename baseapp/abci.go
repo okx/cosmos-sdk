@@ -226,7 +226,7 @@ func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx, needAnte bool,
 	}
 	g, r, m, e := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight, evmIdx)
 	if e != nil {
-		resp = sdkerrors.ResponseDeliverTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
+		resp = sdkerrors.ResponseDeliverTx(e, gInfo.GasWanted, gInfo.GasUsed, app.trace)
 	} else {
 		resp = abci.ResponseDeliverTx{
 			GasWanted: int64(g.GasWanted), // TODO: Should type accept unsigned ints?
@@ -291,7 +291,7 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 			} else {
 				g, r, m, e := app.runTx(runTxModeDeliverInAsync, req.Tx, tx, LatestSimulateTxHeight, counterOfEvm)
 				if e != nil {
-					resp = sdkerrors.ResponseDeliverTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
+					resp = sdkerrors.ResponseDeliverTx(e, gInfo.GasWanted, gInfo.GasUsed, app.trace)
 				} else {
 					resp = abci.ResponseDeliverTx{
 						GasWanted: int64(g.GasWanted), // TODO: Should type accept unsigned ints?
