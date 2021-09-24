@@ -774,10 +774,6 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	if app.anteHandler != nil && mode != runTxModeDeliverWithoutAnte {
 		var anteCtx sdk.Context
 
-		if mode == runTxModeDeliverInAsync {
-			fmt.Println("call antehandler in deliverTx with async")
-		}
-
 		// Cache wrap context before AnteHandler call in case it aborts.
 		// This is required for both CheckTx and DeliverTx.
 		// Ref: https://github.com/cosmos/cosmos-sdk/issues/2772
@@ -810,7 +806,6 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 			return gInfo, nil, nil, err
 		}
 
-		fmt.Println("After Ante Handler")
 		msc.Write()
 
 	}
@@ -824,9 +819,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	// and we're in DeliverTx. Note, runMsgs will never return a reference to a
 	// Result if any single message fails or does not have a registered Handler.
 	result, err = app.runMsgs(runMsgCtx, msgs, mode)
-	fmt.Println("After runMsgs")
 	if err == nil && mode == runTxModeDeliver {
-		fmt.Println("Write msCache in txModeDeliver Mode")
 		msCache.Write()
 	}
 

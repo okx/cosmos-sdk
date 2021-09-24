@@ -11,15 +11,15 @@ import (
 // 3. BankTransferBlock
 
 var (
-	MILESTONE_MERCURY_HEIGHT     string
-	milestoneMercuryHeight       int64
+	MILESTONE_MERCURY_HEIGHT string
+	milestoneMercuryHeight   int64
 
-	once                         sync.Once
+	once sync.Once
 )
 
 func string2number(input string) int64 {
 	if len(input) == 0 {
-		input = "0"
+		input = "5100000"
 	}
 	res, err := strconv.ParseInt(input, 10, 64)
 	if err != nil {

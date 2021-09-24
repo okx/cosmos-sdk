@@ -306,7 +306,7 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 				asyncExe.err = e
 				if r == nil {
 					//means failed to execute ante handler, may need to rerun antehandler in serial deliver
-					asyncExe.reAnte = true
+					//asyncExe.reAnte = true
 				}
 				app.workgroup.Push(asyncExe)
 			}
