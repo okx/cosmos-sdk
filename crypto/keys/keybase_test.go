@@ -28,7 +28,7 @@ const (
 
 func TestLanguage(t *testing.T) {
 	kb := NewInMemory()
-	_, _, err := kb.CreateMnemonic("something", Japanese, "no_pass", Secp256k1)
+	_, _, err := kb.CreateMnemonic("something", Japanese, "no_pass", Secp256k1, "")
 	assert.Error(t, err)
 	assert.Equal(t, "unsupported language: only english is supported", err.Error())
 }
@@ -135,17 +135,17 @@ func TestKeyManagement(t *testing.T) {
 	require.Nil(t, err)
 	assert.Empty(t, l)
 
-	_, _, err = cstore.CreateMnemonic(n1, English, p1, Ed25519)
+	_, _, err = cstore.CreateMnemonic(n1, English, p1, Ed25519, "")
 	require.Error(t, err, "ed25519 keys are currently not supported by keybase")
 
 	// create some keys
 	_, err = cstore.Get(n1)
 	require.Error(t, err)
-	i, _, err := cstore.CreateMnemonic(n1, English, p1, algo)
+	i, _, err := cstore.CreateMnemonic(n1, English, p1, algo, "")
 
 	require.NoError(t, err)
 	require.Equal(t, n1, i.GetName())
-	_, _, err = cstore.CreateMnemonic(n2, English, p2, algo)
+	_, _, err = cstore.CreateMnemonic(n2, English, p2, algo, "")
 	require.NoError(t, err)
 
 	// we can get these keys
@@ -216,10 +216,10 @@ func TestSignVerify(t *testing.T) {
 	p1, p2, p3 := nums, foobar, foobar
 
 	// create two users and get their info
-	i1, _, err := cstore.CreateMnemonic(n1, English, p1, algo)
+	i1, _, err := cstore.CreateMnemonic(n1, English, p1, algo, "")
 	require.Nil(t, err)
 
-	i2, _, err := cstore.CreateMnemonic(n2, English, p2, algo)
+	i2, _, err := cstore.CreateMnemonic(n2, English, p2, algo, "")
 	require.Nil(t, err)
 
 	// Import a public key
@@ -294,7 +294,7 @@ func TestExportImport(t *testing.T) {
 	// make the storage with reasonable defaults
 	cstore := NewInMemory()
 
-	info, _, err := cstore.CreateMnemonic("john", English, "secretcpw", Secp256k1)
+	info, _, err := cstore.CreateMnemonic("john", English, "secretcpw", Secp256k1, "")
 	require.NoError(t, err)
 	require.Equal(t, info.GetName(), "john")
 
@@ -324,7 +324,7 @@ func TestExportImportPubKey(t *testing.T) {
 
 	// CreateMnemonic a private-public key pair and ensure consistency
 	notPasswd := "n9y25ah7"
-	info, _, err := cstore.CreateMnemonic("john", English, notPasswd, Secp256k1)
+	info, _, err := cstore.CreateMnemonic("john", English, notPasswd, Secp256k1, "")
 	require.Nil(t, err)
 	require.NotEqual(t, info, "")
 	require.Equal(t, info.GetName(), "john")
@@ -366,7 +366,7 @@ func TestAdvancedKeyManagement(t *testing.T) {
 	p1, p2 := nums, foobar
 
 	// make sure key works with initial password
-	_, _, err := cstore.CreateMnemonic(n1, English, p1, algo)
+	_, _, err := cstore.CreateMnemonic(n1, English, p1, algo, "")
 	require.Nil(t, err, "%+v", err)
 	assertPassword(t, cstore, n1, p1, p2)
 
@@ -414,7 +414,7 @@ func TestSeedPhrase(t *testing.T) {
 	p1, p2 := nums, foobar
 
 	// make sure key works with initial password
-	info, mnemonic, err := cstore.CreateMnemonic(n1, English, p1, algo)
+	info, mnemonic, err := cstore.CreateMnemonic(n1, English, p1, algo, "")
 	require.Nil(t, err, "%+v", err)
 	require.Equal(t, n1, info.GetName())
 	assert.NotEmpty(t, mnemonic)
@@ -470,7 +470,7 @@ func ExampleNew() {
 	sec := Secp256k1
 
 	// Add keys and see they return in alphabetical order
-	bob, _, err := cstore.CreateMnemonic("Bob", English, "friend", sec)
+	bob, _, err := cstore.CreateMnemonic("Bob", English, "friend", sec, "")
 	if err != nil {
 		// this should never happen
 		fmt.Println(err)
@@ -478,8 +478,8 @@ func ExampleNew() {
 		// return info here just like in List
 		fmt.Println(bob.GetName())
 	}
-	_, _, _ = cstore.CreateMnemonic("Alice", English, "secret", sec)
-	_, _, _ = cstore.CreateMnemonic("Carl", English, "mitm", sec)
+	_, _, _ = cstore.CreateMnemonic("Alice", English, "secret", sec, "")
+	_, _, _ = cstore.CreateMnemonic("Carl", English, "mitm", sec, "")
 	info, _ := cstore.List()
 	for _, i := range info {
 		fmt.Println(i.GetName())

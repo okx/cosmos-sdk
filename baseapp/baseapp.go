@@ -10,12 +10,12 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/tendermint/tendermint/mempool"
-
 	"github.com/gogo/protobuf/proto"
 	abci "github.com/tendermint/tendermint/abci/types"
+	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/tendermint/tendermint/libs/log"
+	"github.com/tendermint/tendermint/mempool"
 	tmhttp "github.com/tendermint/tendermint/rpc/client/http"
 	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
@@ -51,9 +51,10 @@ var (
 	// main store.
 	mainConsensusParamsKey = []byte("consensus_params")
 
-	globalMempool        mempool.Mempool
-	mempoolEnableSort    = false
-	mempoolEnableRecheck = true
+	globalMempool            mempool.Mempool
+	mempoolEnableSort        = false
+	mempoolEnableRecheck     = true
+	mempoolEnablePendingPool = false
 )
 
 func GetGlobalMempool() mempool.Mempool {
@@ -65,13 +66,17 @@ func IsMempoolEnableSort() bool {
 }
 
 func IsMempoolEnableRecheck() bool {
-	return mempoolEnableRecheck
+	return cfg.DynamicConfig.GetMempoolRecheck()
 }
 
-func SetGlobalMempool(mempool mempool.Mempool, enableSort bool, enableRecheck bool) {
+func IsMempoolEnablePendingPool() bool {
+	return mempoolEnablePendingPool
+}
+
+func SetGlobalMempool(mempool mempool.Mempool, enableSort bool, enablePendingPool bool) {
 	globalMempool = mempool
 	mempoolEnableSort = enableSort
-	mempoolEnableRecheck = enableRecheck
+	mempoolEnablePendingPool = enablePendingPool
 }
 
 type (
@@ -571,10 +576,10 @@ func (app *BaseApp) getContextForSimTx(txBytes []byte, height int64) (sdk.Contex
 		return sdk.Context{}, fmt.Errorf("get context for simulate tx failed")
 	}
 
-	simCms := *cms.Copy()
-	simCms.LoadVersion(height)
-
-	ms := simCms.CacheMultiStore()
+	ms, err := cms.CacheMultiStoreWithVersion(height)
+	if err != nil {
+		return sdk.Context{}, err
+	}
 
 	abciHeader, err := GetABCIHeader(height)
 	if err != nil {
@@ -771,6 +776,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		return sdk.GasInfo{}, nil, nil, err
 	}
 
+	accountNonce := uint64(0)
 	if app.anteHandler != nil && mode != runTxModeDeliverWithoutAnte {
 		var anteCtx sdk.Context
 
@@ -784,7 +790,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		anteCtx, msc := app.cacheTxContext(ctx, txBytes)
 		anteCtx = anteCtx.WithEventManager(sdk.NewEventManager())
 		newCtx, err := app.anteHandler(anteCtx, tx, mode == runTxModeSimulate)
-
+		accountNonce = newCtx.AccountNonce()
 		if !newCtx.IsZero() {
 			// At this point, newCtx.MultiStore() is cache-wrapped, or something else
 			// replaced by the AnteHandler. We want the original multistore, not one
@@ -824,16 +830,8 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	}
 
 	if mode == runTxModeCheck {
-		exTxInfo := tx.GetTxInfo(ctx)
-
-		if exTxInfo.Nonce == 0 && exTxInfo.Sender != "" && app.AccHandler != nil {
-			addr, _ := sdk.AccAddressFromBech32(exTxInfo.Sender)
-			exTxInfo.Nonce = app.AccHandler(ctx, addr)
-
-			if app.anteHandler != nil && exTxInfo.Nonce > 0 {
-				exTxInfo.Nonce -= 1 // in ante handler logical, the nonce will incress one
-			}
-		}
+		exTxInfo := app.GetTxInfo(ctx, tx)
+		exTxInfo.SenderNonce = accountNonce
 
 		data, err := json.Marshal(exTxInfo)
 		if err == nil {
@@ -915,4 +913,27 @@ func (app *BaseApp) Export(toApp *BaseApp, version int64) error {
 	}
 
 	return fromCms.Export(toCms, version)
+}
+
+func (app *BaseApp) GetTxInfo(ctx sdk.Context, tx sdk.Tx) mempool.ExTxInfo {
+	exTxInfo := tx.GetTxInfo(ctx)
+	if exTxInfo.Nonce == 0 && exTxInfo.Sender != "" && app.AccHandler != nil {
+		addr, _ := sdk.AccAddressFromBech32(exTxInfo.Sender)
+		exTxInfo.Nonce = app.AccHandler(ctx, addr)
+
+		if app.anteHandler != nil && exTxInfo.Nonce > 0 {
+			exTxInfo.Nonce -= 1 // in ante handler logical, the nonce will incress one
+		}
+	}
+
+	return exTxInfo
+}
+
+func (app *BaseApp) GetRawTxInfo(rawTx tmtypes.Tx) mempool.ExTxInfo {
+	tx, err := app.txDecoder(rawTx)
+	if err != nil {
+		return mempool.ExTxInfo{}
+	}
+
+	return app.GetTxInfo(app.checkState.ctx, tx)
 }

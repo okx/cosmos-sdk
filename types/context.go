@@ -36,6 +36,7 @@ type Context struct {
 	consParams    *abci.ConsensusParams
 	eventManager  *EventManager
 	evmTxIndex    uint32
+	accountNonce  uint64
 }
 
 // Proposed rename, not done to avoid API breakage
@@ -57,6 +58,7 @@ func (c Context) IsReCheckTx() bool           { return c.recheckTx }
 func (c Context) MinGasPrices() DecCoins      { return c.minGasPrice }
 func (c Context) EventManager() *EventManager { return c.eventManager }
 func (c Context) EvmTransactionIndex() uint32 { return c.evmTxIndex }
+func (c Context) AccountNonce() uint64        { return c.accountNonce }
 
 // clone the header before returning
 func (c Context) BlockHeader() abci.Header {
@@ -183,6 +185,11 @@ func (c Context) WithConsensusParams(params *abci.ConsensusParams) Context {
 
 func (c Context) WithEventManager(em *EventManager) Context {
 	c.eventManager = em
+	return c
+}
+
+func (c Context) WithAccountNonce(nonce uint64) Context {
+	c.accountNonce = nonce
 	return c
 }
 

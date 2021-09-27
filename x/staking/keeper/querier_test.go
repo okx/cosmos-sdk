@@ -126,8 +126,8 @@ func TestQueryParametersPool(t *testing.T) {
 	notBondedPool := keeper.GetNotBondedPool(ctx)
 	errRes = cdc.UnmarshalJSON(res, &pool)
 	require.NoError(t, errRes)
-	require.Equal(t, bondedPool.GetCoins().AmountOf(bondDenom), pool.BondedTokens)
-	require.Equal(t, notBondedPool.GetCoins().AmountOf(bondDenom), pool.NotBondedTokens)
+	require.Equal(t, bondedPool.GetCoins().AmountOf(bondDenom), pool.BondedTokens.ToDec())
+	require.Equal(t, notBondedPool.GetCoins().AmountOf(bondDenom), pool.NotBondedTokens.ToDec())
 }
 
 func TestQueryValidators(t *testing.T) {
@@ -208,7 +208,7 @@ func TestQueryDelegation(t *testing.T) {
 	keeper.SetValidatorByPowerIndex(ctx, val2)
 
 	delTokens := sdk.TokensFromConsensusPower(20)
-	keeper.Delegate(ctx, addrAcc2, delTokens, sdk.Unbonded, val1, true)
+	keeper.Delegate(ctx, addrAcc2, delTokens.ToDec(), sdk.Unbonded, val1, true)
 
 	// apply TM updates
 	keeper.ApplyAndReturnValidatorSetUpdates(ctx)
@@ -424,7 +424,7 @@ func TestQueryRedelegations(t *testing.T) {
 	keeper.SetValidator(ctx, val2)
 
 	delAmount := sdk.TokensFromConsensusPower(100)
-	keeper.Delegate(ctx, addrAcc2, delAmount, sdk.Unbonded, val1, true)
+	keeper.Delegate(ctx, addrAcc2, delAmount.ToDec(), sdk.Unbonded, val1, true)
 	_ = keeper.ApplyAndReturnValidatorSetUpdates(ctx)
 
 	rdAmount := sdk.TokensFromConsensusPower(20)
@@ -488,7 +488,7 @@ func TestQueryUnbondingDelegation(t *testing.T) {
 
 	// delegate
 	delAmount := sdk.TokensFromConsensusPower(100)
-	_, err := keeper.Delegate(ctx, addrAcc1, delAmount, sdk.Unbonded, val1, true)
+	_, err := keeper.Delegate(ctx, addrAcc1, delAmount.ToDec(), sdk.Unbonded, val1, true)
 	require.NoError(t, err)
 	_ = keeper.ApplyAndReturnValidatorSetUpdates(ctx)
 

@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	keep "github.com/cosmos/cosmos-sdk/x/mint/internal/keeper"
 	"github.com/cosmos/cosmos-sdk/x/mint/internal/types"
 
@@ -24,12 +23,6 @@ func TestNewQuerier(t *testing.T) {
 	_, err := querier(ctx, []string{types.QueryParameters}, query)
 	require.NoError(t, err)
 
-	_, err = querier(ctx, []string{types.QueryInflation}, query)
-	require.NoError(t, err)
-
-	_, err = querier(ctx, []string{types.QueryAnnualProvisions}, query)
-	require.NoError(t, err)
-
 	_, err = querier(ctx, []string{"foo"}, query)
 	require.Error(t, err)
 }
@@ -46,35 +39,10 @@ func TestQueryParams(t *testing.T) {
 	err := app.Codec().UnmarshalJSON(res, &params)
 	require.NoError(t, err)
 
-	require.Equal(t, app.MintKeeper.GetParams(ctx), params)
-}
-
-func TestQueryInflation(t *testing.T) {
-	app, ctx := createTestApp(true)
-	querier := keep.NewQuerier(app.MintKeeper)
-
-	var inflation sdk.Dec
-
-	res, sdkErr := querier(ctx, []string{types.QueryInflation}, abci.RequestQuery{})
-	require.NoError(t, sdkErr)
-
-	err := app.Codec().UnmarshalJSON(res, &inflation)
-	require.NoError(t, err)
-
-	require.Equal(t, app.MintKeeper.GetMinter(ctx).Inflation, inflation)
-}
-
-func TestQueryAnnualProvisions(t *testing.T) {
-	app, ctx := createTestApp(true)
-	querier := keep.NewQuerier(app.MintKeeper)
-
-	var annualProvisions sdk.Dec
-
-	res, sdkErr := querier(ctx, []string{types.QueryAnnualProvisions}, abci.RequestQuery{})
-	require.NoError(t, sdkErr)
-
-	err := app.Codec().UnmarshalJSON(res, &annualProvisions)
-	require.NoError(t, err)
-
-	require.Equal(t, app.MintKeeper.GetMinter(ctx).AnnualProvisions, annualProvisions)
+	expected := app.MintKeeper.GetParams(ctx)
+	require.Equal(t, expected.MintDenom, params.MintDenom)
+	require.Equal(t, expected.BlocksPerYear, params.BlocksPerYear)
+	require.Equal(t, expected.DeflationRate, params.DeflationRate)
+	require.Equal(t, expected.DeflationEpoch, params.DeflationEpoch)
+	require.Equal(t, expected.FarmProportion, params.FarmProportion)
 }

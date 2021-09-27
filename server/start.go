@@ -4,25 +4,29 @@ package server
 
 import (
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/store/iavl"
 	"os"
 	"runtime/pprof"
 
-	"github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/tendermint/tendermint/rpc/client/local"
 
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/store/iavl"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/abci/server"
 	tcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
 	tmos "github.com/tendermint/tendermint/libs/os"
+	"github.com/tendermint/tendermint/mempool"
 	"github.com/tendermint/tendermint/node"
 	"github.com/tendermint/tendermint/p2p"
 	pvm "github.com/tendermint/tendermint/privval"
 	"github.com/tendermint/tendermint/proxy"
-
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
+	tmdb "github.com/tendermint/tm-db"
 )
 
 // Tendermint full-node start flags
@@ -129,6 +133,8 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().String(FlagEvmImportPath, "", "Evm contract & storage db or files used for InitGenesis")
 	cmd.Flags().Uint64(FlagGoroutineNum, 0, "Limit on the number of goroutines used to import evm data(ignored if evm-import-mode is 'default')")
 	cmd.Flags().IntVar(&iavl.IavlCacheSize, iavl.FlagIavlCacheSize, 1000000, "Max size of iavl cache")
+	cmd.Flags().IntVar(&tmdb.LevelDBCacheSize, tmdb.FlagLevelDBCacheSize, 128, "The amount of memory in megabytes to allocate to leveldb")
+	cmd.Flags().IntVar(&tmdb.LevelDBHandlersNum, tmdb.FlagLevelDBHandlersNum, 1024, "The number of files handles to allocate to the open database files")
 
 	viper.BindPFlag(FlagTrace, cmd.Flags().Lookup(FlagTrace))
 	viper.BindPFlag(FlagPruning, cmd.Flags().Lookup(FlagPruning))
@@ -272,7 +278,19 @@ func startInProcess(ctx *Context, cdc *codec.Codec, appCreator AppCreator,
 		go lcd.StartRestServer(cdc, registerRoutesFn, tmNode, viper.GetString(FlagListenAddr))
 	}
 
-	baseapp.SetGlobalMempool(tmNode.Mempool(), cfg.Mempool.SortTxByGp, cfg.Mempool.Recheck)
+	baseapp.SetGlobalMempool(tmNode.Mempool(), cfg.Mempool.SortTxByGp, cfg.Mempool.EnablePendingPool)
+
+	if cfg.Mempool.EnablePendingPool {
+		cliCtx := context.NewCLIContext().WithCodec(cdc)
+		cliCtx.Client = local.New(tmNode)
+		cliCtx.TrustNode = true
+		accRetriever := types.NewAccountRetriever(cliCtx)
+		tmNode.Mempool().SetAccountRetriever(accRetriever)
+	}
+
+	if parser, ok := app.(mempool.TxInfoParser); ok {
+		tmNode.Mempool().SetTxInfoParser(parser)
+	}
 
 	// run forever (the node will not be returned)
 	select {}

@@ -26,6 +26,7 @@ func Test_runAddCmdBasic(t *testing.T) {
 	assert.NotNil(t, kbHome)
 	defer kbCleanUp()
 	viper.Set(flags.FlagHome, kbHome)
+	viper.Set(flagMnemonic, "nature apology park elegant distance hello gasp dial universe nut area bunker")
 	viper.Set(cli.OutputFlag, OutputFormatText)
 
 	if runningUnattended {
