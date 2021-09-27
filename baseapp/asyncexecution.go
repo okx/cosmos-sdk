@@ -1,8 +1,6 @@
 package baseapp
 
 import (
-	"encoding/hex"
-	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -63,13 +61,6 @@ func (e ExecuteResult) GetCounter() uint32 {
 func (e ExecuteResult) Commit() {
 	for i := 1; i >= 0; i-- {
 		if e.Ms[i] != nil {
-			e.Ms[i].IteratorCache(func(key, value []byte, isDirty bool) bool {
-				if isDirty {
-					fmt.Println("ok.scf", hex.EncodeToString(key))
-				}
-				return true
-			})
-
 			e.Ms[i].Write()
 		}
 	}
