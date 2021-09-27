@@ -3,15 +3,15 @@ package baseapp
 import (
 	"fmt"
 	"os"
+	"reflect"
 	"sort"
 	"strings"
 	"syscall"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 // InitChain implements the ABCI interface. It runs the initialization logic
@@ -212,6 +212,7 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 //if last ante handler has been failed, we need rerun it ? or not?
 func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx, needAnte bool, evmIdx uint32) abci.ExecuteRes {
 	tx, err := app.txDecoder(req.Tx)
+	fmt.Println("====DeliverTxWithCache====", needAnte, evmIdx, reflect.TypeOf(tx))
 	if err != nil {
 		return nil
 	}
@@ -250,6 +251,7 @@ func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx, needAnte bool,
 func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
 	NeedRerun := false
 	tx, err := app.txDecoder(req.Tx)
+	fmt.Println("======DeliverTx==========", reflect.TypeOf(tx))
 	if err != nil {
 		return sdkerrors.ResponseDeliverTx(err, 0, 0, app.trace)
 	}
@@ -285,7 +287,6 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 				//must rerun after async deliver
 				resp = sdkerrors.ResponseDeliverTx(sdk.ErrInvalidAddress("nil"), gInfo.GasWanted, gInfo.GasUsed, app.trace)
 				rerunRes := NewExecuteResult(resp, nil, counter, counterOfEvm)
-				rerunRes.reAnte = true
 				rerunRes.err = sdk.ErrInvalidAddress("nil")
 				app.workgroup.Push(rerunRes)
 			} else {

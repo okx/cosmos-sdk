@@ -658,6 +658,20 @@ func (app *BaseApp) cacheTxContext(ctx sdk.Context, txBytes []byte) (sdk.Context
 	return ctx.WithMultiStore(msCache), msCache
 }
 
+func (app *BaseApp) cacheTxContextWithCache(ctx sdk.Context, txBytes []byte, msCache sdk.CacheMultiStore) (sdk.Context, sdk.CacheMultiStore) {
+	if msCache.TracingEnabled() {
+		msCache = msCache.SetTracingContext(
+			sdk.TraceContext(
+				map[string]interface{}{
+					"txHash": fmt.Sprintf("%X", tmhash.Sum(txBytes)),
+				},
+			),
+		).(sdk.CacheMultiStore)
+	}
+
+	return ctx.WithMultiStore(msCache), msCache
+}
+
 // runTx processes a transaction within a given execution mode, encoded transaction
 // bytes, and the decoded transaction itself. All state transitions occur through
 // a cached Context depending on the mode provided. State only gets persisted
@@ -665,13 +679,15 @@ func (app *BaseApp) cacheTxContext(ctx sdk.Context, txBytes []byte) (sdk.Context
 // Note, gas execution info is always returned. A reference to a Result is
 // returned if the tx does not run out of gas and if all the messages are valid
 // and execute successfully. An error is returned otherwise.
-func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int64, evmTxIndex uint32) (gInfo sdk.GasInfo, result *sdk.Result, msCache sdk.CacheMultiStore, err error) {
+func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int64, evmTxIndex uint32) (gInfo sdk.GasInfo, result *sdk.Result, msCacheList []sdk.CacheMultiStore, err error) {
 	// NOTE: GasWanted should be returned by the AnteHandler. GasUsed is
 	// determined by the GasMeter. We need access to the context to get the gas
 	// meter so we initialize upfront.
 	var gasWanted uint64
 	var ctx sdk.Context
 	var runMsgCtx sdk.Context
+	var msCache sdk.CacheMultiStore
+	var msCacheAnte sdk.CacheMultiStore
 	// simulate tx
 	startHeight := tmtypes.GetStartBlockHeight()
 	if mode == runTxModeSimulate && height > startHeight && height < app.LastBlockHeight() {
@@ -770,7 +786,6 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	if err := validateBasicTxMsgs(msgs); err != nil {
 		return sdk.GasInfo{}, nil, nil, err
 	}
-
 	if app.anteHandler != nil && mode != runTxModeDeliverWithoutAnte {
 		var anteCtx sdk.Context
 
@@ -781,10 +796,9 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		// NOTE: Alternatively, we could require that AnteHandler ensures that
 		// writes do not happen if aborted/failed.  This may have some
 		// performance benefits, but it'll be more difficult to get right.
-		anteCtx, msc := app.cacheTxContext(ctx, txBytes)
+		anteCtx, msCacheAnte = app.cacheTxContext(ctx, txBytes)
 		anteCtx = anteCtx.WithEventManager(sdk.NewEventManager())
 		newCtx, err := app.anteHandler(anteCtx, tx, mode == runTxModeSimulate)
-
 		if !newCtx.IsZero() {
 			// At this point, newCtx.MultiStore() is cache-wrapped, or something else
 			// replaced by the AnteHandler. We want the original multistore, not one
@@ -798,30 +812,36 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 
 		// GasMeter expected to be set in AnteHandler
 		gasWanted = ctx.GasMeter().Limit()
-
 		if err != nil {
 			if mode == runTxModeDeliverInAsync {
 				fmt.Printf("Failed to call antehandler in deliverTx with async ： %v\n", err)
 			}
 			return gInfo, nil, nil, err
 		}
-
-		msc.Write()
-
+		if mode == runTxModeDeliver {
+			msCacheAnte.Write()
+		}
 	}
 
 	// Create a new Context based off of the existing Context with a cache-wrapped
 	// MultiStore in case message processing fails. At this point, the MultiStore
 	// is doubly cached-wrapped.
-	runMsgCtx, msCache = app.cacheTxContext(ctx, txBytes)
+
+	if mode == runTxModeDeliverInAsync {
+		runMsgCtx, msCache = app.cacheTxContextWithCache(ctx, txBytes, msCacheAnte.CacheMultiStore())
+	} else {
+		runMsgCtx, msCache = app.cacheTxContext(ctx, txBytes)
+	}
 
 	// Attempt to execute all messages and only update state if all messages pass
 	// and we're in DeliverTx. Note, runMsgs will never return a reference to a
 	// Result if any single message fails or does not have a registered Handler.
 	result, err = app.runMsgs(runMsgCtx, msgs, mode)
-	if err == nil && mode == runTxModeDeliver {
+	if err == nil && (mode == runTxModeDeliver) {
 		msCache.Write()
 	}
+
+	fmt.Println("runMsg errrr", err, mode == runTxModeDeliver)
 
 	if mode == runTxModeCheck {
 		exTxInfo := tx.GetTxInfo(ctx)
@@ -845,11 +865,13 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		if sdk.HigherThanMercury(ctx.BlockHeight()) {
 			codeSpace, code, info := sdkerrors.ABCIInfo(err, app.trace)
 			err = sdkerrors.New(codeSpace, abci.CodeTypeNonceInc+code, info)
+
 		}
+		msCache = nil
 	}
 
-	if (mode == runTxModeDeliverInAsync || mode == runTxModeDeliverWithoutAnte) && err == nil {
-		return gInfo, result, msCache, err
+	if mode == runTxModeDeliverInAsync || mode == runTxModeDeliverWithoutAnte {
+		return gInfo, result, []sdk.CacheMultiStore{msCacheAnte, msCache}, err
 	}
 	return gInfo, result, nil, err
 }

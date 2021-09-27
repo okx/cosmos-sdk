@@ -1,18 +1,17 @@
 package baseapp
 
 import (
+	"encoding/hex"
 	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 type ExecuteResult struct {
 	Resp       abci.ResponseDeliverTx
-	Ms         sdk.CacheMultiStore
+	Ms         []sdk.CacheMultiStore
 	Counter    uint32
 	err        error
-	reAnte     bool
 	evmCounter uint32
 }
 
@@ -22,36 +21,35 @@ func (e ExecuteResult) GetResponse() abci.ResponseDeliverTx {
 
 func (e ExecuteResult) Recheck(cache abci.AsyncCacheInterface) bool {
 	rerun := false
-	if e.reAnte {
-		//if ante failed, it means the same `from` address has sent multi tx in one block , ante may using wrong nonce
-		//so we rerun this tx in directly
-		return true
-	}
-	if e.Ms == nil { //means tx was failed, nothing need to commit
-		return false
-	}
-	e.Ms.IteratorCache(func(key, value []byte, isDirty bool) bool {
-		//the key we have read was wrote by pre txs
-		if cache.Has(key) {
-			rerun = true
+	for index, m := range e.Ms {
+		if index == 0 || m == nil { // TODO not check ante
+			continue
 		}
-		return true
-	})
-
+		m.IteratorCache(func(key, value []byte, isDirty bool) bool {
+			//the key we have read was wrote by pre txs
+			if cache.Has(key) {
+				rerun = true
+			}
+			return true
+		})
+	}
 	return rerun
 }
 
 func (e ExecuteResult) Collect(cache abci.AsyncCacheInterface) {
-	if e.Ms == nil {
-		return
-	}
-	e.Ms.IteratorCache(func(key, value []byte, isDirty bool) bool {
-		if isDirty {
-			//push every data we have wrote in current tx
-			cache.Push(key, value)
+	for index, m := range e.Ms {
+		if index == 0 || m == nil {
+			continue
 		}
-		return true
-	})
+		m.IteratorCache(func(key, value []byte, isDirty bool) bool {
+			if isDirty {
+				//push every data we have wrote in current tx
+				cache.Push(key, value)
+			}
+			return true
+		})
+	}
+
 }
 
 func (e ExecuteResult) Error() error {
@@ -62,29 +60,30 @@ func (e ExecuteResult) GetCounter() uint32 {
 	return e.Counter
 }
 
-func (e ExecuteResult) Commit() bool {
-	if e.Ms == nil {
-		fmt.Println("commiting a nil res")
-		return false
+func (e ExecuteResult) Commit() {
+	for i := 1; i >= 0; i-- {
+		if e.Ms[i] != nil {
+			e.Ms[i].IteratorCache(func(key, value []byte, isDirty bool) bool {
+				if isDirty {
+					fmt.Println("ok.scf", hex.EncodeToString(key))
+				}
+				return true
+			})
+
+			e.Ms[i].Write()
+		}
 	}
-	e.Ms.Write()
-	return true
 }
 
 func (e ExecuteResult) GetEvmTxCounter() uint32 {
 	return e.evmCounter
 }
 
-func (e ExecuteResult) NeedAnte() bool {
-	return e.reAnte
-}
-
-func NewExecuteResult(r abci.ResponseDeliverTx, ms sdk.CacheMultiStore, counter uint32, evmCounter uint32) ExecuteResult {
+func NewExecuteResult(r abci.ResponseDeliverTx, ms []sdk.CacheMultiStore, counter uint32, evmCounter uint32) ExecuteResult {
 	return ExecuteResult{
 		Resp:       r,
 		Ms:         ms,
 		Counter:    counter,
-		reAnte:     false,
 		evmCounter: evmCounter,
 	}
 }
