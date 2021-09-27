@@ -36,7 +36,7 @@ $ <appcli> tx broadcast ./mytxn.json
 				return
 			}
 
-			res, err := cliCtx.BroadcastTx(txBytes)
+			res, err := cliCtx.BroadcastTx(txBytes, stdTx.GetGas())
 			cliCtx.PrintOutput(res)
 
 			return err

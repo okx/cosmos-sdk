@@ -3,9 +3,11 @@ package context
 import (
 	"fmt"
 	"strings"
+	"encoding/json"
 
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/tendermint/tendermint/mempool"
+	"github.com/tendermint/tendermint/rpc/core"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,16 +18,16 @@ import (
 // based on the context parameters. The result of the broadcast is parsed into
 // an intermediate structure which is logged if the context has a logger
 // defined.
-func (ctx CLIContext) BroadcastTx(txBytes []byte) (res sdk.TxResponse, err error) {
+func (ctx CLIContext) BroadcastTx(txBytes []byte, estGasUse uint64) (res sdk.TxResponse, err error) {
 	switch ctx.BroadcastMode {
 	case flags.BroadcastSync:
-		res, err = ctx.BroadcastTxSync(txBytes)
+		res, err = ctx.BroadcastTxSync(txBytes, estGasUse)
 
 	case flags.BroadcastAsync:
-		res, err = ctx.BroadcastTxAsync(txBytes)
+		res, err = ctx.BroadcastTxAsync(txBytes, estGasUse)
 
 	case flags.BroadcastBlock:
-		res, err = ctx.BroadcastTxCommit(txBytes)
+		res, err = ctx.BroadcastTxCommit(txBytes, estGasUse)
 
 	default:
 		return sdk.TxResponse{}, fmt.Errorf("unsupported return type %s; supported types: sync, async, block", ctx.BroadcastMode)
@@ -81,13 +83,22 @@ func CheckTendermintError(err error, txBytes []byte) *sdk.TxResponse {
 // NOTE: This should ideally not be used as the request may timeout but the tx
 // may still be included in a block. Use BroadcastTxAsync or BroadcastTxSync
 // instead.
-func (ctx CLIContext) BroadcastTxCommit(txBytes []byte) (sdk.TxResponse, error) {
+func (ctx CLIContext) BroadcastTxCommit(txBytes []byte, estGasUse uint64) (sdk.TxResponse, error) {
 	node, err := ctx.GetNode()
 	if err != nil {
 		return sdk.TxResponse{}, err
 	}
 
-	res, err := node.BroadcastTxCommit(txBytes)
+	wMsg := core.WrapEthMsg {
+		RawTxData: txBytes,
+		EstimatedGasUse: estGasUse,
+	}
+	wTxBytes, err := json.Marshal(wMsg)
+	if err != nil {
+		return sdk.TxResponse{}, err
+	}
+
+	res, err := node.BroadcastTxCommit(wTxBytes)
 	if err != nil {
 		if errRes := CheckTendermintError(err, txBytes); errRes != nil {
 			return *errRes, nil
@@ -109,13 +120,22 @@ func (ctx CLIContext) BroadcastTxCommit(txBytes []byte) (sdk.TxResponse, error) 
 
 // BroadcastTxSync broadcasts transaction bytes to a Tendermint node
 // synchronously (i.e. returns after CheckTx execution).
-func (ctx CLIContext) BroadcastTxSync(txBytes []byte) (sdk.TxResponse, error) {
+func (ctx CLIContext) BroadcastTxSync(txBytes []byte, estGasUse uint64) (sdk.TxResponse, error) {
 	node, err := ctx.GetNode()
 	if err != nil {
 		return sdk.TxResponse{}, err
 	}
 
-	res, err := node.BroadcastTxSync(txBytes)
+	wMsg := core.WrapEthMsg {
+		RawTxData: txBytes,
+		EstimatedGasUse: estGasUse,
+	}
+	wTxBytes, err := json.Marshal(wMsg)
+	if err != nil {
+		return sdk.TxResponse{}, err
+	}
+
+	res, err := node.BroadcastTxSync(wTxBytes)
 	if errRes := CheckTendermintError(err, txBytes); errRes != nil {
 		return *errRes, nil
 	}
@@ -125,13 +145,22 @@ func (ctx CLIContext) BroadcastTxSync(txBytes []byte) (sdk.TxResponse, error) {
 
 // BroadcastTxAsync broadcasts transaction bytes to a Tendermint node
 // asynchronously (i.e. returns immediately).
-func (ctx CLIContext) BroadcastTxAsync(txBytes []byte) (sdk.TxResponse, error) {
+func (ctx CLIContext) BroadcastTxAsync(txBytes []byte, estGasUse uint64) (sdk.TxResponse, error) {
 	node, err := ctx.GetNode()
 	if err != nil {
 		return sdk.TxResponse{}, err
 	}
 
-	res, err := node.BroadcastTxAsync(txBytes)
+	wMsg := core.WrapEthMsg {
+		RawTxData: txBytes,
+		EstimatedGasUse: estGasUse,
+	}
+	wTxBytes, err := json.Marshal(wMsg)
+	if err != nil {
+		return sdk.TxResponse{}, err
+	}
+
+	res, err := node.BroadcastTxAsync(wTxBytes)
 	if errRes := CheckTendermintError(err, txBytes); errRes != nil {
 		return *errRes, nil
 	}
