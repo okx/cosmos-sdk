@@ -358,8 +358,10 @@ func (rs *Store) Commit() types.CommitID {
 	}
 
 	// batch prune if the current height is a pruning interval height
-	if !iavltree.EnableOptPruing {
-		rs.pruneStores() // use pruning logic from iavl project
+	if rs.pruningOpts.Interval > 0 && version%int64(rs.pruningOpts.Interval) == 0 {
+		if !iavltree.EnableOptPruing {
+			rs.pruneStores() // use pruning logic from iavl project
+		}
 	}
 
 	rs.versions = append(rs.versions, version)
