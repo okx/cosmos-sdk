@@ -30,7 +30,7 @@ func TestGenerateSaveCoinKey(t *testing.T) {
 	kb, err := crkeys.NewKeyring(t.Name(), "test", dir, nil)
 	require.NoError(t, err)
 
-	addr, mnemonic, err := server.GenerateSaveCoinKey(kb, "keyname", "012345678", false)
+	addr, mnemonic, err := server.GenerateSaveCoinKey(kb, "keyname", "012345678", false, "")
 	require.NoError(t, err)
 
 	// Test key was actually saved
@@ -53,15 +53,15 @@ func TestGenerateSaveCoinKeyOverwriteFlag(t *testing.T) {
 	require.NoError(t, err)
 
 	keyname := "justakey"
-	addr1, _, err := server.GenerateSaveCoinKey(kb, keyname, "012345678", false)
+	addr1, _, err := server.GenerateSaveCoinKey(kb, keyname, "012345678", false, "")
 	require.NoError(t, err)
 
 	// Test overwrite with overwrite=false
-	_, _, err = server.GenerateSaveCoinKey(kb, keyname, "012345678", false)
+	_, _, err = server.GenerateSaveCoinKey(kb, keyname, "012345678", false, "")
 	require.Error(t, err)
 
 	// Test overwrite with overwrite=true
-	addr2, _, err := server.GenerateSaveCoinKey(kb, keyname, "012345678", true)
+	addr2, _, err := server.GenerateSaveCoinKey(kb, keyname, "012345678", true, "")
 	require.NoError(t, err)
 
 	require.NotEqual(t, addr1, addr2)
