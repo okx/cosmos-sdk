@@ -139,6 +139,7 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().IntVar(&tmiavl.HeightOrphansCacheSize, tmiavl.FlagIavlHeightOrphansCacheSize, 8, "Max orphan version to cache in memory")
 	cmd.Flags().IntVar(&tmiavl.MaxCommittedHeightNum, tmiavl.FlagIavlMaxCommittedHeightNum, 8, "Max committed version to cache in memory")
 	cmd.Flags().BoolVar(&tmiavl.EnableOptPruning, tmiavl.FlagIavlEnableOptPruning, true, "Enable cache iavl node data to optimization leveldb pruning process")
+	cmd.Flags().BoolVar(&tmiavl.Debugging, tmiavl.FlagIavlDebug, false, "Enable iavl project debug")
 	cmd.Flags().IntVar(&tmdb.LevelDBCacheSize, tmdb.FlagLevelDBCacheSize, 128, "The amount of memory in megabytes to allocate to leveldb")
 	cmd.Flags().IntVar(&tmdb.LevelDBHandlersNum, tmdb.FlagLevelDBHandlersNum, 1024, "The number of files handles to allocate to the open database files")
 
