@@ -299,16 +299,16 @@ func TestGetValidatorSortingUnmixed(t *testing.T) {
 	// initialize some validators into the state
 	amts := []int64{
 		0,
-		100 * sdk.PowerReduction.Int64(),
-		1 * sdk.PowerReduction.Int64(),
-		400 * sdk.PowerReduction.Int64(),
-		200 * sdk.PowerReduction.Int64()}
+		100,
+		1,
+		400,
+		200}
 	n := len(amts)
 	var validators [5]types.Validator
 	for i, amt := range amts {
 		validators[i] = types.NewValidator(sdk.ValAddress(Addrs[i]), PKs[i], types.Description{})
 		validators[i].Status = sdk.Bonded
-		validators[i].Tokens = sdk.NewInt(amt)
+		validators[i].Tokens = sdk.NewIntFromBigInt(sdk.NewDec(amt).Int)
 		validators[i].DelegatorShares = sdk.NewDec(amt)
 		TestingUpdateValidator(keeper, ctx, validators[i], true)
 	}
@@ -390,17 +390,17 @@ func TestGetValidatorSortingMixed(t *testing.T) {
 	// initialize some validators into the state
 	amts := []int64{
 		0,
-		100 * sdk.PowerReduction.Int64(),
-		1 * sdk.PowerReduction.Int64(),
-		400 * sdk.PowerReduction.Int64(),
-		200 * sdk.PowerReduction.Int64()}
+		100,
+		1,
+		400,
+		200}
 
 	var validators [5]types.Validator
 	for i, amt := range amts {
 		validators[i] = types.NewValidator(sdk.ValAddress(Addrs[i]), PKs[i], types.Description{})
 		validators[i].DelegatorShares = sdk.NewDec(amt)
 		validators[i].Status = sdk.Bonded
-		validators[i].Tokens = sdk.NewInt(amt)
+		validators[i].Tokens = sdk.NewIntFromBigInt(sdk.NewDec(amt).Int)
 		TestingUpdateValidator(keeper, ctx, validators[i], true)
 	}
 

@@ -29,17 +29,17 @@ func TestLazyKeyManagementKeyRing(t *testing.T) {
 	require.Nil(t, err)
 	assert.Empty(t, l)
 
-	_, _, err = kb.CreateMnemonic(n1, English, p1, Ed25519)
+	_, _, err = kb.CreateMnemonic(n1, English, p1, Ed25519, "")
 	require.Error(t, err, "ed25519 keys are currently not supported by keybase")
 
 	// create some keys
 	_, err = kb.Get(n1)
 	require.Error(t, err)
-	i, _, err := kb.CreateMnemonic(n1, English, p1, algo)
+	i, _, err := kb.CreateMnemonic(n1, English, p1, algo, "")
 
 	require.NoError(t, err)
 	require.Equal(t, n1, i.GetName())
-	_, _, err = kb.CreateMnemonic(n2, English, p2, algo)
+	_, _, err = kb.CreateMnemonic(n2, English, p2, algo, "")
 	require.NoError(t, err)
 
 	// we can get these keys
@@ -109,10 +109,10 @@ func TestLazySignVerifyKeyRing(t *testing.T) {
 	p1, p2, p3 := "1234", "foobar", "foobar"
 
 	// create two users and get their info
-	i1, _, err := kb.CreateMnemonic(n1, English, p1, algo)
+	i1, _, err := kb.CreateMnemonic(n1, English, p1, algo, "")
 	require.Nil(t, err)
 
-	i2, _, err := kb.CreateMnemonic(n2, English, p2, algo)
+	i2, _, err := kb.CreateMnemonic(n2, English, p2, algo, "")
 	require.Nil(t, err)
 
 	// Import a public key
@@ -180,7 +180,7 @@ func TestLazyExportImportKeyRing(t *testing.T) {
 	kb, err := NewKeyring("keybasename", "test", dir, nil)
 	require.NoError(t, err)
 
-	info, _, err := kb.CreateMnemonic("john", English, "secretcpw", Secp256k1)
+	info, _, err := kb.CreateMnemonic("john", English, "secretcpw", Secp256k1, "")
 	require.NoError(t, err)
 	require.Equal(t, info.GetName(), "john")
 
@@ -212,7 +212,7 @@ func TestLazyExportImportPubKeyKeyRing(t *testing.T) {
 
 	// CreateMnemonic a private-public key pair and ensure consistency
 	notPasswd := "n9y25ah7"
-	info, _, err := kb.CreateMnemonic("john", English, notPasswd, algo)
+	info, _, err := kb.CreateMnemonic("john", English, notPasswd, algo, "")
 	require.Nil(t, err)
 	require.NotEqual(t, info, "")
 	require.Equal(t, info.GetName(), "john")
@@ -250,7 +250,7 @@ func TestLazyExportPrivateKeyObjectKeyRing(t *testing.T) {
 	kb, err := NewKeyring("keybasename", "test", dir, nil)
 	require.NoError(t, err)
 
-	info, _, err := kb.CreateMnemonic("john", English, "secretcpw", Secp256k1)
+	info, _, err := kb.CreateMnemonic("john", English, "secretcpw", Secp256k1, "")
 	require.NoError(t, err)
 	require.Equal(t, info.GetName(), "john")
 
@@ -271,7 +271,7 @@ func TestLazyAdvancedKeyManagementKeyRing(t *testing.T) {
 	p1 := "1234"
 
 	// make sure key works with initial password
-	_, _, err = kb.CreateMnemonic(n1, English, p1, algo)
+	_, _, err = kb.CreateMnemonic(n1, English, p1, algo, "")
 	require.Nil(t, err, "%+v", err)
 
 	_, err = kb.Export(n1 + ".notreal")
@@ -305,7 +305,7 @@ func TestLazySeedPhraseKeyRing(t *testing.T) {
 	p1, p2 := "1234", "foobar"
 
 	// make sure key works with initial password
-	info, mnemonic, err := kb.CreateMnemonic(n1, English, p1, algo)
+	info, mnemonic, err := kb.CreateMnemonic(n1, English, p1, algo, "")
 	require.Nil(t, err, "%+v", err)
 	require.Equal(t, n1, info.GetName())
 	assert.NotEmpty(t, mnemonic)

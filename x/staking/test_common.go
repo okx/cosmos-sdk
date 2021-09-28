@@ -41,3 +41,9 @@ func NewTestMsgDelegate(delAddr sdk.AccAddress, valAddr sdk.ValAddress, amt sdk.
 	amount := sdk.NewCoin(sdk.DefaultBondDenom, amt)
 	return NewMsgDelegate(delAddr, valAddr, amount)
 }
+
+func NewTestMsgCreateValidator(valAddr sdk.ValAddress, pk crypto.PubKey, amt sdk.Int) MsgCreateValidator {
+	amount := sdk.NewCoin(sdk.DefaultBondDenom, amt)
+	commission := NewCommissionRates(sdk.NewDecWithPrec(5, 1), sdk.NewDecWithPrec(5, 1), sdk.NewDec(0))
+	return NewMsgCreateValidator(valAddr, pk, amount, Description{}, commission, sdk.OneInt())
+}

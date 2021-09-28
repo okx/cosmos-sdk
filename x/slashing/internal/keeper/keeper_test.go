@@ -53,8 +53,8 @@ func TestHandleNewValidator(t *testing.T) {
 	validator, _ := sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
 	require.Equal(t, sdk.Bonded, validator.GetStatus())
 	bondPool := sk.GetBondedPool(ctx)
-	expTokens := sdk.TokensFromConsensusPower(100)
-	require.Equal(t, expTokens.Int64(), bondPool.GetCoins().AmountOf(sk.BondDenom(ctx)).Int64())
+	expTokens := sdk.NewDecFromInt(sdk.TokensFromConsensusPower(100))
+	require.Equal(t, expTokens, bondPool.GetCoins().AmountOf(sk.BondDenom(ctx)))
 }
 
 // Test a jailed validator being "down" twice

@@ -3,6 +3,7 @@ package mock
 import (
 	"testing"
 
+	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -16,7 +17,7 @@ const msgRoute = "testMsg"
 
 var (
 	numAccts                 = 2
-	genCoins                 = sdk.Coins{sdk.NewInt64Coin("foocoin", 77)}
+	genCoins                 = sdk.Coins{sdk.NewInt64Coin(sdk.DefaultBondDenom, 77)}
 	accs, addrs, _, privKeys = CreateGenAccounts(numAccts, genCoins)
 )
 
@@ -56,6 +57,7 @@ func TestCheckAndDeliverGenTx(t *testing.T) {
 	mApp := getMockApp(t)
 	mApp.Cdc.RegisterConcrete(testMsg{}, "mock/testMsg", nil)
 	mApp.Cdc.RegisterInterface((*exported.ModuleAccountI)(nil), nil)
+	mApp.Cdc.RegisterConcrete(supply.ModuleAccount{}, "cosmos-sdk/ModuleAccount", nil)
 
 	SetGenesis(mApp, accs)
 	ctxCheck := mApp.BaseApp.NewContext(true, abci.Header{})

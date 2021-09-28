@@ -50,7 +50,7 @@ func TestStdSignBytes(t *testing.T) {
 	}{
 		{
 			args{"1234", 3, 6, defaultFee, []sdk.Msg{sdk.NewTestMsg(addr)}, "memo"},
-			fmt.Sprintf("{\"account_number\":\"3\",\"chain_id\":\"1234\",\"fee\":{\"amount\":[{\"amount\":\"150\",\"denom\":\"atom\"}],\"gas\":\"100000\"},\"memo\":\"memo\",\"msgs\":[[\"%s\"]],\"sequence\":\"6\"}", addr),
+			fmt.Sprintf("{\"account_number\":\"3\",\"chain_id\":\"1234\",\"fee\":{\"amount\":[{\"amount\":\"150.000000000000000000\",\"denom\":\"atom\"}],\"gas\":\"100000\"},\"memo\":\"memo\",\"msgs\":[[\"%s\"]],\"sequence\":\"6\"}", addr),
 		},
 	}
 	for i, tc := range tests {
@@ -74,7 +74,7 @@ func TestTxValidateBasic(t *testing.T) {
 
 	// require to fail validation upon invalid fee
 	badFee := NewTestStdFee()
-	badFee.Amount[0].Amount = sdk.NewInt(-5)
+	badFee.Amount[0].Amount = sdk.NewDec(-5)
 	tx := NewTestTx(ctx, nil, nil, nil, nil, badFee)
 
 	err := tx.ValidateBasic()
