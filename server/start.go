@@ -140,6 +140,7 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().IntVar(&tmiavl.MaxCommittedHeightNum, tmiavl.FlagIavlMaxCommittedHeightNum, 8, "Max committed version to cache in memory")
 	cmd.Flags().BoolVar(&tmiavl.EnableOptPruning, tmiavl.FlagIavlEnableOptPruning, false, "Enable cache iavl node data to optimization leveldb pruning process")
 	cmd.Flags().IntVar(&tmiavl.Debugging, tmiavl.FlagIavlDebug, 0, "Enable iavl project debug")
+	cmd.Flags().BoolVar(&tmiavl.EnablePruningHistoryState, tmiavl.FlagIavlEnablePruningHistoryState, false, "Enable iavl project debug")
 	cmd.Flags().IntVar(&tmdb.LevelDBCacheSize, tmdb.FlagLevelDBCacheSize, 128, "The amount of memory in megabytes to allocate to leveldb")
 	cmd.Flags().IntVar(&tmdb.LevelDBHandlersNum, tmdb.FlagLevelDBHandlersNum, 1024, "The number of files handles to allocate to the open database files")
 
@@ -185,7 +186,7 @@ func startStandAlone(ctx *Context, appCreator AppCreator) error {
 	}
 
 	svr.SetLogger(ctx.Logger.With("module", "abci-server"))
-
+	ctx.Logger.Info(tmiavl.FlagIavlEnableOptPruning, tmiavl.EnableOptPruning)
 	err = svr.Start()
 	if err != nil {
 		tmos.Exit(err.Error())
