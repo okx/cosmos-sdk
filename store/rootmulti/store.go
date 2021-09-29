@@ -360,7 +360,7 @@ func (rs *Store) Commit() types.CommitID {
 
 	// batch prune if the current height is a pruning interval height
 	if rs.pruningOpts.Interval > 0 && version%int64(rs.pruningOpts.Interval) == 0 {
-		if !iavltree.EnableOptPruning {
+		if !iavltree.EnableAsyncCommit {
 			rs.pruneStores() // use pruning logic from iavl project
 		}
 	}
@@ -634,6 +634,9 @@ func (rs *Store) loadCommitStoreFromParams(key types.StoreKey, id types.CommitID
 
 // PrintCacheLog prints log when abci commit finished
 func (rs *Store) PrintCacheLog(logger tmlog.Logger) {
+	if !iavltree.EnableAsyncCommit {
+		return
+	}
 	for key, store := range rs.stores {
 		if v,ok := iavl.OutputModules[key.Name()]; ok && v != 0 {
 			logger.Info(store.SprintCacheLog())
