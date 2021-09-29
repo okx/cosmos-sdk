@@ -381,8 +381,8 @@ github.com/nats-io/nkeys v0.1.3/go.mod h1:xpnFELMwJABBLVhffcfd1MZx6VsNRFpEugbxzi
 github.com/nats-io/nuid v1.0.1/go.mod h1:19wcPz3Ph3q0Jbyiqsd0kePYG7A95tJPxeL+1OSON2c=
 github.com/nxadm/tail v1.4.4 h1:DQuhQpB1tVlglWS2hLQ5OV6B5r8aGxSrPc5Qo6uTN78=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
-github.com/okex/iavl v0.14.4-0.20210929051610-51e70943801a h1:LA9LE03KK9BC/0pkUGW/e4q8qB1yw3Y9oqw4Astqqw8=
-github.com/okex/iavl v0.14.4-0.20210929051610-51e70943801a/go.mod h1:vHLYxU/zuxBmxxr1v+5Vnd/JzcIsyK17n9P9RDubPVU=
+github.com/okex/iavl v0.14.4-0.20210929052051-96f32989147f h1:JZBngrgh4SMxfYWf9jYwgVfl4OqzX8IrMKqsbYYKdUw=
+github.com/okex/iavl v0.14.4-0.20210929052051-96f32989147f/go.mod h1:vHLYxU/zuxBmxxr1v+5Vnd/JzcIsyK17n9P9RDubPVU=
 github.com/okex/tendermint v0.33.9-exchain12 h1:O+bPKYj/pot8c2c8GBLSivnB/qcZObHaqkhDKhiLtTM=
 github.com/okex/tendermint v0.33.9-exchain12/go.mod h1:M1QIvLS/pX7b7wwoLLFCGPxnPVNpiy9yNg9l/zFiMh0=
 github.com/okex/tm-db v0.5.2-exchain1 h1:c8aX7HoNW58GXHEO6e7BR81SwyBfjWJkqGwNUhF3tlc=
