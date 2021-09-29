@@ -187,7 +187,7 @@ func startStandAlone(ctx *Context, appCreator AppCreator) error {
 	}
 
 	svr.SetLogger(ctx.Logger.With("module", "abci-server"))
-	ctx.Logger.Info(tmiavl.FlagIavlEnableOptPruning, tmiavl.EnableOptPruning)
+
 	err = svr.Start()
 	if err != nil {
 		tmos.Exit(err.Error())
@@ -211,7 +211,7 @@ func startInProcess(ctx *Context, cdc *codec.Codec, appCreator AppCreator, appSt
 	cfg := ctx.Config
 	home := cfg.RootDir
 	//startInProcess hooker
-
+	ctx.Logger.Info(tmiavl.FlagIavlEnableOptPruning, tmiavl.EnableOptPruning)
 	callHooker(FlagHookstartInProcess, ctx)
 
 	traceWriterFile := viper.GetString(flagTraceStore)
