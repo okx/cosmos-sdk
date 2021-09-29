@@ -636,7 +636,7 @@ func (rs *Store) loadCommitStoreFromParams(key types.StoreKey, id types.CommitID
 func (rs *Store) PrintCacheLog(logger tmlog.Logger) {
 	for key, store := range rs.stores {
 		if v,ok := iavl.OutputModules[key.Name()]; ok && v != 0 {
-			logger.Debug(store.SprintCacheLog())
+			logger.Info(store.SprintCacheLog())
 		}
 	}
 }
