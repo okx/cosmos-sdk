@@ -211,7 +211,7 @@ func startInProcess(ctx *Context, cdc *codec.Codec, appCreator AppCreator, appSt
 	cfg := ctx.Config
 	home := cfg.RootDir
 	//startInProcess hooker
-	ctx.Logger.Info(tmiavl.FlagIavlEnableOptPruning, tmiavl.EnableOptPruning)
+	ctx.Logger.Info("iavl flag", tmiavl.FlagIavlEnableOptPruning, tmiavl.EnableOptPruning)
 	callHooker(FlagHookstartInProcess, ctx)
 
 	traceWriterFile := viper.GetString(flagTraceStore)
