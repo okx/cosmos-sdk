@@ -3,6 +3,7 @@ package mock
 import (
 	"io"
 
+	tmlog "github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
 	store "github.com/cosmos/cosmos-sdk/store/types"
@@ -97,6 +98,13 @@ func (ms multiStore) GetStoreType() sdk.StoreType {
 
 func (ms multiStore) SetInterBlockCache(_ sdk.MultiStorePersistentCache) {
 	panic("not implemented")
+}
+
+func (ms multiStore) PrintCacheLog(logger tmlog.Logger) {
+}
+
+func (ms multiStore) SprintCacheLog() string {
+ 	return ""
 }
 
 var _ sdk.KVStore = kvStore{}
