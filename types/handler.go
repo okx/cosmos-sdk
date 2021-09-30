@@ -7,9 +7,13 @@ type Handler func(ctx Context, msg Msg) (*Result, error)
 // If newCtx.IsZero(), ctx is used instead.
 type AnteHandler func(ctx Context, tx Tx, simulate bool) (newCtx Context, err error)
 
-type GasRefundHandler func(ctx Context, tx Tx) (err error)
+type GasRefundHandler func(ctx Context, tx Tx) (fee Coins, err error)
 
-type AccHandler func(ctx Context, address AccAddress) uint64
+type AccHandler func(ctx Context, address AccAddress) (nonce uint64, balances Coins)
+
+type ChangeBalanceHandler func(ctx Context, balance Coins) (balances Coins)
+
+type GetTxFeeHandler func(ctx Context, tx Tx) Coins
 
 // AnteDecorator wraps the next AnteHandler to perform custom pre- and post-processing.
 type AnteDecorator interface {

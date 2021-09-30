@@ -1,6 +1,7 @@
 package baseapp
 
 import (
+	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -26,6 +27,7 @@ func (e ExecuteResult) Recheck(cache abci.AsyncCacheInterface) bool {
 		m.IteratorCache(func(key, value []byte, isDirty bool) bool {
 			//the key we have read was wrote by pre txs
 			if cache.Has(key) {
+				fmt.Println("conflict")
 				rerun = true
 			}
 			return true
@@ -59,8 +61,16 @@ func (e ExecuteResult) GetCounter() uint32 {
 }
 
 func (e ExecuteResult) Commit() {
+	//fmt.Println("LLLLLLL----", len(e.Ms))
 	for i := 1; i >= 0; i-- {
+		//fmt.Println("commit index", i)
 		if e.Ms[i] != nil {
+			//e.Ms[i].IteratorCache(func(key, value []byte, isDirty bool) bool {
+			//	if isDirty {
+			//fmt.Println("ok.scf.debug", hex.EncodeToString(key), hex.EncodeToString(value))
+			//}
+			//return true
+			//})
 			e.Ms[i].Write()
 		}
 	}

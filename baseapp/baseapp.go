@@ -4,12 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"reflect"
-	"runtime/debug"
-	"strings"
-
 	"github.com/gogo/protobuf/proto"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cfg "github.com/tendermint/tendermint/config"
@@ -19,6 +13,12 @@ import (
 	tmhttp "github.com/tendermint/tendermint/rpc/client/http"
 	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
+	"io/ioutil"
+	"os"
+	"reflect"
+	"runtime/debug"
+	"strings"
+	"sync"
 
 	"github.com/cosmos/cosmos-sdk/store"
 	"github.com/cosmos/cosmos-sdk/store/rootmulti"
@@ -29,12 +29,11 @@ import (
 )
 
 const (
-	runTxModeCheck              runTxMode = iota // Check a transaction
-	runTxModeReCheck                             // Recheck a (pending) transaction after a commit
-	runTxModeSimulate                            // Simulate a transaction
-	runTxModeDeliver                             // Deliver a transaction
-	runTxModeDeliverInAsync                      //Deliver a transaction in Aysnc
-	runTxModeDeliverWithoutAnte                  //deliver a tx with ante, the cache will be commit after delivered and will rerun the antehandler
+	runTxModeCheck          runTxMode = iota // Check a transaction
+	runTxModeReCheck                         // Recheck a (pending) transaction after a commit
+	runTxModeSimulate                        // Simulate a transaction
+	runTxModeDeliver                         // Deliver a transaction
+	runTxModeDeliverInAsync                  //Deliver a transaction in Aysnc
 
 	// MainStoreKey is the string representation of the main store
 	MainStoreKey = "main"
@@ -108,13 +107,16 @@ type BaseApp struct { // nolint: maligned
 	anteHandler      sdk.AnteHandler      // ante handler for fee and auth
 	GasRefundHandler sdk.GasRefundHandler // gas refund handler for gas refund
 	AccHandler       sdk.AccHandler       // account handler for cm tx nonce
-	initChainer      sdk.InitChainer      // initialize state with validators and state blob
-	beginBlocker     sdk.BeginBlocker     // logic to run before any txs
-	endBlocker       sdk.EndBlocker       // logic to run after all txs, and to determine valset changes
-	addrPeerFilter   sdk.PeerFilter       // filter peers by address and port
-	idPeerFilter     sdk.PeerFilter       // filter peers by node ID
-	txChecker        sdk.CheckTxType
-	fauxMerkleMode   bool // if true, IAVL MountStores uses MountStoresDB for simulation speed.
+	changeHandle     sdk.ChangeBalanceHandler
+	getTxFee         sdk.GetTxFeeHandler
+
+	initChainer    sdk.InitChainer  // initialize state with validators and state blob
+	beginBlocker   sdk.BeginBlocker // logic to run before any txs
+	endBlocker     sdk.EndBlocker   // logic to run after all txs, and to determine valset changes
+	addrPeerFilter sdk.PeerFilter   // filter peers by address and port
+	idPeerFilter   sdk.PeerFilter   // filter peers by node ID
+	txChecker      sdk.CheckTxType
+	fauxMerkleMode bool // if true, IAVL MountStores uses MountStoresDB for simulation speed.
 
 	// volatile states:
 	//
@@ -162,9 +164,13 @@ type BaseApp struct { // nolint: maligned
 	workgroup *AsyncWorkGroup
 
 	isAsyncDeliverTx bool
-
+	initPoolCoins    sdk.Coins
 	//address of tx sender in per block
 	senders map[string]int
+	fee     map[string]sdk.Coins
+	//refundFee map[string]sdk.Coins
+
+	refundFee sync.Map
 }
 
 // NewBaseApp returns a reference to an initialized BaseApp. It accepts a
@@ -524,6 +530,8 @@ func (app *BaseApp) SetAsyncDeliverTxCb(cb abci.AsyncCallBack) {
 func (app *BaseApp) SetAsyncConfig(sw bool, maxDeliverCounter int) {
 	app.isAsyncDeliverTx = sw
 	app.workgroup.SetMaxCounter(maxDeliverCounter)
+	app.initPoolCoins = app.changeHandle(app.getContextForTx(runTxModeDeliverInAsync, nil), sdk.Coins{})
+
 }
 
 // validateBasicTxMsgs executes basic validator calls for messages.
@@ -545,7 +553,7 @@ func validateBasicTxMsgs(msgs []sdk.Msg) error {
 // Returns the applications's deliverState if app is in runTxModeDeliver,
 // otherwise it returns the application's checkstate.
 func (app *BaseApp) getState(mode runTxMode) *state {
-	if mode == runTxModeDeliver || mode == runTxModeDeliverInAsync || mode == runTxModeDeliverWithoutAnte {
+	if mode == runTxModeDeliver || mode == runTxModeDeliverInAsync {
 		return app.deliverState
 	}
 
@@ -711,13 +719,13 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	ms := ctx.MultiStore()
 
 	// only run the tx if there is block gas remaining
-	if (mode == runTxModeDeliver || mode == runTxModeDeliverInAsync || mode == runTxModeDeliverWithoutAnte) && ctx.BlockGasMeter().IsOutOfGas() {
+	if (mode == runTxModeDeliver || mode == runTxModeDeliverInAsync) && ctx.BlockGasMeter().IsOutOfGas() {
 		gInfo = sdk.GasInfo{GasUsed: ctx.BlockGasMeter().GasConsumed()}
 		return gInfo, nil, nil, sdkerrors.Wrap(sdkerrors.ErrOutOfGas, "no block gas left to run tx")
 	}
 
 	var startingGas uint64
-	if mode == runTxModeDeliver || mode == runTxModeDeliverInAsync || mode == runTxModeDeliverWithoutAnte {
+	if mode == runTxModeDeliver || mode == runTxModeDeliverInAsync {
 		startingGas = ctx.BlockGasMeter().GasConsumed()
 	}
 
@@ -754,7 +762,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	// NOTE: This must exist in a separate defer function for the above recovery
 	// to recover from this one.
 	defer func() {
-		if mode == runTxModeDeliver || mode == runTxModeDeliverInAsync || mode == runTxModeDeliverWithoutAnte {
+		if mode == runTxModeDeliver || mode == runTxModeDeliverInAsync {
 			ctx.BlockGasMeter().ConsumeGas(
 				ctx.GasMeter().GasConsumedToLimit(), "block gas meter",
 			)
@@ -766,23 +774,31 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	}()
 
 	defer func() {
-		if (mode == runTxModeDeliver || mode == runTxModeDeliverInAsync || mode == runTxModeDeliverWithoutAnte) && app.GasRefundHandler != nil {
+		if (mode == runTxModeDeliver || mode == runTxModeDeliverInAsync) && app.GasRefundHandler != nil {
 			var GasRefundCtx sdk.Context
 			if mode == runTxModeDeliver {
 				GasRefundCtx, msCache = app.cacheTxContext(ctx, txBytes)
-			} else if mode == runTxModeDeliverInAsync || mode == runTxModeDeliverWithoutAnte {
+			} else if mode == runTxModeDeliverInAsync {
 				GasRefundCtx = runMsgCtx
 				if msCache == nil {
 					return
 				}
 			}
-
-			err := app.GasRefundHandler(GasRefundCtx, tx)
+			refundGas, err := app.GasRefundHandler(GasRefundCtx, tx)
 			if err != nil {
 				panic(err)
 			}
 			if mode == runTxModeDeliver {
+				//msCache.IteratorCache(func(key, value []byte, isDirty bool) bool {
+				//	if isDirty {
+				//		//fmt.Println("ok.scf.refund", hex.EncodeToString(key), hex.EncodeToString(value))
+				//	}
+				//	return true
+				//})
 				msCache.Write()
+			}
+			if mode == runTxModeDeliverInAsync {
+				app.refundFee.Store(string(txBytes), refundGas)
 			}
 		}
 	}()
@@ -793,7 +809,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	}
 
 	accountNonce := uint64(0)
-	if app.anteHandler != nil && mode != runTxModeDeliverWithoutAnte {
+	if app.anteHandler != nil {
 		var anteCtx sdk.Context
 
 		// Cache wrap context before AnteHandler call in case it aborts.
@@ -827,7 +843,14 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 			return gInfo, nil, nil, err
 		}
 		if mode == runTxModeDeliver {
+			//msCacheAnte.IteratorCache(func(key, value []byte, isDirty bool) bool {
+			//	if isDirty {
+			//		fmt.Println("ok.scf.ante", hex.EncodeToString(key), hex.EncodeToString(value))
+			//	}
+			//	return true
+			//})
 			msCacheAnte.Write()
+
 		}
 	}
 
@@ -846,10 +869,16 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	// Result if any single message fails or does not have a registered Handler.
 	result, err = app.runMsgs(runMsgCtx, msgs, mode)
 	if err == nil && (mode == runTxModeDeliver) {
+		//msCache.IteratorCache(func(key, value []byte, isDirty bool) bool {
+		//	if isDirty {
+		//		fmt.Println("ok.scf.runMsg", hex.EncodeToString(key), hex.EncodeToString(value))
+		//	}
+		//	return true
+		//})
 		msCache.Write()
 	}
 
-	fmt.Println("runMsg errrr", err, mode == runTxModeDeliver)
+	fmt.Println("runMsg errrr", err)
 
 	if mode == runTxModeCheck {
 		exTxInfo := app.GetTxInfo(ctx, tx)
@@ -870,7 +899,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		msCache = nil
 	}
 
-	if mode == runTxModeDeliverInAsync || mode == runTxModeDeliverWithoutAnte {
+	if mode == runTxModeDeliverInAsync {
 		return gInfo, result, []sdk.CacheMultiStore{msCacheAnte, msCache}, err
 	}
 	return gInfo, result, nil, err
@@ -943,8 +972,8 @@ func (app *BaseApp) GetTxInfo(ctx sdk.Context, tx sdk.Tx) mempool.ExTxInfo {
 	exTxInfo := tx.GetTxInfo(ctx)
 	if exTxInfo.Nonce == 0 && exTxInfo.Sender != "" && app.AccHandler != nil {
 		addr, _ := sdk.AccAddressFromBech32(exTxInfo.Sender)
-		exTxInfo.Nonce = app.AccHandler(ctx, addr)
-
+		nonce, _ := app.AccHandler(ctx, addr)
+		exTxInfo.Nonce = nonce
 		if app.anteHandler != nil && exTxInfo.Nonce > 0 {
 			exTxInfo.Nonce -= 1 // in ante handler logical, the nonce will incress one
 		}

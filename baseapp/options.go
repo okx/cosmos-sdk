@@ -127,6 +127,20 @@ func (app *BaseApp) SetAccHandler(ah sdk.AccHandler) {
 	app.AccHandler = ah
 }
 
+func (app *BaseApp) SetChangeBalanceHandler(ah sdk.ChangeBalanceHandler) {
+	if app.sealed {
+		panic("SetChangeBalanceHandler() on sealed BaseApp")
+	}
+	app.changeHandle = ah
+}
+
+func (app *BaseApp) SetGetTxFee(gt sdk.GetTxFeeHandler) {
+	if app.sealed {
+		panic("SetGetTxFee() on sealed BaseApp")
+	}
+	app.getTxFee = gt
+}
+
 func (app *BaseApp) SetAddrPeerFilter(pf sdk.PeerFilter) {
 	if app.sealed {
 		panic("SetAddrPeerFilter() on sealed BaseApp")

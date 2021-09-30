@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -112,6 +113,8 @@ func (app *BaseApp) BeginBlock(req abci.RequestBeginBlock) (res abci.ResponseBeg
 		app.workgroup.Reset()
 		app.evmCounter = 0
 		app.senders = make(map[string]int, 0)
+		app.fee = make(map[string]sdk.Coins, 0)
+		app.refundFee = sync.Map{}
 	}()
 	if app.cms.TracingEnabled() {
 		app.cms.SetTracingContext(sdk.TraceContext(
@@ -210,9 +213,26 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 
 //we reuse the nonce that changed by the last async call
 //if last ante handler has been failed, we need rerun it ? or not?
-func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx, needAnte bool, evmIdx uint32) abci.ExecuteRes {
+func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx, final bool, evmIdx uint32) abci.ExecuteRes {
+	if final {
+		txFeeInBlock := sdk.Coins{}
+		for tx, v := range app.fee {
+			txFeeInBlock = txFeeInBlock.Add(v...)
+
+			if refundFee, ok := app.refundFee.Load(tx); ok {
+				if scf, ok := refundFee.(sdk.Coins); ok {
+					txFeeInBlock = txFeeInBlock.Sub(scf)
+				} else {
+					panic("sdasda")
+				}
+			}
+		}
+		app.changeHandle(app.getContextForTx(runTxModeDeliverInAsync, req.Tx), txFeeInBlock.Add(app.initPoolCoins...))
+
+		return &ExecuteResult{}
+	}
 	tx, err := app.txDecoder(req.Tx)
-	fmt.Println("====DeliverTxWithCache====", needAnte, evmIdx, reflect.TypeOf(tx))
+	fmt.Println("====DeliverTxWithCache====", final, evmIdx, reflect.TypeOf(tx))
 	if err != nil {
 		return nil
 	}
@@ -222,9 +242,6 @@ func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx, needAnte bool,
 		mode  runTxMode
 	)
 	mode = runTxModeDeliverInAsync
-	if !needAnte {
-		mode = runTxModeDeliverWithoutAnte
-	}
 	g, r, m, e := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight, evmIdx)
 	if e != nil {
 		resp = sdkerrors.ResponseDeliverTx(e, gInfo.GasWanted, gInfo.GasUsed, app.trace)
@@ -280,6 +297,8 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 			//record to map for next txs
 			app.senders[sender] = 0
 		}
+
+		app.fee[string(req.Tx)] = app.getTxFee(ctx, tx)
 
 		go func() {
 			var resp abci.ResponseDeliverTx
