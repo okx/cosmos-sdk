@@ -3,6 +3,7 @@ package mock
 import (
 	"io"
 
+	tmlog "github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
 	store "github.com/cosmos/cosmos-sdk/store/types"
@@ -99,6 +100,13 @@ func (ms multiStore) SetInterBlockCache(_ sdk.MultiStorePersistentCache) {
 	panic("not implemented")
 }
 
+func (ms multiStore) PrintCacheLog(logger tmlog.Logger) {
+}
+
+func (ms multiStore) SprintCacheLog() string {
+ 	return ""
+}
+
 var _ sdk.KVStore = kvStore{}
 
 type kvStore struct {
@@ -164,4 +172,8 @@ func (kv kvStore) ReverseSubspaceIterator(prefix []byte) sdk.Iterator {
 
 func NewCommitMultiStore() sdk.CommitMultiStore {
 	return multiStore{kv: make(map[sdk.StoreKey]kvStore)}
+}
+
+func (ms multiStore) StopStore() {
+	panic("not implemented")
 }

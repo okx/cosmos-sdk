@@ -18,6 +18,7 @@ import (
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	tmiavl "github.com/tendermint/iavl"
 	"github.com/tendermint/tendermint/abci/server"
 	tcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
 	tmos "github.com/tendermint/tendermint/libs/os"
@@ -58,7 +59,7 @@ const (
 // StartCmd runs the service passed in, either stand-alone or in-process with
 // Tendermint.
 func StartCmd(ctx *Context,
-	cdc *codec.Codec, appCreator AppCreator,
+	cdc *codec.Codec, appCreator AppCreator, appStop AppStop,
 	registerRoutesFn func(restServer *lcd.RestServer),
 	registerAppFlagFn func(cmd *cobra.Command)) *cobra.Command {
 	cmd := &cobra.Command{
@@ -99,7 +100,7 @@ which accepts a path for the resulting pprof file.
 			ctx.Logger.Info("starting ABCI with Tendermint")
 
 			setPID(ctx)
-			_, err := startInProcess(ctx, cdc, appCreator, registerRoutesFn)
+			_, err := startInProcess(ctx, cdc, appCreator, appStop, registerRoutesFn)
 			if err != nil {
 				tmos.Exit(err.Error())
 			}
@@ -132,7 +133,15 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().String(FlagEvmImportMode, "default", "Select import mode for evm state (default|files|db)")
 	cmd.Flags().String(FlagEvmImportPath, "", "Evm contract & storage db or files used for InitGenesis")
 	cmd.Flags().Uint64(FlagGoroutineNum, 0, "Limit on the number of goroutines used to import evm data(ignored if evm-import-mode is 'default')")
+	cmd.Flags().StringToIntVar(&iavl.OutputModules, iavl.FlagOutputModules, map[string]int{"evm": 1, "acc": 1},"decide which module in iavl to be printed")
 	cmd.Flags().IntVar(&iavl.IavlCacheSize, iavl.FlagIavlCacheSize, 1000000, "Max size of iavl cache")
+	cmd.Flags().Int64Var(&tmiavl.CommitIntervalHeight, tmiavl.FlagIavlCommitIntervalHeight, 100, "Max interval to commit node cache into leveldb")
+	cmd.Flags().Int64Var(&tmiavl.MinCommitItemCount, tmiavl.FlagIavlMinCommitItemCount, 500000, "Min nodes num to triggle node cache commit")
+	cmd.Flags().IntVar(&tmiavl.HeightOrphansCacheSize, tmiavl.FlagIavlHeightOrphansCacheSize, 8, "Max orphan version to cache in memory")
+	cmd.Flags().IntVar(&tmiavl.MaxCommittedHeightNum, tmiavl.FlagIavlMaxCommittedHeightNum, 8, "Max committed version to cache in memory")
+	cmd.Flags().BoolVar(&tmiavl.EnableAsyncCommit, tmiavl.FlagIavlEnableAsyncCommit, false, "Enable async commit")
+	cmd.Flags().IntVar(&tmiavl.Debugging, tmiavl.FlagIavlDebug, 0, "Enable iavl project debug")
+	cmd.Flags().BoolVar(&tmiavl.EnablePruningHistoryState, tmiavl.FlagIavlEnablePruningHistoryState, false, "Enable pruning history state")
 	cmd.Flags().IntVar(&tmdb.LevelDBCacheSize, tmdb.FlagLevelDBCacheSize, 128, "The amount of memory in megabytes to allocate to leveldb")
 	cmd.Flags().IntVar(&tmdb.LevelDBHandlersNum, tmdb.FlagLevelDBHandlersNum, 1024, "The number of files handles to allocate to the open database files")
 
@@ -196,13 +205,13 @@ func startStandAlone(ctx *Context, appCreator AppCreator) error {
 	select {}
 }
 
-func startInProcess(ctx *Context, cdc *codec.Codec, appCreator AppCreator,
+func startInProcess(ctx *Context, cdc *codec.Codec, appCreator AppCreator, appStop AppStop,
 	registerRoutesFn func(restServer *lcd.RestServer)) (*node.Node, error) {
 
 	cfg := ctx.Config
 	home := cfg.RootDir
 	//startInProcess hooker
-
+	ctx.Logger.Info("Enable Async Commit", tmiavl.FlagIavlEnableAsyncCommit, tmiavl.EnableAsyncCommit)
 	callHooker(FlagHookstartInProcess, ctx)
 
 	traceWriterFile := viper.GetString(flagTraceStore)
@@ -266,6 +275,7 @@ func startInProcess(ctx *Context, cdc *codec.Codec, appCreator AppCreator,
 		if tmNode.IsRunning() {
 			_ = tmNode.Stop()
 		}
+		appStop(app)
 
 		if cpuProfileCleanup != nil {
 			cpuProfileCleanup()

@@ -22,6 +22,8 @@ type (
 		Set(key, value []byte) bool
 		Remove(key []byte) ([]byte, bool)
 		SaveVersion() ([]byte, int64, error)
+		SprintCacheLog(name string) string
+		GetModuleName() string
 		DeleteVersion(version int64) error
 		DeleteVersions(versions ...int64) error
 		Version() int64
@@ -91,4 +93,12 @@ func (it *immutableTree) GetImmutable(version int64) (*iavl.ImmutableTree, error
 
 func (it *immutableTree) SetInitialVersion(_ uint64) {
 	panic("cannot call 'SetInitialVersion' on an immutable IAVL tree")
+}
+
+func (it *immutableTree) SprintCacheLog(_ string) string {
+	return ""
+}
+
+func (it *immutableTree) GetModuleName() string {
+	return ""
 }
