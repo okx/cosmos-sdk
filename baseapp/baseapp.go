@@ -1,6 +1,7 @@
 package baseapp
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -358,6 +359,7 @@ func UpgradeableStoreLoader(upgradeInfoPath string) StoreLoader {
 // LoadVersion loads the BaseApp application version. It will panic if called
 // more than once on a running baseapp.
 func (app *BaseApp) LoadVersion(version int64, baseKey *sdk.KVStoreKey) error {
+	fmt.Println("dsadsadsa", version, baseKey.String())
 	err := app.cms.LoadVersion(version)
 	if err != nil {
 		return err
@@ -780,24 +782,33 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 				GasRefundCtx, msCache = app.cacheTxContext(ctx, txBytes)
 			} else if mode == runTxModeDeliverInAsync {
 				GasRefundCtx = runMsgCtx
-				if msCache == nil {
-					return
+				if msCache == nil { // why
+					GasRefundCtx, msCache = app.cacheTxContextWithCache(ctx, txBytes, msCacheAnte.CacheMultiStore())
 				}
 			}
 			refundGas, err := app.GasRefundHandler(GasRefundCtx, tx)
 			if err != nil {
 				panic(err)
 			}
+
+			//msCache.IteratorCache(func(key, value []byte, isDirty bool) bool {
+			//	if isDirty {
+			//		fmt.Println("ok.scf.refund", hex.EncodeToString(key), hex.EncodeToString(value))
+			//	}
+			//	return true
+			//})
+
 			if mode == runTxModeDeliver {
-				//msCache.IteratorCache(func(key, value []byte, isDirty bool) bool {
-				//	if isDirty {
-				//		//fmt.Println("ok.scf.refund", hex.EncodeToString(key), hex.EncodeToString(value))
-				//	}
-				//	return true
-				//})
+				msCache.IteratorCache(func(key, value []byte, isDirty bool) bool {
+					if isDirty {
+						fmt.Println("ok.scf.refund", hex.EncodeToString(key), hex.EncodeToString(value))
+					}
+					return true
+				})
 				msCache.Write()
 			}
 			if mode == runTxModeDeliverInAsync {
+				//msCache.Write()
 				app.refundFee.Store(string(txBytes), refundGas)
 			}
 		}
@@ -822,6 +833,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		anteCtx, msCacheAnte = app.cacheTxContext(ctx, txBytes)
 		anteCtx = anteCtx.WithEventManager(sdk.NewEventManager())
 		newCtx, err := app.anteHandler(anteCtx, tx, mode == runTxModeSimulate)
+		fmt.Println("eeeeee", err)
 		accountNonce = newCtx.AccountNonce()
 		if !newCtx.IsZero() {
 			// At this point, newCtx.MultiStore() is cache-wrapped, or something else
@@ -836,19 +848,21 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 
 		// GasMeter expected to be set in AnteHandler
 		gasWanted = ctx.GasMeter().Limit()
+		fmt.Println("err", err)
 		if err != nil {
 			if mode == runTxModeDeliverInAsync {
 				fmt.Printf("Failed to call antehandler in deliverTx with async ： %v\n", err)
+				panic("unexpected err")
 			}
 			return gInfo, nil, nil, err
 		}
 		if mode == runTxModeDeliver {
-			//msCacheAnte.IteratorCache(func(key, value []byte, isDirty bool) bool {
-			//	if isDirty {
-			//		fmt.Println("ok.scf.ante", hex.EncodeToString(key), hex.EncodeToString(value))
-			//	}
-			//	return true
-			//})
+			msCacheAnte.IteratorCache(func(key, value []byte, isDirty bool) bool {
+				if isDirty {
+					fmt.Println("ok.scf.ante", hex.EncodeToString(key), hex.EncodeToString(value))
+				}
+				return true
+			})
 			msCacheAnte.Write()
 
 		}
@@ -869,12 +883,12 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	// Result if any single message fails or does not have a registered Handler.
 	result, err = app.runMsgs(runMsgCtx, msgs, mode)
 	if err == nil && (mode == runTxModeDeliver) {
-		//msCache.IteratorCache(func(key, value []byte, isDirty bool) bool {
-		//	if isDirty {
-		//		fmt.Println("ok.scf.runMsg", hex.EncodeToString(key), hex.EncodeToString(value))
-		//	}
-		//	return true
-		//})
+		msCache.IteratorCache(func(key, value []byte, isDirty bool) bool {
+			if isDirty {
+				fmt.Println("ok.scf.runMsg", hex.EncodeToString(key), hex.EncodeToString(value))
+			}
+			return true
+		})
 		msCache.Write()
 	}
 
@@ -883,7 +897,6 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	if mode == runTxModeCheck {
 		exTxInfo := app.GetTxInfo(ctx, tx)
 		exTxInfo.SenderNonce = accountNonce
-
 		data, err := json.Marshal(exTxInfo)
 		if err == nil {
 			result.Data = data
@@ -900,6 +913,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	}
 
 	if mode == runTxModeDeliverInAsync {
+		fmt.Println("????", msCacheAnte == nil, msCache == nil)
 		return gInfo, result, []sdk.CacheMultiStore{msCacheAnte, msCache}, err
 	}
 	return gInfo, result, nil, err
