@@ -19,6 +19,8 @@ const (
 	AttributeKeyRecipient  = types.AttributeKeyRecipient
 	AttributeKeySender     = types.AttributeKeySender
 	AttributeValueCategory = types.AttributeValueCategory
+	COSMOS_DEPTH           = keeper.COSMOS_DEPTH
+	COSMOS_CALL_TYPE       = keeper.COSMOS_CALL_TYPE
 )
 
 var (

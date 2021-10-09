@@ -2,6 +2,9 @@ package keeper
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/vm"
+	tmtypes "github.com/tendermint/tendermint/types"
 	"time"
 
 	"github.com/tendermint/tendermint/libs/log"
@@ -23,6 +26,10 @@ type Keeper interface {
 
 	DelegateCoins(ctx sdk.Context, delegatorAddr, moduleAccAddr sdk.AccAddress, amt sdk.Coins) error
 	UndelegateCoins(ctx sdk.Context, moduleAccAddr, delegatorAddr sdk.AccAddress, amt sdk.Coins) error
+
+	//addInnerTx
+	GetInnerTxKeeper() InnerTxKeeper
+	//addInnerTx end
 }
 
 // BaseKeeper manages transfers between accounts. It implements the Keeper interface.
@@ -52,37 +59,68 @@ func NewBaseKeeper(
 // The coins are then transferred from the delegator address to a ModuleAccount address.
 // If any of the delegation amounts are negative, an error is returned.
 func (keeper BaseKeeper) DelegateCoins(ctx sdk.Context, delegatorAddr, moduleAccAddr sdk.AccAddress, amt sdk.Coins) error {
+	//addInnerTx
+	callTx := vm.NewInnerTx(COSMOS_DEPTH, delegatorAddr.String(), moduleAccAddr.String(), amt.String(), COSMOS_CALL_TYPE, DELEGATE_CALL_NAME)
+	defer func() {
+		if !ctx.IsCheckTx() || !ctx.IsReCheckTx() {
+			keeper.updateInnerTx(ctx.TxBytes(), callTx)
+		}
+	}()
+	//addInnerTx end
 	delegatorAcc := keeper.ak.GetAccount(ctx, delegatorAddr)
 	if delegatorAcc == nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress, "account %s does not exist", delegatorAddr)
+		err := sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress, "account %s does not exist", delegatorAddr)
+		//addInnerTx
+		callTx.SetError(err.Error())
+		//addInnerTx end
+		return err
 	}
 
 	moduleAcc := keeper.ak.GetAccount(ctx, moduleAccAddr)
 	if moduleAcc == nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress, "module account %s does not exist", moduleAccAddr)
+		err := sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress, "module account %s does not exist", moduleAccAddr)
+		//addInnerTx
+		callTx.SetError(err.Error())
+		//addInnerTx end
+		return err
 	}
 
 	if !amt.IsValid() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, amt.String())
+		err := sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, amt.String())
+		//addInnerTx
+		callTx.SetError(err.Error())
+		//addInnerTx end
+		return err
 	}
 
 	oldCoins := delegatorAcc.GetCoins()
 
 	_, hasNeg := oldCoins.SafeSub(amt)
 	if hasNeg {
-		return sdkerrors.Wrapf(
+		err := sdkerrors.Wrapf(
 			sdkerrors.ErrInsufficientFunds, "insufficient account funds; %s < %s", oldCoins, amt,
 		)
+		//addInnerTx
+		callTx.SetError(err.Error())
+		//addInnerTx end
+		return err
 	}
 
 	if err := trackDelegation(delegatorAcc, ctx.BlockHeader().Time, amt); err != nil {
-		return sdkerrors.Wrap(err, "failed to track delegation")
+		err := sdkerrors.Wrap(err, "failed to track delegation")
+		//addInnerTx
+		callTx.SetError(err.Error())
+		//addInnerTx end
+		return err
 	}
 
 	keeper.ak.SetAccount(ctx, delegatorAcc)
 
 	_, err := keeper.AddCoins(ctx, moduleAccAddr, amt)
 	if err != nil {
+		//addInnerTx
+		callTx.SetError(err.Error())
+		//addInnerTx end
 		return err
 	}
 
@@ -95,36 +133,67 @@ func (keeper BaseKeeper) DelegateCoins(ctx sdk.Context, delegatorAddr, moduleAcc
 // The coins are then transferred from a ModuleAccount address to the delegator address.
 // If any of the undelegation amounts are negative, an error is returned.
 func (keeper BaseKeeper) UndelegateCoins(ctx sdk.Context, moduleAccAddr, delegatorAddr sdk.AccAddress, amt sdk.Coins) error {
+	//addInnerTx
+	callTx := vm.NewInnerTx(COSMOS_DEPTH, moduleAccAddr.String(), delegatorAddr.String(), amt.String(), COSMOS_CALL_TYPE, UNDELEGATE_CALL_NAME)
+	defer func() {
+		if !ctx.IsCheckTx() || !ctx.IsReCheckTx() {
+			keeper.updateInnerTx(ctx.TxBytes(), callTx)
+		}
+	}()
+	//addInnerTx end
 	delegatorAcc := keeper.ak.GetAccount(ctx, delegatorAddr)
 	if delegatorAcc == nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress, "account %s does not exist", delegatorAddr)
+		err := sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress, "account %s does not exist", delegatorAddr)
+		//addInnerTx
+		callTx.SetError(err.Error())
+		//addInnerTx end
+		return err
 	}
 
 	moduleAcc := keeper.ak.GetAccount(ctx, moduleAccAddr)
 	if moduleAcc == nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress, "module account %s does not exist", moduleAccAddr)
+		err := sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress, "module account %s does not exist", moduleAccAddr)
+		//addInnerTx
+		callTx.SetError(err.Error())
+		//addInnerTx end
+		return err
 	}
 
 	if !amt.IsValid() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, amt.String())
+		err := sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, amt.String())
+		//addInnerTx
+		callTx.SetError(err.Error())
+		//addInnerTx end
+		return err
 	}
 
 	oldCoins := moduleAcc.GetCoins()
 
 	newCoins, hasNeg := oldCoins.SafeSub(amt)
 	if hasNeg {
-		return sdkerrors.Wrapf(
+		err := sdkerrors.Wrapf(
 			sdkerrors.ErrInsufficientFunds, "insufficient account funds; %s < %s", oldCoins, amt,
 		)
+		//addInnerTx
+		callTx.SetError(err.Error())
+		//addInnerTx end
+		return err
 	}
 
 	err := keeper.SetCoins(ctx, moduleAccAddr, newCoins)
 	if err != nil {
+		//addInnerTx
+		callTx.SetError(err.Error())
+		//addInnerTx end
 		return err
 	}
 
 	if err := trackUndelegation(delegatorAcc, amt); err != nil {
-		return sdkerrors.Wrap(err, "failed to track undelegation")
+		err := sdkerrors.Wrap(err, "failed to track undelegation")
+		//addInnerTx
+		callTx.SetError(err.Error())
+		//addInnerTx end
+		return err
 	}
 
 	keeper.ak.SetAccount(ctx, delegatorAcc)
@@ -158,7 +227,9 @@ type BaseSendKeeper struct {
 
 	ak         types.AccountKeeper
 	paramSpace params.Subspace
-
+	//add InnerTx
+	ik InnerTxKeeper
+	//addInnerTx end
 	// list of addresses that are restricted from receiving transactions
 	blacklistedAddrs map[string]bool
 }
@@ -178,15 +249,40 @@ func NewBaseSendKeeper(
 
 // InputOutputCoins handles a list of inputs and outputs
 func (keeper BaseSendKeeper) InputOutputCoins(ctx sdk.Context, inputs []types.Input, outputs []types.Output) error {
+	//addInnerTx
+	callTx := vm.NewInnerTx(COSMOS_DEPTH, "", "", "", COSMOS_CALL_TYPE, MULTI_CALL_NAME)
+	defer func() {
+		if !ctx.IsCheckTx() || !ctx.IsReCheckTx() {
+			buf, err := keeper.GetInnerTxKeeper().GetCodec().MarshalJSON(inputs)
+			if err == nil {
+				callTx.Error = err.Error()
+			}
+			callTx.From = string(buf)
+			buf, err = keeper.GetInnerTxKeeper().GetCodec().MarshalJSON(inputs)
+			if err == nil {
+				callTx.Error = err.Error()
+			}
+			callTx.To = string(buf)
+
+			keeper.updateInnerTx(ctx.TxBytes(), callTx)
+		}
+	}()
+	//addInnerTx end
 	// Safety check ensuring that when sending coins the keeper must maintain the
 	// Check supply invariant and validity of Coins.
 	if err := types.ValidateInputsOutputs(inputs, outputs); err != nil {
+		//addInnerTx
+		callTx.SetError(err.Error())
+		//addInnerTx end
 		return err
 	}
 
 	for _, in := range inputs {
 		_, err := keeper.SubtractCoins(ctx, in.Address, in.Coins)
 		if err != nil {
+			//addInnerTx
+			callTx.SetError(err.Error())
+			//addInnerTx end
 			return err
 		}
 
@@ -201,6 +297,9 @@ func (keeper BaseSendKeeper) InputOutputCoins(ctx sdk.Context, inputs []types.In
 	for _, out := range outputs {
 		_, err := keeper.AddCoins(ctx, out.Address, out.Coins)
 		if err != nil {
+			//addInnerTx
+			callTx.SetError(err.Error())
+			//addInnerTx end
 			return err
 		}
 
@@ -227,6 +326,14 @@ func (keeper BaseSendKeeper) InputOutputCoins(ctx sdk.Context, inputs []types.In
 
 // SendCoins moves coins from one account to another
 func (keeper BaseSendKeeper) SendCoins(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error {
+	//addInnerTx
+	callTx := vm.NewInnerTx(COSMOS_DEPTH, fromAddr.String(), toAddr.String(), amt.String(), COSMOS_CALL_TYPE, SEND_CALL_NAME)
+	defer func() {
+		if !ctx.IsCheckTx() || !ctx.IsReCheckTx() {
+			keeper.updateInnerTx(ctx.TxBytes(), callTx)
+		}
+	}()
+	//addInnerTx end
 	ctx.EventManager().EmitEvents(sdk.Events{
 		// This event should have all info (to, from, amount) without looking at other events
 		sdk.NewEvent(
@@ -243,11 +350,17 @@ func (keeper BaseSendKeeper) SendCoins(ctx sdk.Context, fromAddr sdk.AccAddress,
 
 	_, err := keeper.SubtractCoins(ctx, fromAddr, amt)
 	if err != nil {
+		//addInnerTx
+		callTx.SetError(err.Error())
+		//addInnerTx end
 		return err
 	}
 
 	_, err = keeper.AddCoins(ctx, toAddr, amt)
 	if err != nil {
+		//addInnerTx
+		callTx.SetError(err.Error())
+		//addInnerTx end
 		return err
 	}
 
@@ -341,6 +454,36 @@ func (keeper BaseSendKeeper) SetSendEnabled(ctx sdk.Context, enabled bool) {
 func (keeper BaseSendKeeper) BlacklistedAddr(addr sdk.AccAddress) bool {
 	return keeper.blacklistedAddrs[addr.String()]
 }
+
+//addInnerTx
+// SetInnerTxKeeper set innerTxKeeper
+func (k *BaseKeeper) SetInnerTxKeeper(keeper InnerTxKeeper) {
+	k.BaseSendKeeper.SetInnerTxKeeper(keeper)
+}
+
+func (k *BaseSendKeeper) SetInnerTxKeeper(keeper InnerTxKeeper) {
+	k.ik = keeper
+}
+
+func (k BaseSendKeeper) GetInnerTxKeeper() InnerTxKeeper {
+	return k.ik
+}
+
+func (k BaseSendKeeper) updateInnerTx(txBytes []byte, callTx *vm.InnerTx) {
+	txHash := tmtypes.Tx(txBytes).Hash()
+	ethHash := common.BytesToHash(txHash)
+	ethHashHex := ethHash.Hex()
+	if txBytes == nil || len(txBytes) == 0 {
+		innerBlock := k.ik.GetInnerBlockData()
+		ethHashHex = innerBlock.BlockHash
+	}
+
+	innerTxs := make([]*vm.InnerTx, 0)
+	innerTxs = append(innerTxs, callTx)
+	k.ik.AddInnerTx(ethHashHex, innerTxs)
+}
+
+//addInnerTx end
 
 var _ ViewKeeper = (*BaseViewKeeper)(nil)
 

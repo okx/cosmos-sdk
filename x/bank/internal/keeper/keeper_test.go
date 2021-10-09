@@ -574,3 +574,14 @@ func TestUndelegateCoins(t *testing.T) {
 	require.Equal(t, origCoins, vacc.GetCoins())
 	require.True(t, macc.GetCoins().Empty())
 }
+
+func TestTxConetx(t *testing.T) {
+	ctx := sdk.Context{}
+	txBytes := ctx.TxBytes()
+	if txBytes == nil {
+		t.Log("txBytes is nil")
+	}
+	if len(txBytes) == 0 {
+		t.Log("txBytes is empty")
+	}
+}

@@ -241,6 +241,25 @@ func TestMsgMultiSendGetSigners(t *testing.T) {
 	require.Equal(t, fmt.Sprintf("%v", res), "[696E70757431 696E70757432 696E70757433]")
 }
 
+func TestMashal(t *testing.T) {
+	addr1 := sdk.AccAddress([]byte{1, 2})
+	addr2 := sdk.AccAddress([]byte{7, 8})
+	atom123 := sdk.NewCoins(sdk.NewInt64Coin("atom", 123))
+	atom124 := sdk.NewCoins(sdk.NewInt64Coin("atom", 124))
+	eth123 := sdk.NewCoins(sdk.NewInt64Coin("eth", 123))
+
+	input1 := NewInput(addr1, atom123)
+	input2 := NewInput(addr1, eth123)
+	output1 := NewOutput(addr2, atom123)
+	output2 := NewOutput(addr2, atom124)
+	buffer, err := ModuleCdc.MarshalJSON([]Input{input1, input2})
+	require.NoError(t, err)
+	t.Log("input", string(buffer))
+	buffer, err = ModuleCdc.MarshalJSON([]Output{output1, output2})
+	require.NoError(t, err)
+	t.Log("output", string(buffer))
+}
+
 /*
 // what to do w/ this test?
 func TestMsgSendSigners(t *testing.T) {
