@@ -317,6 +317,18 @@ func (st *Store) SprintCacheLog() string {
 	return st.tree.SprintCacheLog(st.tree.GetModuleName())
 }
 
+func (st *Store) GetDBWriteCount() int {
+	return st.tree.GetDBWriteCount()
+}
+
+func (st *Store) GetDBReadCount() int {
+	return st.tree.GetDBReadCount()
+}
+
+func (st *Store) ResetCount() {
+	st.tree.ResetCount()
+}
+
 //----------------------------------------
 
 // Implements types.Iterator.

@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/trace"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -240,7 +241,10 @@ func (app *BaseApp) Commit() (res abci.ResponseCommit) {
 	// MultiStore (app.cms) so when Commit() is called is persists those values.
 	app.deliverState.ms.Write()
 	commitID := app.cms.Commit()
+
 	app.cms.PrintCacheLog(app.logger)
+	trace.GetElapsedInfo().AddInfo("DB", fmt.Sprintf("read<%d>, write<%d>", app.cms.GetDBReadCount(), app.cms.GetDBWriteCount()))
+	app.cms.ResetCount()
 	app.logger.Debug("Commit synced", "commit", fmt.Sprintf("%X", commitID))
 
 	// Reset the Check state to the latest committed.

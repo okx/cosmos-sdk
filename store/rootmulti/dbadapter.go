@@ -36,3 +36,9 @@ func (cdsa commitDBStoreAdapter) SetPruning(_ types.PruningOptions) {}
 func (cdsa commitDBStoreAdapter) PrintCacheLog(logger tmlog.Logger) { }
 
 func (cdsa commitDBStoreAdapter) SprintCacheLog() string { return "" }
+
+func (cdsa commitDBStoreAdapter) GetDBWriteCount() int { return 0 }
+
+func (cdsa commitDBStoreAdapter) GetDBReadCount() int { return 0 }
+
+func (cdsa commitDBStoreAdapter) ResetCount() {}
