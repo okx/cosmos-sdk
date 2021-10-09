@@ -13,6 +13,8 @@ type AccHandler func(ctx Context, address AccAddress) (nonce uint64, balances Co
 
 type ChangeBalanceHandler func(ctx Context, balance Coins) (balances Coins)
 
+type LogFix func() (logs map[int][]byte)
+
 type GetTxFeeHandler func(ctx Context, tx Tx) Coins
 
 // AnteDecorator wraps the next AnteHandler to perform custom pre- and post-processing.

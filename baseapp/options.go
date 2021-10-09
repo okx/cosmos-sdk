@@ -141,6 +141,13 @@ func (app *BaseApp) SetGetTxFee(gt sdk.GetTxFeeHandler) {
 	app.getTxFee = gt
 }
 
+func (app *BaseApp) SetFixLog(fg sdk.LogFix) {
+	if app.sealed {
+		panic("SetFixLog() on sealed BaseApp")
+	}
+	app.fixLog = fg
+}
+
 func (app *BaseApp) SetAddrPeerFilter(pf sdk.PeerFilter) {
 	if app.sealed {
 		panic("SetAddrPeerFilter() on sealed BaseApp")

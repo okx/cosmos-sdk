@@ -211,25 +211,43 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 	}
 }
 
+func (app *BaseApp) FinalTx() [][]byte {
+	txFeeInBlock := sdk.Coins{}
+	for tx, v := range app.fee {
+		txFeeInBlock = txFeeInBlock.Add(v...)
+
+		if refundFee, ok := app.refundFee.Load(tx); ok {
+			if scf, ok := refundFee.(sdk.Coins); ok {
+				txFeeInBlock = txFeeInBlock.Sub(scf)
+			} else {
+				panic("sdasda")
+			}
+		}
+	}
+	app.changeHandle(app.getContextForTx(runTxModeDeliverInAsync, []byte{}), txFeeInBlock.Add(app.initPoolCoins...))
+
+	evmReceipts := app.fixLog()
+	//for index, v := range data {
+	//	fmt.Println("finalTx", index, hex.EncodeToString(v))
+	//}
+	res := make([][]byte, 0)
+	currentEvmIndex := 0
+	for index := 0; index < len(app.mpTxDetail); index++ {
+		if app.mpTxDetail[index].isEvm {
+			res = append(res, evmReceipts[currentEvmIndex])
+			currentEvmIndex++
+		} else {
+			res = append(res, []byte{})
+		}
+	}
+	return res
+}
+
 //we reuse the nonce that changed by the last async call
 //if last ante handler has been failed, we need rerun it ? or not?
 func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx, final bool, evmIdx uint32) abci.ExecuteRes {
 	if final {
-		txFeeInBlock := sdk.Coins{}
-		for tx, v := range app.fee {
-			txFeeInBlock = txFeeInBlock.Add(v...)
-
-			if refundFee, ok := app.refundFee.Load(tx); ok {
-				if scf, ok := refundFee.(sdk.Coins); ok {
-					txFeeInBlock = txFeeInBlock.Sub(scf)
-				} else {
-					panic("sdasda")
-				}
-			}
-		}
-		app.changeHandle(app.getContextForTx(runTxModeDeliverInAsync, req.Tx), txFeeInBlock.Add(app.initPoolCoins...))
-
-		return &ExecuteResult{}
+		panic("need delete")
 	}
 	tx, err := app.txDecoder(req.Tx)
 	fmt.Println("====DeliverTxWithCache====", final, evmIdx, reflect.TypeOf(tx))

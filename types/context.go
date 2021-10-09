@@ -35,8 +35,10 @@ type Context struct {
 	minGasPrice   DecCoins
 	consParams    *abci.ConsensusParams
 	eventManager  *EventManager
-	evmTxIndex    uint32
-	accountNonce  uint64
+
+	isAsync      bool
+	evmTxIndex   uint32
+	accountNonce uint64
 }
 
 // Proposed rename, not done to avoid API breakage
@@ -57,6 +59,7 @@ func (c Context) IsCheckTx() bool             { return c.checkTx }
 func (c Context) IsReCheckTx() bool           { return c.recheckTx }
 func (c Context) MinGasPrices() DecCoins      { return c.minGasPrice }
 func (c Context) EventManager() *EventManager { return c.eventManager }
+func (c Context) IsAsync() bool               { return c.isAsync }
 func (c Context) EvmTransactionIndex() uint32 { return c.evmTxIndex }
 func (c Context) AccountNonce() uint64        { return c.accountNonce }
 
@@ -99,6 +102,11 @@ func (c Context) WithMultiStore(ms MultiStore) Context {
 
 func (c Context) WithEvmCounter(counter uint32) Context {
 	c.evmTxIndex = counter
+	return c
+}
+
+func (c Context) WithAsync() Context {
+	c.isAsync = true
 	return c
 }
 
