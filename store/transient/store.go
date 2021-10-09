@@ -50,3 +50,14 @@ func (ts *Store) PrintCacheLog(logger tmlog.Logger) {
 func (ts *Store) SprintCacheLog() string {
 	return ""
 }
+
+func (ts *Store) GetDBWriteCount() int {
+	return 0
+}
+
+func (ts *Store) GetDBReadCount() int {
+	return 0
+}
+
+func (ts *Store) ResetCount() {
+}

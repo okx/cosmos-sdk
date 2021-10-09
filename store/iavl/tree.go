@@ -24,6 +24,9 @@ type (
 		SaveVersion() ([]byte, int64, error)
 		SprintCacheLog(name string) string
 		GetModuleName() string
+		GetDBWriteCount() int
+		GetDBReadCount() int
+		ResetCount()
 		DeleteVersion(version int64) error
 		DeleteVersions(versions ...int64) error
 		Version() int64
@@ -101,4 +104,16 @@ func (it *immutableTree) SprintCacheLog(_ string) string {
 
 func (it *immutableTree) GetModuleName() string {
 	return ""
+}
+
+func (it *immutableTree) GetDBWriteCount() int {
+	return 0
+}
+
+func (it *immutableTree) GetDBReadCount() int {
+	return 0
+}
+
+func (it *immutableTree) ResetCount() {
+
 }

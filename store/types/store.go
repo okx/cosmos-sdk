@@ -23,8 +23,15 @@ type Committer interface {
 
 	// TODO: Deprecate after 0.38.5
 	SetPruning(PruningOptions)
+	Analyser
+}
+
+type Analyser interface {
 	PrintCacheLog(logger log.Logger)
 	SprintCacheLog() string
+	GetDBWriteCount() int
+	GetDBReadCount() int
+	ResetCount()
 }
 
 // Stores of MultiStore must implement CommitStore.

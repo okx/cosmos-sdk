@@ -653,6 +653,28 @@ func (rs *Store) SprintCacheLog() string {
 	return cacheLog
 }
 
+func (rs *Store) GetDBWriteCount() int {
+	count := 0
+	for _, store := range rs.stores {
+		count += store.GetDBWriteCount()
+	}
+	return count
+}
+
+func (rs *Store) GetDBReadCount() int {
+	count := 0
+	for _, store := range rs.stores {
+		count += store.GetDBReadCount()
+	}
+	return count
+}
+
+func (rs *Store) ResetCount() {
+	for _, store := range rs.stores {
+		store.ResetCount()
+	}
+}
+
 //----------------------------------------
 // storeParams
 
