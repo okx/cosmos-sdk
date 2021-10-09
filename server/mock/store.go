@@ -107,6 +107,17 @@ func (ms multiStore) SprintCacheLog() string {
  	return ""
 }
 
+func (ms multiStore) GetDBWriteCount() int {
+	return 0
+}
+
+func (ms multiStore) GetDBReadCount() int {
+	return 0
+}
+
+func (ms multiStore) ResetCount() {
+}
+
 var _ sdk.KVStore = kvStore{}
 
 type kvStore struct {
