@@ -3,7 +3,6 @@ package baseapp
 import (
 	"fmt"
 	"os"
-	"reflect"
 	"sort"
 	"strings"
 	"sync"
@@ -168,7 +167,6 @@ func (app *BaseApp) EndBlock(req abci.RequestEndBlock) (res abci.ResponseEndBloc
 	if app.endBlocker != nil {
 		res = app.endBlocker(app.deliverState.ctx, req)
 	}
-
 	return
 }
 
@@ -224,9 +222,17 @@ func (app *BaseApp) FinalTx() [][]byte {
 			}
 		}
 	}
-	app.changeHandle(app.getContextForTx(runTxModeDeliverInAsync, []byte{}), txFeeInBlock.Add(app.initPoolCoins...))
+	ctx, cache := app.cacheTxContext(app.getContextForTx(runTxModeDeliverInAsync, []byte{}), []byte{})
+	app.changeHandle(ctx, txFeeInBlock.Add(app.initPoolCoins...))
+	//cache.IteratorCache(func(key, value []byte, isDirty bool) bool {
+	//	if isDirty {
+	//		fmt.Println("ok.scf.defer finall----", hex.EncodeToString(key), hex.EncodeToString(value))
+	//	}
+	//	return true
+	//})
+	cache.Write()
 
-	evmReceipts := app.fixLog()
+	evmReceipts := app.fixLog(len(app.mpTxDetail))
 	//for index, v := range data {
 	//	fmt.Println("finalTx", index, hex.EncodeToString(v))
 	//}
@@ -250,7 +256,7 @@ func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx, final bool, ev
 		panic("need delete")
 	}
 	tx, err := app.txDecoder(req.Tx)
-	fmt.Println("====DeliverTxWithCache====", final, evmIdx, reflect.TypeOf(tx))
+	//fmt.Println("====DeliverTxWithCache====", final, evmIdx, reflect.TypeOf(tx))
 	if err != nil {
 		return nil
 	}
@@ -286,7 +292,7 @@ func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx, final bool, ev
 func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
 	NeedRerun := false
 	tx, err := app.txDecoder(req.Tx)
-	fmt.Println("======DeliverTx==========", reflect.TypeOf(tx))
+	//fmt.Println("======DeliverTx==========", reflect.TypeOf(tx))
 	if err != nil {
 		return sdkerrors.ResponseDeliverTx(err, 0, 0, app.trace)
 	}

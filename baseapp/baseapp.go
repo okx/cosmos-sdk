@@ -538,6 +538,7 @@ func (app *BaseApp) SetAsyncConfig(sw bool, txs [][]byte) {
 	app.workgroup.SetMaxCounter(len(txs))
 	app.initPoolCoins = app.changeHandle(app.getContextForTx(runTxModeDeliverInAsync, nil), sdk.Coins{})
 
+	//fmt.Println("inintttttt", app.initPoolCoins)
 	app.mpTxDetail = make(map[int]txMapping)
 	for index, v := range txs {
 		tx, err := app.txDecoder(v)
@@ -712,6 +713,7 @@ func (app *BaseApp) cacheTxContextWithCache(ctx sdk.Context, txBytes []byte, msC
 // returned if the tx does not run out of gas and if all the messages are valid
 // and execute successfully. An error is returned otherwise.
 func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int64, evmTxIndex uint32) (gInfo sdk.GasInfo, result *sdk.Result, msCacheList sdk.CacheMultiStore, err error) {
+	fmt.Println("RunTx", evmTxIndex)
 	// NOTE: GasWanted should be returned by the AnteHandler. GasUsed is
 	// determined by the GasMeter. We need access to the context to get the gas
 	// meter so we initialize upfront.
@@ -824,10 +826,18 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 			if err != nil {
 				panic(err)
 			}
+			//
+			//msCache.IteratorCache(func(key, value []byte, isDirty bool) bool {
+			//	if isDirty {
+			//		fmt.Println("ok.scf.defer gasRefund", hex.EncodeToString(key), hex.EncodeToString(value))
+			//	}
+			//	return true
+			//})
 
 			if mode == runTxModeDeliver {
 				msCache.Write()
 			}
+			//fmt.Println("refundGas", refundGas)
 			if mode == runTxModeDeliverInAsync {
 				msCache.Write()
 				app.refundFee.Store(string(txBytes), refundGas)
@@ -854,6 +864,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		anteCtx, msCacheAnte = app.cacheTxContext(ctx, txBytes)
 		anteCtx = anteCtx.WithEventManager(sdk.NewEventManager())
 		newCtx, err := app.anteHandler(anteCtx, tx, mode == runTxModeSimulate)
+		//fmt.Println("Ante err", err, ctx.GasMeter().GasConsumed(), ctx.GasMeter().Limit())
 		accountNonce = newCtx.AccountNonce()
 		if !newCtx.IsZero() {
 			// At this point, newCtx.MultiStore() is cache-wrapped, or something else
@@ -869,18 +880,21 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		// GasMeter expected to be set in AnteHandler
 		gasWanted = ctx.GasMeter().Limit()
 		if err != nil {
-			if mode == runTxModeDeliverInAsync {
-				fmt.Printf("Failed to call antehandler in deliverTx with async ： %v\n", err)
-				panic("unexpected err")
-			}
+			//if mode == runTxModeDeliverInAsync {
+			//	fmt.Printf("Failed to call antehandler in deliverTx with async ： %v\n", err)
+			//	panic("unexpected err")
+			//}
+			delete(app.fee, string(txBytes))
 			return gInfo, nil, nil, err
 		}
-		msCacheAnte.IteratorCache(func(key, value []byte, isDirty bool) bool {
-			if isDirty {
-				//fmt.Println("ok.scf.ante", hex.EncodeToString(key), hex.EncodeToString(value))
-			}
-			return true
-		})
+
+		//msCacheAnte.IteratorCache(func(key, value []byte, isDirty bool) bool {
+		//	if isDirty {
+		//		fmt.Println("ok.scf.ante", hex.EncodeToString(key), hex.EncodeToString(value))
+		//	}
+		//	return true
+		//})
+
 		if mode == runTxModeDeliver {
 			msCacheAnte.Write()
 		}
@@ -902,10 +916,16 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	result, err = app.runMsgs(runMsgCtx, msgs, mode)
 	runMsgEnd = true
 	if err == nil && (mode == runTxModeDeliver) {
+		//msCache.IteratorCache(func(key, value []byte, isDirty bool) bool {
+		//	if isDirty {
+		//		fmt.Println("ok.scf.runMsg", hex.EncodeToString(key), hex.EncodeToString(value))
+		//	}
+		//	return true
+		//})
 		msCache.Write()
 	}
 
-	fmt.Println("runMsg errrr", err)
+	//fmt.Println("runMsg errrr", err)
 
 	if mode == runTxModeCheck {
 		exTxInfo := app.GetTxInfo(ctx, tx)
@@ -926,6 +946,12 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 
 	if mode == runTxModeDeliverInAsync {
 		if msCache != nil {
+			//msCache.IteratorCache(func(key, value []byte, isDirty bool) bool {
+			//	if isDirty {
+			//		fmt.Println("ok.scf.runMsg", hex.EncodeToString(key), hex.EncodeToString(value))
+			//	}
+			//	return true
+			//})
 			msCache.Write()
 		}
 		return gInfo, result, msCacheAnte, err

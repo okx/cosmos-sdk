@@ -22,13 +22,13 @@ func (e ExecuteResult) GetResponse() abci.ResponseDeliverTx {
 func (e ExecuteResult) Recheck(cache abci.AsyncCacheInterface) bool {
 	rerun := false
 	if e.Ms == nil {
-		return true
+		return true //TODO fix later
 	}
 
 	e.Ms.IteratorCache(func(key, value []byte, isDirty bool) bool {
 		//the key we have read was wrote by pre txs
 		if cache.Has(key) && !whiteAccountList[hex.EncodeToString(key)] {
-			fmt.Println("conflict", hex.EncodeToString(key), string(key))
+			//fmt.Println("conflict", hex.EncodeToString(key), string(key))
 			rerun = true
 		}
 		return true
@@ -44,6 +44,11 @@ var (
 )
 
 func (e ExecuteResult) Collect(cache abci.AsyncCacheInterface) {
+	fmt.Println("-----Collect-----")
+	if e.Ms == nil {
+		fmt.Println("-----Collect----- is nil")
+		return
+	}
 	e.Ms.IteratorCache(func(key, value []byte, isDirty bool) bool {
 		if isDirty {
 			//push every data we have wrote in current tx
@@ -62,19 +67,19 @@ func (e ExecuteResult) GetCounter() uint32 {
 }
 
 func (e ExecuteResult) Commit() {
-	if e.Ms != nil {
-		e.Ms.IteratorCache(func(key, value []byte, isDirty bool) bool {
-			if isDirty {
-				//fmt.Println("ok.scf.debug", hex.EncodeToString(key), hex.EncodeToString(value))
-			}
-			return true
-		})
-		e.Ms.Write()
-	} else {
-		// TODO delete
-		panic("need panic")
+	fmt.Println("-----Commit-----", e.Counter, e.evmCounter)
+	if e.Ms == nil {
+		fmt.Println("-----Commit----- is nil", e.Counter, e.evmCounter)
+		return
 	}
 
+	e.Ms.IteratorCache(func(key, value []byte, isDirty bool) bool {
+		if isDirty {
+			//fmt.Println("ok.scf.debug", hex.EncodeToString(key), hex.EncodeToString(value))
+		}
+		return true
+	})
+	e.Ms.Write()
 }
 
 func (e ExecuteResult) GetEvmTxCounter() uint32 {
