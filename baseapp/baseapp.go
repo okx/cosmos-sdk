@@ -1,6 +1,7 @@
 package baseapp
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -167,12 +168,92 @@ type BaseApp struct { // nolint: maligned
 	isAsyncDeliverTx bool
 	initPoolCoins    sdk.Coins
 	//address of tx sender in per block
-	senders map[string]int
-	fee     map[string]sdk.Coins
+	senders   map[string]int
+	feeManage *feeManager
 
-	refundFee sync.Map
+	//mpTxDetail map[int]txMapping
+}
 
-	mpTxDetail map[int]txMapping
+type feeManager struct {
+	mu            sync.RWMutex
+	txSizeInBlock int
+
+	fee          map[string]sdk.Coins
+	refundFee    map[string]sdk.Coins
+	isAnteFailed map[uint32]bool
+	isEvmTx      map[int]bool
+}
+
+func NewFeeManager() *feeManager {
+	return &feeManager{
+		fee:          make(map[string]sdk.Coins),
+		refundFee:    make(map[string]sdk.Coins),
+		isAnteFailed: make(map[uint32]bool),
+		isEvmTx:      make(map[int]bool),
+	}
+}
+
+func (f *feeManager) Clear() {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.txSizeInBlock = 0
+	f.fee = make(map[string]sdk.Coins)
+	f.refundFee = make(map[string]sdk.Coins)
+	f.isAnteFailed = make(map[uint32]bool)
+	f.isEvmTx = make(map[int]bool)
+}
+func (f *feeManager) SetFee(key string, value sdk.Coins) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.fee[key] = value
+}
+
+func (f *feeManager) GetFee(key string) sdk.Coins {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	return f.fee[key]
+}
+
+func (f *feeManager) deleteFeeKey(key string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	delete(f.fee, key)
+}
+func (f *feeManager) GetFeeMap() map[string]sdk.Coins {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	return f.fee
+}
+func (f *feeManager) SetRefundFee(key string, value sdk.Coins) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.refundFee[key] = value
+}
+
+func (f *feeManager) GetRefundFee(key string) sdk.Coins {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	return f.refundFee[key]
+}
+func (f *feeManager) GetRefundFeeMap() map[string]sdk.Coins {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	return f.refundFee
+}
+
+func (f *feeManager) IsAntedFailed(key uint32) bool {
+	return f.isAnteFailed[key]
+}
+func (f *feeManager) SetAnteFaile(key uint32, value bool) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.isAnteFailed[key] = value
+}
+
+func (f *feeManager) GetAnteFailMap() map[uint32]bool {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	return f.isAnteFailed
 }
 
 type txMapping struct {
@@ -203,6 +284,7 @@ func NewBaseApp(
 		evmCounter:       0,
 		workgroup:        NewAsyncWorkGroup(),
 		isAsyncDeliverTx: false,
+		feeManage:        NewFeeManager(),
 		senders:          make(map[string]int, 0),
 	}
 	for _, option := range options {
@@ -538,17 +620,15 @@ func (app *BaseApp) SetAsyncConfig(sw bool, txs [][]byte) {
 	app.workgroup.SetMaxCounter(len(txs))
 	app.initPoolCoins = app.changeHandle(app.getContextForTx(runTxModeDeliverInAsync, nil), sdk.Coins{})
 
-	//fmt.Println("inintttttt", app.initPoolCoins)
-	app.mpTxDetail = make(map[int]txMapping)
-	for index, v := range txs {
+	for txIndexInBlock, v := range txs {
 		tx, err := app.txDecoder(v)
 		if err != nil {
 			panic(err)
 		}
-		app.mpTxDetail[index] = txMapping{
-			isEvm: app.txChecker(tx),
-		}
+		app.feeManage.txSizeInBlock++
+		app.feeManage.isEvmTx[txIndexInBlock] = app.txChecker(tx)
 	}
+
 }
 
 // validateBasicTxMsgs executes basic validator calls for messages.
@@ -713,6 +793,7 @@ func (app *BaseApp) cacheTxContextWithCache(ctx sdk.Context, txBytes []byte, msC
 // returned if the tx does not run out of gas and if all the messages are valid
 // and execute successfully. An error is returned otherwise.
 func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int64, evmTxIndex uint32) (gInfo sdk.GasInfo, result *sdk.Result, msCacheList sdk.CacheMultiStore, err error) {
+	app.feeManage.SetFee(hex.EncodeToString(txBytes), app.getTxFee(sdk.Context{}, tx))
 	fmt.Println("RunTx", evmTxIndex)
 	// NOTE: GasWanted should be returned by the AnteHandler. GasUsed is
 	// determined by the GasMeter. We need access to the context to get the gas
@@ -823,6 +904,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 				}
 			}
 			refundGas, err := app.GasRefundHandler(GasRefundCtx, tx)
+			//fmt.Println("refundGas", refundGas, "err", err)
 			if err != nil {
 				panic(err)
 			}
@@ -840,7 +922,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 			//fmt.Println("refundGas", refundGas)
 			if mode == runTxModeDeliverInAsync {
 				msCache.Write()
-				app.refundFee.Store(string(txBytes), refundGas)
+				app.feeManage.SetRefundFee(hex.EncodeToString(txBytes), refundGas)
 			}
 		}
 	}()
@@ -879,12 +961,16 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 
 		// GasMeter expected to be set in AnteHandler
 		gasWanted = ctx.GasMeter().Limit()
+		if mode == runTxModeDeliverInAsync {
+			app.feeManage.SetAnteFaile(ctx.EvmTransactionIndex(), err != nil)
+		}
+
 		if err != nil {
 			//if mode == runTxModeDeliverInAsync {
 			//	fmt.Printf("Failed to call antehandler in deliverTx with async ： %v\n", err)
 			//	panic("unexpected err")
 			//}
-			delete(app.fee, string(txBytes))
+			app.feeManage.deleteFeeKey(hex.EncodeToString(txBytes))
 			return gInfo, nil, nil, err
 		}
 

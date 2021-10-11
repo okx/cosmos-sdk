@@ -5,7 +5,6 @@ import (
 	"os"
 	"sort"
 	"strings"
-	"sync"
 	"syscall"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -112,8 +111,7 @@ func (app *BaseApp) BeginBlock(req abci.RequestBeginBlock) (res abci.ResponseBeg
 		app.workgroup.Reset()
 		app.evmCounter = 0
 		app.senders = make(map[string]int, 0)
-		app.fee = make(map[string]sdk.Coins, 0)
-		app.refundFee = sync.Map{}
+		app.feeManage.Clear()
 	}()
 	if app.cms.TracingEnabled() {
 		app.cms.SetTracingContext(sdk.TraceContext(
@@ -211,35 +209,24 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 
 func (app *BaseApp) FinalTx() [][]byte {
 	txFeeInBlock := sdk.Coins{}
-	for tx, v := range app.fee {
+	feeMap := app.feeManage.GetFeeMap()
+	refundMap := app.feeManage.GetRefundFeeMap()
+	for tx, v := range feeMap {
+		fmt.Println("txxxxx", tx, "vvv", v, "refundFee", refundMap[tx])
 		txFeeInBlock = txFeeInBlock.Add(v...)
-
-		if refundFee, ok := app.refundFee.Load(tx); ok {
-			if scf, ok := refundFee.(sdk.Coins); ok {
-				txFeeInBlock = txFeeInBlock.Sub(scf)
-			} else {
-				panic("sdasda")
-			}
+		if refundFee, ok := refundMap[tx]; ok {
+			txFeeInBlock = txFeeInBlock.Sub(refundFee)
 		}
 	}
 	ctx, cache := app.cacheTxContext(app.getContextForTx(runTxModeDeliverInAsync, []byte{}), []byte{})
 	app.changeHandle(ctx, txFeeInBlock.Add(app.initPoolCoins...))
-	//cache.IteratorCache(func(key, value []byte, isDirty bool) bool {
-	//	if isDirty {
-	//		fmt.Println("ok.scf.defer finall----", hex.EncodeToString(key), hex.EncodeToString(value))
-	//	}
-	//	return true
-	//})
 	cache.Write()
 
-	evmReceipts := app.fixLog(len(app.mpTxDetail))
-	//for index, v := range data {
-	//	fmt.Println("finalTx", index, hex.EncodeToString(v))
-	//}
+	evmReceipts := app.fixLog(app.feeManage.GetAnteFailMap())
 	res := make([][]byte, 0)
 	currentEvmIndex := 0
-	for index := 0; index < len(app.mpTxDetail); index++ {
-		if app.mpTxDetail[index].isEvm {
+	for index := 0; index < app.feeManage.txSizeInBlock; index++ {
+		if app.feeManage.isEvmTx[index] {
 			res = append(res, evmReceipts[currentEvmIndex])
 			currentEvmIndex++
 		} else {
@@ -321,8 +308,6 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 			//record to map for next txs
 			app.senders[sender] = 0
 		}
-
-		app.fee[string(req.Tx)] = app.getTxFee(ctx, tx)
 
 		go func() {
 			var resp abci.ResponseDeliverTx
