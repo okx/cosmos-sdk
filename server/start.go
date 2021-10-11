@@ -88,6 +88,7 @@ For profiling and benchmarking purposes, CPU profiling can be enabled via the '-
 which accepts a path for the resulting pprof file.
 `,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
+			setExternalPackageValue(cmd)
 			_, err := GetPruningOptionsFromFlags()
 			return err
 		},
@@ -133,18 +134,17 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().String(FlagEvmImportMode, "default", "Select import mode for evm state (default|files|db)")
 	cmd.Flags().String(FlagEvmImportPath, "", "Evm contract & storage db or files used for InitGenesis")
 	cmd.Flags().Uint64(FlagGoroutineNum, 0, "Limit on the number of goroutines used to import evm data(ignored if evm-import-mode is 'default')")
-	cmd.Flags().StringToIntVar(&iavl.OutputModules, iavl.FlagOutputModules, map[string]int{"evm": 1, "acc": 1},"decide which module in iavl to be printed")
-	cmd.Flags().IntVar(&iavl.IavlCacheSize, iavl.FlagIavlCacheSize, 1000000, "Max size of iavl cache")
-	cmd.Flags().Int64Var(&tmiavl.CommitIntervalHeight, tmiavl.FlagIavlCommitIntervalHeight, 100, "Max interval to commit node cache into leveldb")
-	cmd.Flags().Int64Var(&tmiavl.MinCommitItemCount, tmiavl.FlagIavlMinCommitItemCount, 500000, "Min nodes num to triggle node cache commit")
-	cmd.Flags().IntVar(&tmiavl.HeightOrphansCacheSize, tmiavl.FlagIavlHeightOrphansCacheSize, 8, "Max orphan version to cache in memory")
-	cmd.Flags().IntVar(&tmiavl.MaxCommittedHeightNum, tmiavl.FlagIavlMaxCommittedHeightNum, 8, "Max committed version to cache in memory")
-	cmd.Flags().BoolVar(&tmiavl.EnableAsyncCommit, tmiavl.FlagIavlEnableAsyncCommit, false, "Enable async commit")
-	cmd.Flags().IntVar(&tmiavl.Debugging, tmiavl.FlagIavlDebug, 0, "Enable iavl project debug")
-	cmd.Flags().BoolVar(&tmiavl.EnablePruningHistoryState, tmiavl.FlagIavlEnablePruningHistoryState, false, "Enable pruning history state")
-	cmd.Flags().IntVar(&tmdb.LevelDBCacheSize, tmdb.FlagLevelDBCacheSize, 128, "The amount of memory in megabytes to allocate to leveldb")
-	cmd.Flags().IntVar(&tmdb.LevelDBHandlersNum, tmdb.FlagLevelDBHandlersNum, 1024, "The number of files handles to allocate to the open database files")
-
+	cmd.Flags().StringToInt(iavl.FlagOutputModules, map[string]int{"evm": 1, "acc": 1},"decide which module in iavl to be printed")
+	cmd.Flags().Int(iavl.FlagIavlCacheSize, 1000000, "Max size of iavl cache")
+	cmd.Flags().Int64(tmiavl.FlagIavlCommitIntervalHeight, 100, "Max interval to commit node cache into leveldb")
+	cmd.Flags().Int64(tmiavl.FlagIavlMinCommitItemCount, 500000, "Min nodes num to triggle node cache commit")
+	cmd.Flags().Int(tmiavl.FlagIavlHeightOrphansCacheSize, 8, "Max orphan version to cache in memory")
+	cmd.Flags().Int(tmiavl.FlagIavlMaxCommittedHeightNum, 8, "Max committed version to cache in memory")
+	cmd.Flags().Bool(tmiavl.FlagIavlEnableAsyncCommit, false, "Enable async commit")
+	cmd.Flags().Int(tmiavl.FlagIavlDebug, 0, "Enable iavl project debug")
+	cmd.Flags().Bool(tmiavl.FlagIavlEnablePruningHistoryState, false, "Enable pruning history state")
+	cmd.Flags().Int(tmdb.FlagLevelDBCacheSize, 128, "The amount of memory in megabytes to allocate to leveldb")
+	cmd.Flags().Int(tmdb.FlagLevelDBHandlersNum, 1024, "The number of files handles to allocate to the open database files")
 	viper.BindPFlag(FlagTrace, cmd.Flags().Lookup(FlagTrace))
 	viper.BindPFlag(FlagPruning, cmd.Flags().Lookup(FlagPruning))
 	viper.BindPFlag(FlagPruningKeepRecent, cmd.Flags().Lookup(FlagPruningKeepRecent))
@@ -156,7 +156,6 @@ which accepts a path for the resulting pprof file.
 	viper.BindPFlag(FlagEvmImportMode, cmd.Flags().Lookup(FlagEvmImportMode))
 	viper.BindPFlag(FlagEvmImportPath, cmd.Flags().Lookup(FlagEvmImportPath))
 	viper.BindPFlag(FlagGoroutineNum, cmd.Flags().Lookup(FlagGoroutineNum))
-
 	registerRestServerFlags(cmd)
 	registerAppFlagFn(cmd)
 	registerExChainPluginFlags(cmd)
@@ -304,4 +303,18 @@ func startInProcess(ctx *Context, cdc *codec.Codec, appCreator AppCreator, appSt
 
 	// run forever (the node will not be returned)
 	select {}
+}
+
+func setExternalPackageValue(cmd *cobra.Command) {
+	iavl.OutputModules, _ = cmd.Flags().GetStringToInt(iavl.FlagOutputModules)
+	iavl.IavlCacheSize = viper.GetInt(iavl.FlagIavlCacheSize)
+	tmiavl.CommitIntervalHeight = viper.GetInt64(tmiavl.FlagIavlCommitIntervalHeight)
+	tmiavl.MinCommitItemCount = viper.GetInt64(tmiavl.FlagIavlMinCommitItemCount)
+	tmiavl.HeightOrphansCacheSize = viper.GetInt(tmiavl.FlagIavlHeightOrphansCacheSize)
+	tmiavl.MaxCommittedHeightNum = viper.GetInt(tmiavl.FlagIavlMaxCommittedHeightNum)
+	tmiavl.EnableAsyncCommit = viper.GetBool(tmiavl.FlagIavlEnableAsyncCommit)
+	tmiavl.Debugging = viper.GetInt(tmiavl.FlagIavlDebug)
+	tmiavl.EnablePruningHistoryState = viper.GetBool(tmiavl.FlagIavlEnablePruningHistoryState)
+	tmdb.LevelDBCacheSize = viper.GetInt(tmdb.FlagLevelDBCacheSize)
+	tmdb.LevelDBHandlersNum = viper.GetInt(tmdb.FlagLevelDBHandlersNum)
 }
