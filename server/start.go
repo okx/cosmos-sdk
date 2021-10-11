@@ -145,6 +145,8 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().Bool(tmiavl.FlagIavlEnablePruningHistoryState, false, "Enable pruning history state")
 	cmd.Flags().Int(tmdb.FlagLevelDBCacheSize, 128, "The amount of memory in megabytes to allocate to leveldb")
 	cmd.Flags().Int(tmdb.FlagLevelDBHandlersNum, 1024, "The number of files handles to allocate to the open database files")
+	// Don`t use cmd.Flags().*Var functions(such as cmd.Flags.IntVar) here, because it doesn't work with environment variables.
+	// Use setExternalPackageValue function instead.
 	viper.BindPFlag(FlagTrace, cmd.Flags().Lookup(FlagTrace))
 	viper.BindPFlag(FlagPruning, cmd.Flags().Lookup(FlagPruning))
 	viper.BindPFlag(FlagPruningKeepRecent, cmd.Flags().Lookup(FlagPruningKeepRecent))
@@ -305,6 +307,7 @@ func startInProcess(ctx *Context, cdc *codec.Codec, appCreator AppCreator, appSt
 	select {}
 }
 
+// Use setExternalPackageValue to set external package config value.
 func setExternalPackageValue(cmd *cobra.Command) {
 	iavl.OutputModules, _ = cmd.Flags().GetStringToInt(iavl.FlagOutputModules)
 	iavl.IavlCacheSize = viper.GetInt(iavl.FlagIavlCacheSize)
