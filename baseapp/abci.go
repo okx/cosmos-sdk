@@ -339,7 +339,10 @@ func handleQueryApp(app *BaseApp, path []string, req abci.RequestQuery) abci.Res
 			}
 
 			gInfo, res, err := app.Simulate(txBytes, tx, req.Height)
-			if err != nil {
+			// if path contains mempool, it means to enable MaxGasUsedPerBlock
+			// return the actual gasUsed even though simulate tx failed
+			isMempoolSim := len(path) >= 3 && path[2] == "mempool"
+			if err != nil && !isMempoolSim {
 				return sdkerrors.QueryResult(sdkerrors.Wrap(err, "failed to simulate tx"))
 			}
 
