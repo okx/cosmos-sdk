@@ -6,6 +6,7 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmkv "github.com/tendermint/tendermint/libs/kv"
+	"github.com/tendermint/tendermint/libs/log"
 	tmstrings "github.com/tendermint/tendermint/libs/strings"
 	dbm "github.com/tendermint/tm-db"
 )
@@ -22,6 +23,15 @@ type Committer interface {
 
 	// TODO: Deprecate after 0.38.5
 	SetPruning(PruningOptions)
+	Analyser
+}
+
+type Analyser interface {
+	PrintCacheLog(logger log.Logger)
+	SprintCacheLog() string
+	GetDBWriteCount() int
+	GetDBReadCount() int
+	ResetCount()
 }
 
 // Stores of MultiStore must implement CommitStore.
@@ -167,6 +177,8 @@ type CommitMultiStore interface {
 	// Set an inter-block (persistent) cache that maintains a mapping from
 	// StoreKeys to CommitKVStores.
 	SetInterBlockCache(MultiStorePersistentCache)
+
+	StopStore()
 }
 
 //---------subsp-------------------------------
