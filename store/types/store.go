@@ -6,7 +6,6 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmkv "github.com/tendermint/tendermint/libs/kv"
-	"github.com/tendermint/tendermint/libs/log"
 	tmstrings "github.com/tendermint/tendermint/libs/strings"
 	dbm "github.com/tendermint/tm-db"
 )
@@ -27,8 +26,6 @@ type Committer interface {
 }
 
 type Analyser interface {
-	PrintCacheLog(logger log.Logger)
-	SprintCacheLog() string
 	GetDBWriteCount() int
 	GetDBReadCount() int
 	ResetCount()

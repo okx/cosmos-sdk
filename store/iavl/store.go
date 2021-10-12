@@ -10,7 +10,6 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/merkle"
 	tmkv "github.com/tendermint/tendermint/libs/kv"
-	tmlog "github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/cosmos/cosmos-sdk/store/cachekv"
@@ -21,10 +20,8 @@ import (
 
 var (
 	FlagIavlCacheSize = "iavl-cache-size"
-	FlagOutputModules = "iavl-output-modules"
 
 	IavlCacheSize     = 1000000
-	OutputModules     map[string]int
 )
 
 var (
@@ -306,15 +303,6 @@ func (st *Store) Query(req abci.RequestQuery) (res abci.ResponseQuery) {
 	}
 
 	return res
-}
-
-func (st *Store) PrintCacheLog(logger tmlog.Logger) {
-
-}
-
-// PrintCacheLog prints the cache logs about iavl nodes
-func (st *Store) SprintCacheLog() string {
-	return st.tree.SprintCacheLog(st.tree.GetModuleName())
 }
 
 func (st *Store) GetDBWriteCount() int {

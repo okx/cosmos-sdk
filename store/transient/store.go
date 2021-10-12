@@ -1,7 +1,6 @@
 package transient
 
 import (
-	tmlog "github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/cosmos/cosmos-sdk/store/types"
@@ -41,14 +40,6 @@ func (ts *Store) LastCommitID() (id types.CommitID) {
 // Implements Store.
 func (ts *Store) GetStoreType() types.StoreType {
 	return types.StoreTypeTransient
-}
-
-func (ts *Store) PrintCacheLog(logger tmlog.Logger) {
-
-}
-
-func (ts *Store) SprintCacheLog() string {
-	return ""
 }
 
 func (ts *Store) GetDBWriteCount() int {
