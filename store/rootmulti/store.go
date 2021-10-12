@@ -12,7 +12,6 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/merkle"
 	"github.com/tendermint/tendermint/crypto/tmhash"
-	tmlog "github.com/tendermint/tendermint/libs/log"
 	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
@@ -630,27 +629,6 @@ func (rs *Store) loadCommitStoreFromParams(key types.StoreKey, id types.CommitID
 	default:
 		panic(fmt.Sprintf("unrecognized store type %v", params.typ))
 	}
-}
-
-// PrintCacheLog prints log when abci commit finished
-func (rs *Store) PrintCacheLog(logger tmlog.Logger) {
-	if !iavltree.EnableAsyncCommit {
-		return
-	}
-	for key, store := range rs.stores {
-		if v,ok := iavl.OutputModules[key.Name()]; ok && v != 0 {
-			logger.Info(store.SprintCacheLog())
-		}
-	}
-}
-
-// SprintCacheLog not used in temporary
-func (rs *Store) SprintCacheLog() string {
-	var cacheLog string
-	for _, store := range rs.stores {
-		cacheLog += store.SprintCacheLog()
-	}
-	return cacheLog
 }
 
 func (rs *Store) GetDBWriteCount() int {

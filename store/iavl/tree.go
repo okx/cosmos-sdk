@@ -22,7 +22,6 @@ type (
 		Set(key, value []byte) bool
 		Remove(key []byte) ([]byte, bool)
 		SaveVersion() ([]byte, int64, error)
-		SprintCacheLog(name string) string
 		GetModuleName() string
 		GetDBWriteCount() int
 		GetDBReadCount() int
@@ -96,10 +95,6 @@ func (it *immutableTree) GetImmutable(version int64) (*iavl.ImmutableTree, error
 
 func (it *immutableTree) SetInitialVersion(_ uint64) {
 	panic("cannot call 'SetInitialVersion' on an immutable IAVL tree")
-}
-
-func (it *immutableTree) SprintCacheLog(_ string) string {
-	return ""
 }
 
 func (it *immutableTree) GetModuleName() string {

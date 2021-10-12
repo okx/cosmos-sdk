@@ -242,7 +242,6 @@ func (app *BaseApp) Commit() (res abci.ResponseCommit) {
 	app.deliverState.ms.Write()
 	commitID := app.cms.Commit()
 
-	app.cms.PrintCacheLog(app.logger)
 	trace.GetElapsedInfo().AddInfo("DB", fmt.Sprintf("read<%d>, write<%d>", app.cms.GetDBReadCount(), app.cms.GetDBWriteCount()))
 	app.cms.ResetCount()
 	app.logger.Debug("Commit synced", "commit", fmt.Sprintf("%X", commitID))

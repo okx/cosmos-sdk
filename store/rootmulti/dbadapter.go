@@ -3,7 +3,6 @@ package rootmulti
 import (
 	"github.com/cosmos/cosmos-sdk/store/dbadapter"
 	"github.com/cosmos/cosmos-sdk/store/types"
-	tmlog "github.com/tendermint/tendermint/libs/log"
 )
 
 var commithash = []byte("FAKE_HASH")
@@ -32,10 +31,6 @@ func (cdsa commitDBStoreAdapter) LastCommitID() types.CommitID {
 }
 
 func (cdsa commitDBStoreAdapter) SetPruning(_ types.PruningOptions) {}
-
-func (cdsa commitDBStoreAdapter) PrintCacheLog(logger tmlog.Logger) { }
-
-func (cdsa commitDBStoreAdapter) SprintCacheLog() string { return "" }
 
 func (cdsa commitDBStoreAdapter) GetDBWriteCount() int { return 0 }
 
