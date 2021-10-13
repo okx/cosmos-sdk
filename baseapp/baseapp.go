@@ -164,7 +164,7 @@ type recordHandle func(string)
 //
 // NOTE: The db is used to store the version number for now.
 func NewBaseApp(
-	name string, logger log.Logger, db dbm.DB, txDecoder sdk.TxDecoder, startLog recordHandle, endLog recordHandle, options ...func(*BaseApp),
+	name string, logger log.Logger, db dbm.DB, txDecoder sdk.TxDecoder, options ...func(*BaseApp),
 ) *BaseApp {
 
 	app := &BaseApp{
@@ -178,8 +178,6 @@ func NewBaseApp(
 		txDecoder:      txDecoder,
 		fauxMerkleMode: false,
 		trace:          false,
-		startLog:       startLog,
-		endLog:         endLog,
 	}
 	for _, option := range options {
 		option(app)
@@ -205,6 +203,16 @@ func (app *BaseApp) AppVersion() string {
 // Logger returns the logger of the BaseApp.
 func (app *BaseApp) Logger() log.Logger {
 	return app.logger
+}
+
+// SetStartLogHandler set the startLog of the BaseApp.
+func (app *BaseApp) SetStartLogHandler(handle recordHandle)  {
+	app.startLog = handle
+}
+
+// SetStopLogHandler set the endLog of the BaseApp.
+func (app *BaseApp) SetEndLogHandler(handle recordHandle)  {
+	app.endLog = handle
 }
 
 // MountStores mounts all IAVL or DB stores to the provided keys in the BaseApp
