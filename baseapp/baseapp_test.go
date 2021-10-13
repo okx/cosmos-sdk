@@ -40,7 +40,7 @@ func newBaseApp(name string, options ...func(*BaseApp)) *BaseApp {
 	db := dbm.NewMemDB()
 	codec := codec.New()
 	registerTestCodec(codec)
-	return NewBaseApp(name, logger, db, testTxDecoder(codec), nil, nil, options...)
+	return NewBaseApp(name, logger, db, testTxDecoder(codec), options...)
 }
 
 func registerTestCodec(cdc *codec.Codec) {
