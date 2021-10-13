@@ -40,7 +40,7 @@ func newBaseApp(name string, options ...func(*BaseApp)) *BaseApp {
 	db := dbm.NewMemDB()
 	codec := codec.New()
 	registerTestCodec(codec)
-	return NewBaseApp(name, logger, db, testTxDecoder(codec), options...)
+	return NewBaseApp(name, logger, db, testTxDecoder(codec), nil, nil, options...)
 }
 
 func registerTestCodec(cdc *codec.Codec) {
@@ -89,7 +89,7 @@ func TestLoadVersion(t *testing.T) {
 	pruningOpt := SetPruning(store.PruneNothing)
 	db := dbm.NewMemDB()
 	name := t.Name()
-	app := NewBaseApp(name, logger, db, nil, pruningOpt)
+	app := NewBaseApp(name, logger, db, nil, nil, nil, pruningOpt)
 
 	// make a cap key and mount the store
 	capKey := sdk.NewKVStoreKey(MainStoreKey)
@@ -118,7 +118,7 @@ func TestLoadVersion(t *testing.T) {
 	commitID2 := sdk.CommitID{Version: 2, Hash: res.Data}
 
 	// reload with LoadLatestVersion
-	app = NewBaseApp(name, logger, db, nil, pruningOpt)
+	app = NewBaseApp(name, logger, db, nil, nil, nil, pruningOpt)
 	app.MountStores(capKey)
 	err = app.LoadLatestVersion(capKey)
 	require.Nil(t, err)
@@ -126,7 +126,7 @@ func TestLoadVersion(t *testing.T) {
 
 	// reload with LoadVersion, see if you can commit the same block and get
 	// the same result
-	app = NewBaseApp(name, logger, db, nil, pruningOpt)
+	app = NewBaseApp(name, logger, db, nil, nil, nil, pruningOpt)
 	app.MountStores(capKey)
 	err = app.LoadVersion(1, capKey)
 	require.Nil(t, err)
@@ -251,7 +251,7 @@ func TestSetLoader(t *testing.T) {
 			if tc.setLoader != nil {
 				opts = append(opts, tc.setLoader)
 			}
-			app := NewBaseApp(t.Name(), defaultLogger(), db, nil, opts...)
+			app := NewBaseApp(t.Name(), defaultLogger(), db, nil, nil, nil, opts...)
 			capKey := sdk.NewKVStoreKey(MainStoreKey)
 			app.MountStores(capKey)
 			app.MountStores(sdk.NewKVStoreKey(tc.loadStoreKey))
@@ -316,7 +316,7 @@ func TestLoadVersionInvalid(t *testing.T) {
 	commitID1 := sdk.CommitID{Version: 1, Hash: res.Data}
 
 	// create a new app with the stores mounted under the same cap key
-	app = NewBaseApp(name, logger, db, nil, pruningOpt)
+	app = NewBaseApp(name, logger, db, nil, nil, nil, pruningOpt)
 	app.MountStores(capKey)
 
 	// require we can load the latest version
