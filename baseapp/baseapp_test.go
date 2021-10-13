@@ -316,7 +316,7 @@ func TestLoadVersionInvalid(t *testing.T) {
 	commitID1 := sdk.CommitID{Version: 1, Hash: res.Data}
 
 	// create a new app with the stores mounted under the same cap key
-	app = NewBaseApp(name, logger, db, nil, nil, nil, pruningOpt)
+	app = NewBaseApp(name, logger, db, nil, pruningOpt)
 	app.MountStores(capKey)
 
 	// require we can load the latest version
