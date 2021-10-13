@@ -743,9 +743,15 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		}
 	}()
 
+	if app.startLog != nil{
+		app.startLog("validateBasicTxMsgs")
+	}
 	msgs := tx.GetMsgs()
 	if err := validateBasicTxMsgs(msgs); err != nil {
 		return sdk.GasInfo{}, nil, err
+	}
+	if app.endLog != nil{
+		app.endLog("validateBasicTxMsgs")
 	}
 
 	accountNonce := uint64(0)
