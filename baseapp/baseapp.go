@@ -148,7 +148,16 @@ type BaseApp struct { // nolint: maligned
 
 	// trace set will return full stack traces for errors in ABCI Log field
 	trace bool
+
+	// start record handle
+	startLog recordHandle
+
+	// end record handle
+	endLog recordHandle
+
 }
+
+type recordHandle func(string)
 
 // NewBaseApp returns a reference to an initialized BaseApp. It accepts a
 // variadic number of option functions, which act on the BaseApp to set
@@ -744,7 +753,9 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		// performance benefits, but it'll be more difficult to get right.
 		anteCtx, msCache = app.cacheTxContext(ctx, txBytes)
 		anteCtx = anteCtx.WithEventManager(sdk.NewEventManager())
+		app.startLog("anteHandler")
 		newCtx, err := app.anteHandler(anteCtx, tx, mode == runTxModeSimulate)
+		app.endLog("anteHandler")
 		accountNonce = newCtx.AccountNonce()
 		if !newCtx.IsZero() {
 			// At this point, newCtx.MultiStore() is cache-wrapped, or something else
