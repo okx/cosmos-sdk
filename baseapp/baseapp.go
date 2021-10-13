@@ -164,7 +164,7 @@ type recordHandle func(string)
 //
 // NOTE: The db is used to store the version number for now.
 func NewBaseApp(
-	name string, logger log.Logger, db dbm.DB, txDecoder sdk.TxDecoder, options ...func(*BaseApp), startLog recordHandle, endLog recordHandle,
+	name string, logger log.Logger, db dbm.DB, txDecoder sdk.TxDecoder, startLog recordHandle, endLog recordHandle, options ...func(*BaseApp),
 ) *BaseApp {
 
 	app := &BaseApp{
