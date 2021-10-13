@@ -1108,6 +1108,10 @@ func (app *BaseApp) Export(toApp *BaseApp, version int64) error {
 	return fromCms.Export(toCms, version)
 }
 
+func (app *BaseApp) StopStore() {
+	app.cms.StopStore()
+}
+
 func (app *BaseApp) GetTxInfo(ctx sdk.Context, tx sdk.Tx) mempool.ExTxInfo {
 	exTxInfo := tx.GetTxInfo(ctx)
 	if exTxInfo.Nonce == 0 && exTxInfo.Sender != "" && app.AccHandler != nil {

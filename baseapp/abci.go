@@ -7,10 +7,12 @@ import (
 	"strings"
 	"syscall"
 
+	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/trace"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 // InitChain implements the ABCI interface. It runs the initialization logic
@@ -380,6 +382,9 @@ func (app *BaseApp) Commit() (res abci.ResponseCommit) {
 	// MultiStore (app.cms) so when Commit() is called is persists those values.
 	app.deliverState.ms.Write()
 	commitID := app.cms.Commit()
+
+	trace.GetElapsedInfo().AddInfo("DB", fmt.Sprintf("read<%d>, write<%d>", app.cms.GetDBReadCount(), app.cms.GetDBWriteCount()))
+	app.cms.ResetCount()
 	app.logger.Debug("Commit synced", "commit", fmt.Sprintf("%X", commitID))
 
 	// Reset the Check state to the latest committed.
@@ -474,7 +479,10 @@ func handleQueryApp(app *BaseApp, path []string, req abci.RequestQuery) abci.Res
 			}
 
 			gInfo, res, err := app.Simulate(txBytes, tx, req.Height)
-			if err != nil {
+			// if path contains mempool, it means to enable MaxGasUsedPerBlock
+			// return the actual gasUsed even though simulate tx failed
+			isMempoolSim := len(path) >= 3 && path[2] == "mempool"
+			if err != nil && !isMempoolSim {
 				return sdkerrors.QueryResult(sdkerrors.Wrap(err, "failed to simulate tx"))
 			}
 

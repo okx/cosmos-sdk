@@ -20,6 +20,7 @@ import (
 
 var (
 	FlagIavlCacheSize = "iavl-cache-size"
+
 	IavlCacheSize     = 1000000
 )
 
@@ -33,6 +34,11 @@ var (
 // Store Implements types.KVStore and CommitKVStore.
 type Store struct {
 	tree Tree
+}
+
+func (st *Store) StopStore() {
+	tr := st.tree.(*iavl.MutableTree)
+	tr.StopTree()
 }
 
 // LoadStore returns an IAVL Store as a CommitKVStore. Internally, it will load the
@@ -297,6 +303,18 @@ func (st *Store) Query(req abci.RequestQuery) (res abci.ResponseQuery) {
 	}
 
 	return res
+}
+
+func (st *Store) GetDBWriteCount() int {
+	return st.tree.GetDBWriteCount()
+}
+
+func (st *Store) GetDBReadCount() int {
+	return st.tree.GetDBReadCount()
+}
+
+func (st *Store) ResetCount() {
+	st.tree.ResetCount()
 }
 
 //----------------------------------------
