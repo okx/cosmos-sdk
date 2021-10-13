@@ -154,7 +154,6 @@ type BaseApp struct { // nolint: maligned
 
 	// end record handle
 	endLog recordHandle
-
 }
 
 type recordHandle func(string)
@@ -165,7 +164,7 @@ type recordHandle func(string)
 //
 // NOTE: The db is used to store the version number for now.
 func NewBaseApp(
-	name string, logger log.Logger, db dbm.DB, txDecoder sdk.TxDecoder, options ...func(*BaseApp),
+	name string, logger log.Logger, db dbm.DB, txDecoder sdk.TxDecoder, options ...func(*BaseApp), startLog recordHandle, endLog recordHandle,
 ) *BaseApp {
 
 	app := &BaseApp{
@@ -179,6 +178,8 @@ func NewBaseApp(
 		txDecoder:      txDecoder,
 		fauxMerkleMode: false,
 		trace:          false,
+		startLog:       startLog,
+		endLog:         endLog,
 	}
 	for _, option := range options {
 		option(app)
@@ -753,9 +754,13 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		// performance benefits, but it'll be more difficult to get right.
 		anteCtx, msCache = app.cacheTxContext(ctx, txBytes)
 		anteCtx = anteCtx.WithEventManager(sdk.NewEventManager())
-		app.startLog("anteHandler")
+		if app.startLog != nil{
+			app.startLog("anteHandler")
+		}
 		newCtx, err := app.anteHandler(anteCtx, tx, mode == runTxModeSimulate)
-		app.endLog("anteHandler")
+		if app.endLog != nil {
+			app.endLog("anteHandler")
+		}
 		accountNonce = newCtx.AccountNonce()
 		if !newCtx.IsZero() {
 			// At this point, newCtx.MultiStore() is cache-wrapped, or something else
