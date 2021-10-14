@@ -747,6 +747,9 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	}()
 
 	defer func() {
+		if app.startLog != nil{
+			app.startLog("GasRefundHandler")
+		}
 		if mode == runTxModeDeliver && app.GasRefundHandler != nil {
 			GasRefundCtx, msCache := app.cacheTxContext(ctx, txBytes)
 			err := app.GasRefundHandler(GasRefundCtx, tx)
@@ -754,6 +757,10 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 				panic(err)
 			}
 			msCache.Write()
+		}
+
+		if app.endLog != nil{
+			app.endLog("GasRefundHandler")
 		}
 	}()
 

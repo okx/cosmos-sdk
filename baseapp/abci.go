@@ -208,7 +208,7 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 // gas execution context.
 func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
 	if app.startLog != nil{
-		app.startLog("app.txDecoder")
+		app.startLog("app-txDecoder")
 	}
 
 	tx, err := app.txDecoder(req.Tx)
@@ -216,7 +216,7 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 		return sdkerrors.ResponseDeliverTx(err, 0, 0, app.trace)
 	}
 	if app.endLog != nil{
-		app.endLog("app.txDecoder")
+		app.endLog("app-txDecoder")
 	}
 
 	gInfo, result, err := app.runTx(runTxModeDeliver, req.Tx, tx, LatestSimulateTxHeight)
