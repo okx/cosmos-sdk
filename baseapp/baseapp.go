@@ -657,7 +657,7 @@ func (app *BaseApp) cacheTxContext(ctx sdk.Context, txBytes []byte) (sdk.Context
 // and execute successfully. An error is returned otherwise.
 func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int64) (gInfo sdk.GasInfo, result *sdk.Result, err error) {
 	if app.startLog != nil{
-		app.startLog("runTx")
+		app.startLog("BaseApp-run")
 	}
 	// NOTE: GasWanted should be returned by the AnteHandler. GasUsed is
 	// determined by the GasMeter. We need access to the context to get the gas
@@ -725,7 +725,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 
 		gInfo = sdk.GasInfo{GasWanted: gasWanted, GasUsed: ctx.GasMeter().GasConsumed()}
 		if app.endLog != nil{
-			app.endLog("runTx")
+			app.endLog("BaseApp-run")
 		}
 	}()
 
