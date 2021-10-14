@@ -2,7 +2,6 @@ package baseapp
 
 import (
 	"encoding/hex"
-	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -28,7 +27,6 @@ func (e ExecuteResult) Recheck(cache abci.AsyncCacheInterface) bool {
 	e.Ms.IteratorCache(func(key, value []byte, isDirty bool) bool {
 		//the key we have read was wrote by pre txs
 		if cache.Has(key) && !whiteAccountList[hex.EncodeToString(key)] {
-			//fmt.Println("conflict", hex.EncodeToString(key), string(key))
 			rerun = true
 		}
 		return true
@@ -44,14 +42,12 @@ var (
 )
 
 func (e ExecuteResult) Collect(cache abci.AsyncCacheInterface) {
-	fmt.Println("-----Collect-----")
 	if e.Ms == nil {
-		fmt.Println("-----Collect----- is nil")
 		return
 	}
 	e.Ms.IteratorCache(func(key, value []byte, isDirty bool) bool {
 		if isDirty {
-			//push every data we have wrote in current tx
+			//push every data we have written in current tx
 			cache.Push(key, value)
 		}
 		return true
@@ -67,18 +63,9 @@ func (e ExecuteResult) GetCounter() uint32 {
 }
 
 func (e ExecuteResult) Commit() {
-	fmt.Println("-----Commit-----", e.Counter, e.evmCounter)
 	if e.Ms == nil {
-		fmt.Println("-----Commit----- is nil", e.Counter, e.evmCounter)
 		return
 	}
-
-	e.Ms.IteratorCache(func(key, value []byte, isDirty bool) bool {
-		if isDirty {
-			//fmt.Println("ok.scf.debug", hex.EncodeToString(key), hex.EncodeToString(value))
-		}
-		return true
-	})
 	e.Ms.Write()
 }
 

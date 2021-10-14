@@ -107,7 +107,6 @@ func (app *BaseApp) FilterPeerByID(info string) abci.ResponseQuery {
 
 // BeginBlock implements the ABCI application interface.
 func (app *BaseApp) BeginBlock(req abci.RequestBeginBlock) (res abci.ResponseBeginBlock) {
-
 	defer func() {
 		app.deliverCounter = 0
 		app.workgroup.Reset()
@@ -154,7 +153,6 @@ func (app *BaseApp) BeginBlock(req abci.RequestBeginBlock) (res abci.ResponseBeg
 
 	// set the signed validators for addition to context in deliverTx
 	app.voteInfos = req.LastCommitInfo.GetVotes()
-
 	return res
 }
 
@@ -167,6 +165,7 @@ func (app *BaseApp) EndBlock(req abci.RequestEndBlock) (res abci.ResponseEndBloc
 	if app.endBlocker != nil {
 		res = app.endBlocker(app.deliverState.ctx, req)
 	}
+
 	return
 }
 
@@ -220,7 +219,7 @@ func (app *BaseApp) FinalTx() [][]byte {
 		}
 	}
 	ctx, cache := app.cacheTxContext(app.getContextForTx(runTxModeDeliverInAsync, []byte{}), []byte{})
-	app.changeHandle(ctx, true, txFeeInBlock.Add(app.initPoolCoins...))
+	app.feeCollectorAccHandler(ctx, true, txFeeInBlock.Add(app.initPoolCoins...))
 	cache.Write()
 
 	evmReceipts := app.fixLog(app.feeManage.GetAnteFailMap())
@@ -244,7 +243,6 @@ func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx, final bool, ev
 		panic("need delete")
 	}
 	tx, err := app.txDecoder(req.Tx)
-	//fmt.Println("====DeliverTxWithCache====", final, evmIdx, reflect.TypeOf(tx))
 	if err != nil {
 		return nil
 	}
@@ -280,7 +278,6 @@ func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx, final bool, ev
 func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
 	NeedRerun := false
 	tx, err := app.txDecoder(req.Tx)
-	//fmt.Println("======DeliverTx==========", reflect.TypeOf(tx))
 	if err != nil {
 		return sdkerrors.ResponseDeliverTx(err, 0, 0, app.trace)
 	}
@@ -307,7 +304,7 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 			NeedRerun = true
 		} else {
 			//record to map for next txs
-			app.senders[sender] = 0
+			app.senders[sender] = 0 //TODO delete
 		}
 
 		go func() {

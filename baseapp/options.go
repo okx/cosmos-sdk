@@ -131,7 +131,7 @@ func (app *BaseApp) SetChangeBalanceHandler(ah sdk.FeeCollectorAccHandler) {
 	if app.sealed {
 		panic("SetChangeBalanceHandler() on sealed BaseApp")
 	}
-	app.changeHandle = ah
+	app.feeCollectorAccHandler = ah
 }
 
 func (app *BaseApp) SetGetTxFeeHandler(gt sdk.GetTxFeeHandler) {

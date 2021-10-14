@@ -115,12 +115,12 @@ type BaseApp struct { // nolint: maligned
 	addrPeerFilter sdk.PeerFilter   // filter peers by address and port
 	idPeerFilter   sdk.PeerFilter   // filter peers by node ID
 
-	isEvmTx      sdk.IsEvmTx
-	changeHandle sdk.FeeCollectorAccHandler
-	getTxFee     sdk.GetTxFeeHandler
-	fixLog       sdk.LogFix
-
 	fauxMerkleMode bool // if true, IAVL MountStores uses MountStoresDB for simulation speed.
+
+	isEvmTx                sdk.IsEvmTx
+	feeCollectorAccHandler sdk.FeeCollectorAccHandler
+	getTxFee               sdk.GetTxFeeHandler
+	fixLog                 sdk.LogFix
 
 	// volatile states:
 	//
@@ -159,10 +159,10 @@ type BaseApp struct { // nolint: maligned
 	trace bool
 
 	//counter of latest delivered tx
-	deliverCounter uint32
+	deliverCounter uint32 //TODO delete
 
 	//counting the type of evm transactions
-	evmCounter uint32
+	evmCounter uint32 //TODO delete
 
 	//AsyncWorkGroup
 	workgroup *AsyncWorkGroup
@@ -172,8 +172,6 @@ type BaseApp struct { // nolint: maligned
 	//address of tx sender in per block
 	senders   map[string]int
 	feeManage *feeManager
-
-	//mpTxDetail map[int]txMapping
 }
 
 type feeManager struct {
@@ -620,7 +618,7 @@ func (app *BaseApp) SetAsyncDeliverTxCb(cb abci.AsyncCallBack) {
 func (app *BaseApp) SetAsyncConfig(sw bool, txs [][]byte) {
 	app.isAsyncDeliverTx = true
 	app.workgroup.SetMaxCounter(len(txs))
-	app.initPoolCoins = app.changeHandle(app.getContextForTx(runTxModeDeliverInAsync, nil), false, sdk.Coins{})
+	app.initPoolCoins = app.feeCollectorAccHandler(app.getContextForTx(runTxModeDeliverInAsync, nil), false, sdk.Coins{})
 
 	for txIndexInBlock, v := range txs {
 		tx, err := app.txDecoder(v)
@@ -858,19 +856,6 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 			msCacheList = msCacheAnte
 			msCache = nil //TODO msCache not write
 			result = nil
-			//msCacheAnte.IteratorCache(func(key, value []byte, isDirty bool) bool {
-			//	if isDirty {
-			//		fmt.Println("ok.scf.panics---Ante", hex.EncodeToString(key), hex.EncodeToString(value))
-			//	}
-			//	return true
-			//})
-
-			//msCacheList.IteratorCache(func(key, value []byte, isDirty bool) bool {
-			//	if isDirty {
-			//		fmt.Println("ok.scf.panic s", hex.EncodeToString(key), hex.EncodeToString(value))
-			//	}
-			//	return true
-			//})
 		}
 
 		gInfo = sdk.GasInfo{GasWanted: gasWanted, GasUsed: ctx.GasMeter().GasConsumed()}
@@ -888,7 +873,6 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 			)
 
 			if ctx.BlockGasMeter().GasConsumed() < startingGas {
-				fmt.Println("uuuuuunexcepted error error error ")
 				panic(sdk.ErrorGasOverflow{Descriptor: "tx gas summation"})
 			}
 		}
@@ -906,22 +890,12 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 				}
 			}
 			refundGas, err := app.GasRefundHandler(GasRefundCtx, tx)
-			//fmt.Println("refundGas", refundGas, "err", err)
 			if err != nil {
 				panic(err)
 			}
-			//
-			//msCache.IteratorCache(func(key, value []byte, isDirty bool) bool {
-			//	if isDirty {
-			//		fmt.Println("ok.scf.defer gasRefund", hex.EncodeToString(key), hex.EncodeToString(value))
-			//	}
-			//	return true
-			//})
-
 			if mode == runTxModeDeliver {
 				msCache.Write()
 			}
-			//fmt.Println("refundGas", refundGas)
 			if mode == runTxModeDeliverInAsync {
 				msCache.Write()
 				app.feeManage.SetRefundFee(hex.EncodeToString(txBytes), refundGas)
@@ -948,7 +922,6 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		anteCtx, msCacheAnte = app.cacheTxContext(ctx, txBytes)
 		anteCtx = anteCtx.WithEventManager(sdk.NewEventManager())
 		newCtx, err := app.anteHandler(anteCtx, tx, mode == runTxModeSimulate)
-		//fmt.Println("Ante err", err, ctx.GasMeter().GasConsumed(), ctx.GasMeter().Limit())
 		accountNonce = newCtx.AccountNonce()
 		if !newCtx.IsZero() {
 			// At this point, newCtx.MultiStore() is cache-wrapped, or something else
@@ -968,20 +941,10 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		}
 
 		if err != nil {
-			//if mode == runTxModeDeliverInAsync {
-			//	fmt.Printf("Failed to call antehandler in deliverTx with async ： %v\n", err)
-			//	panic("unexpected err")
-			//}
 			app.feeManage.deleteFeeKey(hex.EncodeToString(txBytes))
 			return gInfo, nil, nil, err
 		}
 
-		//msCacheAnte.IteratorCache(func(key, value []byte, isDirty bool) bool {
-		//	if isDirty {
-		//		fmt.Println("ok.scf.ante", hex.EncodeToString(key), hex.EncodeToString(value))
-		//	}
-		//	return true
-		//})
 
 		if mode == runTxModeDeliver {
 			msCacheAnte.Write()
@@ -1004,20 +967,13 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	result, err = app.runMsgs(runMsgCtx, msgs, mode)
 	runMsgEnd = true
 	if err == nil && (mode == runTxModeDeliver) {
-		//msCache.IteratorCache(func(key, value []byte, isDirty bool) bool {
-		//	if isDirty {
-		//		fmt.Println("ok.scf.runMsg", hex.EncodeToString(key), hex.EncodeToString(value))
-		//	}
-		//	return true
-		//})
 		msCache.Write()
 	}
-
-	//fmt.Println("runMsg errrr", err)
 
 	if mode == runTxModeCheck {
 		exTxInfo := app.GetTxInfo(ctx, tx)
 		exTxInfo.SenderNonce = accountNonce
+
 		data, err := json.Marshal(exTxInfo)
 		if err == nil {
 			result.Data = data
@@ -1034,12 +990,6 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 
 	if mode == runTxModeDeliverInAsync {
 		if msCache != nil {
-			//msCache.IteratorCache(func(key, value []byte, isDirty bool) bool {
-			//	if isDirty {
-			//		fmt.Println("ok.scf.runMsg", hex.EncodeToString(key), hex.EncodeToString(value))
-			//	}
-			//	return true
-			//})
 			msCache.Write()
 		}
 		return gInfo, result, msCacheAnte, err

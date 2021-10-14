@@ -215,7 +215,6 @@ type KVStore interface {
 }
 
 type CacheManager interface {
-	IsDirty(key []byte) bool
 	IteratorCache(cb func(key, value []byte, isDirty bool) bool)
 }
 
@@ -247,7 +246,6 @@ type CommitKVStore interface {
 // HeapStore, SpaceStore, etc.
 type CacheWrap interface {
 	CacheManager
-
 	// Write syncs with the underlying store.
 	Write()
 

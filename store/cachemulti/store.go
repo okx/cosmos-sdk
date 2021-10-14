@@ -111,23 +111,8 @@ func (cms Store) GetStoreType() types.StoreType {
 func (cms Store) Write() {
 	cms.db.Write()
 	for _, store := range cms.stores {
-		//fmt.Println("store----", k.String())
 		store.Write()
 	}
-}
-
-func (cms Store) IsDirty(key []byte) bool {
-	dirty := cms.db.IsDirty(key)
-	if dirty {
-		return dirty
-	}
-	for _, store := range cms.stores {
-		dirty = store.IsDirty(key)
-		if dirty {
-			return dirty
-		}
-	}
-	return false
 }
 
 func (cms Store) IteratorCache(cb func(key, value []byte, isDirty bool) bool) {

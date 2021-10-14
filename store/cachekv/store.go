@@ -82,21 +82,6 @@ func (store *Store) IteratorCache(cb func(key, value []byte, isDirty bool) bool)
 	return
 }
 
-func (store *Store) IsDirty(key []byte) bool {
-	if key == nil {
-		return false
-	}
-	store.mtx.Lock()
-	defer store.mtx.Unlock()
-
-	value, ok := store.cache[string(key)]
-	if ok {
-		return value.dirty
-	}
-
-	return false
-}
-
 // Implements types.KVStore.
 func (store *Store) Set(key []byte, value []byte) {
 	store.mtx.Lock()
@@ -144,7 +129,6 @@ func (store *Store) Write() {
 	// at least happen atomically.
 	for _, key := range keys {
 		cacheValue := store.cache[key]
-		//fmt.Println("kety--Write", hex.EncodeToString([]byte(key)), hex.EncodeToString(cacheValue.value))
 		switch {
 		case cacheValue.deleted:
 			store.parent.Delete([]byte(key))
