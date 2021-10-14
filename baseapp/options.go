@@ -78,13 +78,6 @@ func (app *BaseApp) SetCMS(cms store.CommitMultiStore) {
 	app.cms = cms
 }
 
-func (app *BaseApp) SetTxChecker(ch sdk.CheckTxType) {
-	if app.sealed {
-		panic("SetTxChecker() on sealed BaseApp")
-	}
-	app.txChecker = ch
-}
-
 func (app *BaseApp) SetInitChainer(initChainer sdk.InitChainer) {
 	if app.sealed {
 		panic("SetInitChainer() on sealed BaseApp")
@@ -127,14 +120,21 @@ func (app *BaseApp) SetAccHandler(ah sdk.AccHandler) {
 	app.AccHandler = ah
 }
 
-func (app *BaseApp) SetChangeBalanceHandler(ah sdk.ChangeBalanceHandler) {
+func (app *BaseApp) SetIsEvmTxHandler(ch sdk.IsEvmTx) {
+	if app.sealed {
+		panic("SetIsEvmTxHandler() on sealed BaseApp")
+	}
+	app.isEvmTx = ch
+}
+
+func (app *BaseApp) SetChangeBalanceHandler(ah sdk.FeeCollectorAccHandler) {
 	if app.sealed {
 		panic("SetChangeBalanceHandler() on sealed BaseApp")
 	}
 	app.changeHandle = ah
 }
 
-func (app *BaseApp) SetGetTxFee(gt sdk.GetTxFeeHandler) {
+func (app *BaseApp) SetGetTxFeeHandler(gt sdk.GetTxFeeHandler) {
 	if app.sealed {
 		panic("SetGetTxFee() on sealed BaseApp")
 	}

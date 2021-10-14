@@ -214,14 +214,13 @@ func (app *BaseApp) FinalTx() [][]byte {
 	feeMap := app.feeManage.GetFeeMap()
 	refundMap := app.feeManage.GetRefundFeeMap()
 	for tx, v := range feeMap {
-		//fmt.Println("txxxxx", tx, "vvv", v, "refundFee", refundMap[tx])
 		txFeeInBlock = txFeeInBlock.Add(v...)
 		if refundFee, ok := refundMap[tx]; ok {
 			txFeeInBlock = txFeeInBlock.Sub(refundFee)
 		}
 	}
 	ctx, cache := app.cacheTxContext(app.getContextForTx(runTxModeDeliverInAsync, []byte{}), []byte{})
-	app.changeHandle(ctx, txFeeInBlock.Add(app.initPoolCoins...))
+	app.changeHandle(ctx, true, txFeeInBlock.Add(app.initPoolCoins...))
 	cache.Write()
 
 	evmReceipts := app.fixLog(app.feeManage.GetAnteFailMap())
@@ -290,7 +289,7 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 		result *sdk.Result
 	)
 	counterOfEvm := app.evmCounter
-	if app.txChecker(tx) {
+	if app.isEvmTx(tx) {
 		app.evmCounter++
 	}
 

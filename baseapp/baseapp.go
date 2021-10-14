@@ -108,16 +108,18 @@ type BaseApp struct { // nolint: maligned
 	anteHandler      sdk.AnteHandler      // ante handler for fee and auth
 	GasRefundHandler sdk.GasRefundHandler // gas refund handler for gas refund
 	AccHandler       sdk.AccHandler       // account handler for cm tx nonce
-	changeHandle     sdk.ChangeBalanceHandler
-	getTxFee         sdk.GetTxFeeHandler
-	fixLog           sdk.LogFix
 
 	initChainer    sdk.InitChainer  // initialize state with validators and state blob
 	beginBlocker   sdk.BeginBlocker // logic to run before any txs
 	endBlocker     sdk.EndBlocker   // logic to run after all txs, and to determine valset changes
 	addrPeerFilter sdk.PeerFilter   // filter peers by address and port
 	idPeerFilter   sdk.PeerFilter   // filter peers by node ID
-	txChecker      sdk.CheckTxType
+
+	isEvmTx      sdk.IsEvmTx
+	changeHandle sdk.FeeCollectorAccHandler
+	getTxFee     sdk.GetTxFeeHandler
+	fixLog       sdk.LogFix
+
 	fauxMerkleMode bool // if true, IAVL MountStores uses MountStoresDB for simulation speed.
 
 	// volatile states:
@@ -618,7 +620,7 @@ func (app *BaseApp) SetAsyncDeliverTxCb(cb abci.AsyncCallBack) {
 func (app *BaseApp) SetAsyncConfig(sw bool, txs [][]byte) {
 	app.isAsyncDeliverTx = true
 	app.workgroup.SetMaxCounter(len(txs))
-	app.initPoolCoins = app.changeHandle(app.getContextForTx(runTxModeDeliverInAsync, nil), sdk.Coins{})
+	app.initPoolCoins = app.changeHandle(app.getContextForTx(runTxModeDeliverInAsync, nil), false, sdk.Coins{})
 
 	for txIndexInBlock, v := range txs {
 		tx, err := app.txDecoder(v)
@@ -626,7 +628,7 @@ func (app *BaseApp) SetAsyncConfig(sw bool, txs [][]byte) {
 			panic(err)
 		}
 		app.feeManage.txSizeInBlock++
-		app.feeManage.isEvmTx[txIndexInBlock] = app.txChecker(tx)
+		app.feeManage.isEvmTx[txIndexInBlock] = app.isEvmTx(tx)
 	}
 
 }
@@ -793,7 +795,7 @@ func (app *BaseApp) cacheTxContextWithCache(ctx sdk.Context, txBytes []byte, msC
 // returned if the tx does not run out of gas and if all the messages are valid
 // and execute successfully. An error is returned otherwise.
 func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int64, evmTxIndex uint32) (gInfo sdk.GasInfo, result *sdk.Result, msCacheList sdk.CacheMultiStore, err error) {
-	app.feeManage.SetFee(hex.EncodeToString(txBytes), app.getTxFee(sdk.Context{}, tx))
+	app.feeManage.SetFee(hex.EncodeToString(txBytes), app.getTxFee(tx))
 	fmt.Println("RunTx", evmTxIndex)
 	// NOTE: GasWanted should be returned by the AnteHandler. GasUsed is
 	// determined by the GasMeter. We need access to the context to get the gas

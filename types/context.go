@@ -60,7 +60,7 @@ func (c Context) IsReCheckTx() bool           { return c.recheckTx }
 func (c Context) MinGasPrices() DecCoins      { return c.minGasPrice }
 func (c Context) EventManager() *EventManager { return c.eventManager }
 func (c Context) IsAsync() bool               { return c.isAsync }
-func (c Context) EvmTransactionIndex() uint32 { return c.evmTxIndex }
+func (c Context) EvmTransactionIndex() uint32 { return c.evmTxIndex } //TODO delete
 func (c Context) AccountNonce() uint64        { return c.accountNonce }
 
 // clone the header before returning

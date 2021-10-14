@@ -11,11 +11,11 @@ type GasRefundHandler func(ctx Context, tx Tx) (fee Coins, err error)
 
 type AccHandler func(ctx Context, address AccAddress) (nonce uint64, balances Coins)
 
-type ChangeBalanceHandler func(ctx Context, balance Coins) (balances Coins)
+type FeeCollectorAccHandler func(ctx Context, updateValue bool, balance Coins) (balances Coins)
 
 type LogFix func(isAnteFailed map[uint32]bool) (logs map[int][]byte)
 
-type GetTxFeeHandler func(ctx Context, tx Tx) Coins
+type GetTxFeeHandler func(tx Tx) Coins
 
 // AnteDecorator wraps the next AnteHandler to perform custom pre- and post-processing.
 type AnteDecorator interface {
