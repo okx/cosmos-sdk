@@ -648,6 +648,16 @@ func (app *BaseApp) cacheTxContext(ctx sdk.Context, txBytes []byte) (sdk.Context
 	return ctx.WithMultiStore(msCache), msCache
 }
 
+func (app *BaseApp) pin(tag string, start bool) {
+	if app.startLog != nil{
+		if start {
+			app.startLog(tag)
+		} else {
+			app.endLog(tag)
+		}
+	}
+}
+
 // runTx processes a transaction within a given execution mode, encoded transaction
 // bytes, and the decoded transaction itself. All state transitions occur through
 // a cached Context depending on the mode provided. State only gets persisted
@@ -656,17 +666,15 @@ func (app *BaseApp) cacheTxContext(ctx sdk.Context, txBytes []byte) (sdk.Context
 // returned if the tx does not run out of gas and if all the messages are valid
 // and execute successfully. An error is returned otherwise.
 func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int64) (gInfo sdk.GasInfo, result *sdk.Result, err error) {
-	if app.startLog != nil{
-		app.startLog("BaseApp-run")
-	}
+	app.pin("BaseApp-run", true)
+	defer app.pin("BaseApp-run", false)
+
 	// NOTE: GasWanted should be returned by the AnteHandler. GasUsed is
 	// determined by the GasMeter. We need access to the context to get the gas
 	// meter so we initialize upfront.
 	var gasWanted uint64
+	app.pin("initCtx", true)
 
-	if app.startLog != nil{
-		app.startLog("initCtx")
-	}
 	var ctx sdk.Context
 	// simulate tx
 	startHeight := tmtypes.GetStartBlockHeight()
@@ -682,9 +690,8 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		ctx = app.getContextForTx(mode, txBytes)
 	}
 
-	if app.endLog != nil{
-		app.endLog("initCtx")
-	}
+	app.pin("initCtx", false)
+
 
 	ms := ctx.MultiStore()
 
@@ -724,9 +731,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		}
 
 		gInfo = sdk.GasInfo{GasWanted: gasWanted, GasUsed: ctx.GasMeter().GasConsumed()}
-		if app.endLog != nil{
-			app.endLog("BaseApp-run")
-		}
+
 	}()
 
 	// If BlockGasMeter() panics it will be caught by the above recover and will
@@ -747,9 +752,9 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	}()
 
 	defer func() {
-		if app.startLog != nil{
-			app.startLog("GasRefundHandler")
-		}
+		app.pin("refund", true)
+		defer app.pin("refund", false)
+
 		if mode == runTxModeDeliver && app.GasRefundHandler != nil {
 			GasRefundCtx, msCache := app.cacheTxContext(ctx, txBytes)
 			err := app.GasRefundHandler(GasRefundCtx, tx)
@@ -759,21 +764,15 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 			msCache.Write()
 		}
 
-		if app.endLog != nil{
-			app.endLog("GasRefundHandler")
-		}
 	}()
+	app.pin("valTxMsgs", true)
 
-	if app.startLog != nil{
-		app.startLog("validateBasicTxMsgs")
-	}
 	msgs := tx.GetMsgs()
 	if err := validateBasicTxMsgs(msgs); err != nil {
 		return sdk.GasInfo{}, nil, err
 	}
-	if app.endLog != nil{
-		app.endLog("validateBasicTxMsgs")
-	}
+	app.pin("valTxMsgs", false)
+
 
 	accountNonce := uint64(0)
 	if app.anteHandler != nil {
@@ -826,16 +825,13 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	// Attempt to execute all messages and only update state if all messages pass
 	// and we're in DeliverTx. Note, runMsgs will never return a reference to a
 	// Result if any single message fails or does not have a registered Handler.
-	if app.startLog != nil{
-		app.startLog("runMsgs")
-	}
+	app.pin("runMsgs", true)
+
 	result, err = app.runMsgs(runMsgCtx, msgs, mode)
 	if err == nil && mode == runTxModeDeliver {
 		msCache.Write()
 	}
-	if app.endLog != nil{
-		app.endLog("runMsgs")
-	}
+	app.pin("runMsgs", false)
 
 	if mode == runTxModeCheck {
 		exTxInfo := app.GetTxInfo(ctx, tx)
@@ -888,9 +884,8 @@ func (app *BaseApp) runMsgs(ctx sdk.Context, msgs []sdk.Msg, mode runTxMode) (*s
 		msgEvents := sdk.Events{
 			sdk.NewEvent(sdk.EventTypeMessage, sdk.NewAttribute(sdk.AttributeKeyAction, msg.Type())),
 		}
-		if app.startLog != nil{
-			app.startLog("AppendEvents")
-		}
+		app.pin("AppendEvents", true)
+
 		msgEvents = msgEvents.AppendEvents(msgResult.Events)
 
 		// append message events, data and logs
@@ -900,9 +895,8 @@ func (app *BaseApp) runMsgs(ctx sdk.Context, msgs []sdk.Msg, mode runTxMode) (*s
 		events = events.AppendEvents(msgEvents)
 		data = append(data, msgResult.Data...)
 		msgLogs = append(msgLogs, sdk.NewABCIMessageLog(uint16(i), msgResult.Log, msgEvents))
-		if app.endLog != nil{
-			app.endLog("AppendEvents")
-		}
+		app.pin("AppendEvents", false)
+
 	}
 
 	return &sdk.Result{
