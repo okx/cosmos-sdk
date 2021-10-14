@@ -207,23 +207,18 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 // Regardless of tx execution outcome, the ResponseDeliverTx will contain relevant
 // gas execution context.
 func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
-	if app.startLog != nil{
-		app.startLog("app-Decoder")
-		app.startLog("Deliver")
-	}
-	defer func() {
-		if app.endLog != nil{
-			app.endLog("Deliver")
-		}
-	}()
+	app.pin("DeliverTx", true)
+	defer app.pin("DeliverTx", false)
+
+	app.pin("txdecoder", true)
 
 	tx, err := app.txDecoder(req.Tx)
 	if err != nil {
 		return sdkerrors.ResponseDeliverTx(err, 0, 0, app.trace)
 	}
-	if app.endLog != nil{
-		app.endLog("app-Decoder")
-	}
+
+	app.pin("txdecoder", false)
+
 
 	gInfo, result, err := app.runTx(runTxModeDeliver, req.Tx, tx, LatestSimulateTxHeight)
 	if err != nil {
