@@ -214,7 +214,7 @@ func (app *BaseApp) FinalTx() [][]byte {
 	feeMap := app.feeManage.GetFeeMap()
 	refundMap := app.feeManage.GetRefundFeeMap()
 	for tx, v := range feeMap {
-		fmt.Println("txxxxx", tx, "vvv", v, "refundFee", refundMap[tx])
+		//fmt.Println("txxxxx", tx, "vvv", v, "refundFee", refundMap[tx])
 		txFeeInBlock = txFeeInBlock.Add(v...)
 		if refundFee, ok := refundMap[tx]; ok {
 			txFeeInBlock = txFeeInBlock.Sub(refundFee)
