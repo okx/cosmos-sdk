@@ -811,9 +811,15 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	// Attempt to execute all messages and only update state if all messages pass
 	// and we're in DeliverTx. Note, runMsgs will never return a reference to a
 	// Result if any single message fails or does not have a registered Handler.
+	if app.startLog != nil{
+		app.startLog("runMsgs")
+	}
 	result, err = app.runMsgs(runMsgCtx, msgs, mode)
 	if err == nil && mode == runTxModeDeliver {
 		msCache.Write()
+	}
+	if app.endLog != nil{
+		app.endLog("runMsgs")
 	}
 
 	if mode == runTxModeCheck {
@@ -867,6 +873,9 @@ func (app *BaseApp) runMsgs(ctx sdk.Context, msgs []sdk.Msg, mode runTxMode) (*s
 		msgEvents := sdk.Events{
 			sdk.NewEvent(sdk.EventTypeMessage, sdk.NewAttribute(sdk.AttributeKeyAction, msg.Type())),
 		}
+		if app.startLog != nil{
+			app.startLog("AppendEvents")
+		}
 		msgEvents = msgEvents.AppendEvents(msgResult.Events)
 
 		// append message events, data and logs
@@ -876,6 +885,9 @@ func (app *BaseApp) runMsgs(ctx sdk.Context, msgs []sdk.Msg, mode runTxMode) (*s
 		events = events.AppendEvents(msgEvents)
 		data = append(data, msgResult.Data...)
 		msgLogs = append(msgLogs, sdk.NewABCIMessageLog(uint16(i), msgResult.Log, msgEvents))
+		if app.endLog != nil{
+			app.endLog("AppendEvents")
+		}
 	}
 
 	return &sdk.Result{
