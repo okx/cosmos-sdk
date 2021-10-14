@@ -663,6 +663,10 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	// determined by the GasMeter. We need access to the context to get the gas
 	// meter so we initialize upfront.
 	var gasWanted uint64
+
+	if app.startLog != nil{
+		app.startLog("initCtx")
+	}
 	var ctx sdk.Context
 	// simulate tx
 	startHeight := tmtypes.GetStartBlockHeight()
@@ -676,6 +680,10 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 			fmt.Sprintf("height(%d) should be greater than start block height(%d)", height, startHeight))
 	} else {
 		ctx = app.getContextForTx(mode, txBytes)
+	}
+
+	if app.endLog != nil{
+		app.endLog("initCtx")
 	}
 
 	ms := ctx.MultiStore()
