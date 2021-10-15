@@ -311,7 +311,7 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 			//record to map for next txs
 			app.senders[sender] = 0 //TODO delete
 		}
-
+		app.pin("txdecoder", false)
 		go func() {
 			var resp abci.ResponseDeliverTx
 			if NeedRerun {
@@ -354,9 +354,6 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 	} else {
 		gInfo, result, _, err = app.runTx(runTxModeDeliver, req.Tx, tx, LatestSimulateTxHeight, counterOfEvm)
 	}
-
-	app.pin("txdecoder", false)
-
 	if err != nil {
 		return sdkerrors.ResponseDeliverTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
 	}
