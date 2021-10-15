@@ -587,6 +587,10 @@ func (tx txTest) GetTxInfo(ctx sdk.Context) mempool.ExTxInfo {
 	}
 }
 
+func (tx txTest) GetGasPrice() *big.Int {
+	return big.NewInt(0)
+}
+
 const (
 	routeMsgCounter  = "msgCounter"
 	routeMsgCounter2 = "msgCounter2"
