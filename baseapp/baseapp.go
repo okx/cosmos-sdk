@@ -206,12 +206,12 @@ func (app *BaseApp) Logger() log.Logger {
 }
 
 // SetStartLogHandler set the startLog of the BaseApp.
-func (app *BaseApp) SetStartLogHandler(handle recordHandle)  {
+func (app *BaseApp) SetStartLogHandler(handle recordHandle) {
 	app.startLog = handle
 }
 
 // SetStopLogHandler set the endLog of the BaseApp.
-func (app *BaseApp) SetEndLogHandler(handle recordHandle)  {
+func (app *BaseApp) SetEndLogHandler(handle recordHandle) {
 	app.endLog = handle
 }
 
@@ -649,7 +649,7 @@ func (app *BaseApp) cacheTxContext(ctx sdk.Context, txBytes []byte) (sdk.Context
 }
 
 func (app *BaseApp) pin(tag string, start bool) {
-	if app.startLog != nil{
+	if app.startLog != nil {
 		if start {
 			app.startLog(tag)
 		} else {
@@ -691,7 +691,6 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	}
 
 	app.pin("initCtx", false)
-
 
 	ms := ctx.MultiStore()
 
@@ -772,7 +771,6 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		return sdk.GasInfo{}, nil, err
 	}
 	app.pin("valTxMsgs", false)
-
 
 	accountNonce := uint64(0)
 	if app.anteHandler != nil {

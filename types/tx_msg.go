@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"math/big"
 
 	"github.com/tendermint/tendermint/mempool"
 )
@@ -43,6 +44,9 @@ type Tx interface {
 
 	// Return tx sender and gas price
 	GetTxInfo(ctx Context) mempool.ExTxInfo
+
+	// Return tx gas price
+	GetGasPrice() *big.Int
 }
 
 //__________________________________________________________
