@@ -11,17 +11,17 @@ import (
 var isAlphaNumeric = regexp.MustCompile(`^[a-zA-Z0-9]+$`).MatchString
 
 func (app *BaseApp) Check(tx sdk.Tx) (sdk.GasInfo, *sdk.Result, error) {
-	gsInfo, r, _, e := app.runTx(runTxModeCheck, nil, tx, LatestSimulateTxHeight, 0)
+	gsInfo, r, _, e := app.runTx(runTxModeCheck, nil, tx, LatestSimulateTxHeight)
 	return gsInfo, r, e
 }
 
 func (app *BaseApp) Simulate(txBytes []byte, tx sdk.Tx, height int64) (sdk.GasInfo, *sdk.Result, error) {
-	gsInfo, r, _, e := app.runTx(runTxModeSimulate, txBytes, tx, height, 0)
+	gsInfo, r, _, e := app.runTx(runTxModeSimulate, txBytes, tx, height)
 	return gsInfo, r, e
 }
 
 func (app *BaseApp) Deliver(tx sdk.Tx) (sdk.GasInfo, *sdk.Result, error) {
-	gsInfo, r, _, e := app.runTx(runTxModeDeliver, nil, tx, LatestSimulateTxHeight, 0)
+	gsInfo, r, _, e := app.runTx(runTxModeDeliver, nil, tx, LatestSimulateTxHeight)
 	return gsInfo, r, e
 }
 

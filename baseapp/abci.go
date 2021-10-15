@@ -108,10 +108,7 @@ func (app *BaseApp) FilterPeerByID(info string) abci.ResponseQuery {
 // BeginBlock implements the ABCI application interface.
 func (app *BaseApp) BeginBlock(req abci.RequestBeginBlock) (res abci.ResponseBeginBlock) {
 	defer func() {
-		app.deliverCounter = 0
 		app.workgroup.Reset()
-		app.evmCounter = 0
-		app.senders = make(map[string]int, 0)
 		app.feeManage.Clear()
 	}()
 	if app.cms.TracingEnabled() {
@@ -194,7 +191,7 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 		panic(fmt.Sprintf("unknown RequestCheckTx type: %s", req.Type))
 	}
 
-	gInfo, result, _, err := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight, 0)
+	gInfo, result, _, err := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight)
 	if err != nil {
 		return sdkerrors.ResponseCheckTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
 	}
@@ -213,6 +210,9 @@ func (app *BaseApp) FinalTx() [][]byte {
 	feeMap := app.feeManage.GetFeeMap()
 	refundMap := app.feeManage.GetRefundFeeMap()
 	for tx, v := range feeMap {
+		if app.feeManage.txDetail[tx].AnteErr != nil {
+			continue
+		}
 		txFeeInBlock = txFeeInBlock.Add(v...)
 		if refundFee, ok := refundMap[tx]; ok {
 			txFeeInBlock = txFeeInBlock.Sub(refundFee)
@@ -222,16 +222,20 @@ func (app *BaseApp) FinalTx() [][]byte {
 	app.feeCollectorAccHandler(ctx, true, txFeeInBlock.Add(app.initPoolCoins...))
 	cache.Write()
 
-	evmReceipts := app.fixLog(app.feeManage.GetAnteFailMap())
-	res := make([][]byte, 0)
-	currentEvmIndex := 0
-	for index := 0; index < app.feeManage.txSizeInBlock; index++ {
-		if app.feeManage.isEvmTx[index] {
-			res = append(res, evmReceipts[currentEvmIndex])
-			currentEvmIndex++
-		} else {
-			res = append(res, []byte{})
+	tmp := make([][]string, 0)
+	for _, v := range app.feeManage.indexMapBytes {
+		errMsg := ""
+		if err := app.feeManage.txDetail[v].AnteErr; err != nil {
+			errMsg = err.Error()
 		}
+		tmp = append(tmp, []string{v, errMsg})
+	}
+
+	evmReceipts := app.fixLog(tmp)
+	res := make([][]byte, 0)
+	txLen := len(app.feeManage.txDetail)
+	for index := 0; index < txLen; index++ {
+		res = append(res, evmReceipts[index])
 	}
 	return res
 }
@@ -252,7 +256,7 @@ func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx, final bool, ev
 		mode  runTxMode
 	)
 	mode = runTxModeDeliverInAsync
-	g, r, m, e := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight, evmIdx)
+	g, r, m, e := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight)
 	if e != nil {
 		resp = sdkerrors.ResponseDeliverTx(e, gInfo.GasWanted, gInfo.GasUsed, app.trace)
 	} else {
@@ -265,7 +269,9 @@ func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx, final bool, ev
 		}
 	}
 
-	asyncExe := NewExecuteResult(resp, m, app.deliverCounter, evmIdx)
+	txx := bytes2str(req.Tx)
+
+	asyncExe := NewExecuteResult(resp, m, app.feeManage.txDetail[txx].IndexInBlock, app.feeManage.txDetail[txx].EvmIndex)
 	asyncExe.err = e
 	return asyncExe
 }
@@ -276,7 +282,6 @@ func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx, final bool, ev
 // Regardless of tx execution outcome, the ResponseDeliverTx will contain relevant
 // gas execution context.
 func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
-	NeedRerun := false
 	app.pin("DeliverTx", true)
 	defer app.pin("DeliverTx", false)
 
@@ -290,57 +295,30 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 		gInfo  sdk.GasInfo
 		result *sdk.Result
 	)
-	counterOfEvm := app.evmCounter
-	if app.isEvmTx(tx) {
-		app.evmCounter++
-	}
 
 	//just for asynchronous deliver tx
 	if app.isAsyncDeliverTx {
-		defer func() {
-			app.deliverCounter++
-		}()
-		counter := app.deliverCounter
-		ctx := app.getContextForTx(runTxModeDeliverInAsync, req.Tx)
-		sender := tx.GetTxInfo(ctx).Sender
-		_, ok := app.senders[sender]
-		if ok {
-			//target address has more than one tx in block per
-			NeedRerun = true
-		} else {
-			//record to map for next txs
-			app.senders[sender] = 0 //TODO delete
-		}
+
 		go func() {
 			var resp abci.ResponseDeliverTx
-			if NeedRerun {
-				//must rerun after async deliver
-				resp = sdkerrors.ResponseDeliverTx(sdk.ErrInvalidAddress("nil"), gInfo.GasWanted, gInfo.GasUsed, app.trace)
-				rerunRes := NewExecuteResult(resp, nil, counter, counterOfEvm)
-				rerunRes.err = sdk.ErrInvalidAddress("nil")
-				app.workgroup.Push(rerunRes)
-			} else {
-				g, r, m, e := app.runTx(runTxModeDeliverInAsync, req.Tx, tx, LatestSimulateTxHeight, counterOfEvm)
-				if e != nil {
-					resp = sdkerrors.ResponseDeliverTx(e, gInfo.GasWanted, gInfo.GasUsed, app.trace)
-				} else {
-					resp = abci.ResponseDeliverTx{
-						GasWanted: int64(g.GasWanted), // TODO: Should type accept unsigned ints?
-						GasUsed:   int64(g.GasUsed),   // TODO: Should type accept unsigned ints?
-						Log:       r.Log,
-						Data:      r.Data,
-						Events:    r.Events.ToABCIEvents(),
-					}
-				}
 
-				asyncExe := NewExecuteResult(resp, m, counter, counterOfEvm)
-				asyncExe.err = e
-				if r == nil {
-					//means failed to execute ante handler, may need to rerun antehandler in serial deliver
-					//asyncExe.reAnte = true
+			g, r, m, e := app.runTx(runTxModeDeliverInAsync, req.Tx, tx, LatestSimulateTxHeight)
+			if e != nil {
+				resp = sdkerrors.ResponseDeliverTx(e, gInfo.GasWanted, gInfo.GasUsed, app.trace)
+			} else {
+				resp = abci.ResponseDeliverTx{
+					GasWanted: int64(g.GasWanted), // TODO: Should type accept unsigned ints?
+					GasUsed:   int64(g.GasUsed),   // TODO: Should type accept unsigned ints?
+					Log:       r.Log,
+					Data:      r.Data,
+					Events:    r.Events.ToABCIEvents(),
 				}
-				app.workgroup.Push(asyncExe)
 			}
+
+			txIndex := app.feeManage.txDetail[bytes2str(req.Tx)]
+			asyncExe := NewExecuteResult(resp, m, txIndex.IndexInBlock, txIndex.EvmIndex)
+			asyncExe.err = e
+			app.workgroup.Push(asyncExe)
 		}()
 		return abci.ResponseDeliverTx{
 			GasWanted: int64(0), // TODO: Should type accept unsigned ints?
@@ -349,9 +327,8 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 			Data:      nil,
 			Events:    nil,
 		}
-
 	} else {
-		gInfo, result, _, err = app.runTx(runTxModeDeliver, req.Tx, tx, LatestSimulateTxHeight, counterOfEvm)
+		gInfo, result, _, err = app.runTx(runTxModeDeliver, req.Tx, tx, LatestSimulateTxHeight)
 	}
 	if err != nil {
 		return sdkerrors.ResponseDeliverTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)

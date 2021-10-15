@@ -37,7 +37,6 @@ type Context struct {
 	eventManager  *EventManager
 
 	isAsync      bool
-	evmTxIndex   uint32
 	accountNonce uint64
 }
 
@@ -60,7 +59,6 @@ func (c Context) IsReCheckTx() bool           { return c.recheckTx }
 func (c Context) MinGasPrices() DecCoins      { return c.minGasPrice }
 func (c Context) EventManager() *EventManager { return c.eventManager }
 func (c Context) IsAsync() bool               { return c.isAsync }
-func (c Context) EvmTransactionIndex() uint32 { return c.evmTxIndex } //TODO delete
 func (c Context) AccountNonce() uint64        { return c.accountNonce }
 
 // clone the header before returning
@@ -97,11 +95,6 @@ func (c Context) WithContext(ctx context.Context) Context {
 
 func (c Context) WithMultiStore(ms MultiStore) Context {
 	c.ms = ms
-	return c
-}
-
-func (c Context) WithEvmCounter(counter uint32) Context {
-	c.evmTxIndex = counter
 	return c
 }
 

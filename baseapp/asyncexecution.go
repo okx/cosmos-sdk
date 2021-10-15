@@ -18,7 +18,7 @@ func (e ExecuteResult) GetResponse() abci.ResponseDeliverTx {
 	return e.Resp
 }
 
-func (e ExecuteResult) Recheck(cache abci.AsyncCacheInterface) bool {
+func (e ExecuteResult) Conflict(cache abci.AsyncCacheInterface) bool {
 	rerun := false
 	if e.Ms == nil {
 		return true //TODO fix later
@@ -83,18 +83,14 @@ func NewExecuteResult(r abci.ResponseDeliverTx, ms sdk.CacheMultiStore, counter 
 }
 
 type AsyncWorkGroup struct {
-	WorkCh     chan ExecuteResult
-	ExecRes    map[int]abci.ExecuteRes
-	MaxCounter int
-	Cb         abci.AsyncCallBack
+	WorkCh chan ExecuteResult
+	Cb     abci.AsyncCallBack
 }
 
 func NewAsyncWorkGroup() *AsyncWorkGroup {
 	return &AsyncWorkGroup{
-		WorkCh:     make(chan ExecuteResult, 1),
-		ExecRes:    make(map[int]abci.ExecuteRes, 0),
-		MaxCounter: 0,
-		Cb:         nil,
+		WorkCh: make(chan ExecuteResult, 64),
+		Cb:     nil,
 	}
 }
 
@@ -104,27 +100,17 @@ func (a *AsyncWorkGroup) Push(item ExecuteResult) {
 
 func (a *AsyncWorkGroup) Start() {
 	go func() {
-		var exec ExecuteResult
 		for {
 			select {
-			case exec = <-a.WorkCh:
-				a.ExecRes[int(exec.Counter)] = exec
-				if len(a.ExecRes) == a.MaxCounter {
-					//call tendermint to update the deliver tx response
-					if a.Cb != nil {
-						a.Cb(a.ExecRes)
-					}
+			case exec := <-a.WorkCh:
+				if a.Cb != nil {
+					a.Cb(exec)
 				}
 			}
 		}
 	}()
 }
 
-func (a *AsyncWorkGroup) SetMaxCounter(MaxCounter int) {
-	a.MaxCounter = MaxCounter
-}
-
 func (a *AsyncWorkGroup) Reset() {
-	a.ExecRes = make(map[int]abci.ExecuteRes, 0)
-	a.MaxCounter = 0
+	//a.WorkCh = make(chan ExecuteResult, 300)
 }
