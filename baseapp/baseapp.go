@@ -258,7 +258,14 @@ func (f *feeManager) GetAnteFailMap() map[uint32]bool {
 
 type txMapping struct {
 	isEvm bool
+	// start record handle
+	startLog recordHandle
+
+	// end record handle
+	endLog recordHandle
 }
+
+type recordHandle func(string)
 
 // NewBaseApp returns a reference to an initialized BaseApp. It accepts a
 // variadic number of option functions, which act on the BaseApp to set
@@ -313,6 +320,16 @@ func (app *BaseApp) AppVersion() string {
 // Logger returns the logger of the BaseApp.
 func (app *BaseApp) Logger() log.Logger {
 	return app.logger
+}
+
+// SetStartLogHandler set the startLog of the BaseApp.
+func (app *BaseApp) SetStartLogHandler(handle recordHandle) {
+	app.startLog = handle
+}
+
+// SetStopLogHandler set the endLog of the BaseApp.
+func (app *BaseApp) SetEndLogHandler(handle recordHandle) {
+	app.endLog = handle
 }
 
 // MountStores mounts all IAVL or DB stores to the provided keys in the BaseApp
@@ -782,7 +799,15 @@ func (app *BaseApp) cacheTxContextWithCache(ctx sdk.Context, txBytes []byte, msC
 		).(sdk.CacheMultiStore)
 	}
 
-	return ctx.WithMultiStore(msCache), msCache
+}
+func (app *BaseApp) pin(tag string, start bool) {
+	if app.startLog != nil {
+		if start {
+			app.startLog(tag)
+		} else {
+			app.endLog(tag)
+		}
+	}
 }
 
 // runTx processes a transaction within a given execution mode, encoded transaction
@@ -794,10 +819,15 @@ func (app *BaseApp) cacheTxContextWithCache(ctx sdk.Context, txBytes []byte, msC
 // and execute successfully. An error is returned otherwise.
 func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int64, evmTxIndex uint32) (gInfo sdk.GasInfo, result *sdk.Result, msCacheList sdk.CacheMultiStore, err error) {
 	app.feeManage.SetFee(hex.EncodeToString(txBytes), app.getTxFee(tx))
+	app.pin("BaseApp-run", true)
+	defer app.pin("BaseApp-run", false)
+
 	// NOTE: GasWanted should be returned by the AnteHandler. GasUsed is
 	// determined by the GasMeter. We need access to the context to get the gas
 	// meter so we initialize upfront.
 	var gasWanted uint64
+	app.pin("initCtx", true)
+
 	var ctx sdk.Context
 	var runMsgCtx sdk.Context
 	var msCache sdk.CacheMultiStore
@@ -818,6 +848,8 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	}
 
 	ctx = ctx.WithEvmCounter(evmTxIndex)
+	app.pin("initCtx", false)
+
 	ms := ctx.MultiStore()
 
 	// only run the tx if there is block gas remaining
@@ -858,6 +890,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		}
 
 		gInfo = sdk.GasInfo{GasWanted: gasWanted, GasUsed: ctx.GasMeter().GasConsumed()}
+
 	}()
 
 	// If BlockGasMeter() panics it will be caught by the above recover and will
@@ -889,6 +922,9 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 				}
 			}
 			refundGas, err := app.GasRefundHandler(GasRefundCtx, tx)
+			app.pin("refund", true)
+			defer app.pin("refund", false)
+
 			if err != nil {
 				panic(err)
 			}
@@ -900,12 +936,15 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 				app.feeManage.SetRefundFee(hex.EncodeToString(txBytes), refundGas)
 			}
 		}
+
 	}()
+	app.pin("valTxMsgs", true)
 
 	msgs := tx.GetMsgs()
 	if err := validateBasicTxMsgs(msgs); err != nil {
 		return sdk.GasInfo{}, nil, nil, err
 	}
+	app.pin("valTxMsgs", false)
 
 	accountNonce := uint64(0)
 	if app.anteHandler != nil {
@@ -920,7 +959,10 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		// performance benefits, but it'll be more difficult to get right.
 		anteCtx, msCacheAnte = app.cacheTxContext(ctx, txBytes)
 		anteCtx = anteCtx.WithEventManager(sdk.NewEventManager())
+		app.pin("anteHandler", true)
 		newCtx, err := app.anteHandler(anteCtx, tx, mode == runTxModeSimulate)
+		app.pin("anteHandler", false)
+
 		accountNonce = newCtx.AccountNonce()
 		if !newCtx.IsZero() {
 			// At this point, newCtx.MultiStore() is cache-wrapped, or something else
@@ -965,11 +1007,14 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	// Attempt to execute all messages and only update state if all messages pass
 	// and we're in DeliverTx. Note, runMsgs will never return a reference to a
 	// Result if any single message fails or does not have a registered Handler.
+	app.pin("runMsgs", true)
+
 	result, err = app.runMsgs(runMsgCtx, msgs, mode)
 	runMsgEnd = true
 	if err == nil && (mode == runTxModeDeliver) {
 		msCache.Write()
 	}
+	app.pin("runMsgs", false)
 
 	if mode == runTxModeCheck {
 		exTxInfo := app.GetTxInfo(ctx, tx)
@@ -1029,6 +1074,8 @@ func (app *BaseApp) runMsgs(ctx sdk.Context, msgs []sdk.Msg, mode runTxMode) (*s
 		msgEvents := sdk.Events{
 			sdk.NewEvent(sdk.EventTypeMessage, sdk.NewAttribute(sdk.AttributeKeyAction, msg.Type())),
 		}
+		app.pin("AppendEvents", true)
+
 		msgEvents = msgEvents.AppendEvents(msgResult.Events)
 
 		// append message events, data and logs
@@ -1038,6 +1085,8 @@ func (app *BaseApp) runMsgs(ctx sdk.Context, msgs []sdk.Msg, mode runTxMode) (*s
 		events = events.AppendEvents(msgEvents)
 		data = append(data, msgResult.Data...)
 		msgLogs = append(msgLogs, sdk.NewABCIMessageLog(uint16(i), msgResult.Log, msgEvents))
+		app.pin("AppendEvents", false)
+
 	}
 
 	return &sdk.Result{

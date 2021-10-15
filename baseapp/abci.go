@@ -277,6 +277,11 @@ func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx, final bool, ev
 // gas execution context.
 func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
 	NeedRerun := false
+	app.pin("DeliverTx", true)
+	defer app.pin("DeliverTx", false)
+
+	app.pin("txdecoder", true)
+
 	tx, err := app.txDecoder(req.Tx)
 	if err != nil {
 		return sdkerrors.ResponseDeliverTx(err, 0, 0, app.trace)
@@ -349,6 +354,8 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 	} else {
 		gInfo, result, _, err = app.runTx(runTxModeDeliver, req.Tx, tx, LatestSimulateTxHeight, counterOfEvm)
 	}
+
+	app.pin("txdecoder", false)
 
 	if err != nil {
 		return sdkerrors.ResponseDeliverTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
