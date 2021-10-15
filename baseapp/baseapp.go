@@ -158,6 +158,11 @@ type BaseApp struct { // nolint: maligned
 	// trace set will return full stack traces for errors in ABCI Log field
 	trace bool
 
+	// start record handle
+	startLog recordHandle
+
+	// end record handle
+	endLog recordHandle
 	//counter of latest delivered tx
 	deliverCounter uint32 //TODO delete
 
@@ -798,7 +803,7 @@ func (app *BaseApp) cacheTxContextWithCache(ctx sdk.Context, txBytes []byte, msC
 			),
 		).(sdk.CacheMultiStore)
 	}
-
+	return ctx.WithMultiStore(msCache), msCache
 }
 func (app *BaseApp) pin(tag string, start bool) {
 	if app.startLog != nil {
