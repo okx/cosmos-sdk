@@ -794,7 +794,6 @@ func (app *BaseApp) cacheTxContextWithCache(ctx sdk.Context, txBytes []byte, msC
 // and execute successfully. An error is returned otherwise.
 func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int64, evmTxIndex uint32) (gInfo sdk.GasInfo, result *sdk.Result, msCacheList sdk.CacheMultiStore, err error) {
 	app.feeManage.SetFee(hex.EncodeToString(txBytes), app.getTxFee(tx))
-	fmt.Println("RunTx", evmTxIndex)
 	// NOTE: GasWanted should be returned by the AnteHandler. GasUsed is
 	// determined by the GasMeter. We need access to the context to get the gas
 	// meter so we initialize upfront.
@@ -937,14 +936,16 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		// GasMeter expected to be set in AnteHandler
 		gasWanted = ctx.GasMeter().Limit()
 		if mode == runTxModeDeliverInAsync {
-			app.feeManage.SetAnteFaile(ctx.EvmTransactionIndex(), err != nil)
+			if app.isEvmTx(tx) {
+				// many tx : ctx.evmTransactionIndex=0
+				app.feeManage.SetAnteFaile(ctx.EvmTransactionIndex(), err != nil)
+			}
 		}
 
 		if err != nil {
 			app.feeManage.deleteFeeKey(hex.EncodeToString(txBytes))
 			return gInfo, nil, nil, err
 		}
-
 
 		if mode == runTxModeDeliver {
 			msCacheAnte.Write()
