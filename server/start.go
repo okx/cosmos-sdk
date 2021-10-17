@@ -139,9 +139,8 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().Int64(tmiavl.FlagIavlCommitIntervalHeight, 100, "Max interval to commit node cache into leveldb")
 	cmd.Flags().Int64(tmiavl.FlagIavlMinCommitItemCount, 500000, "Min nodes num to triggle node cache commit")
 	cmd.Flags().Int(tmiavl.FlagIavlHeightOrphansCacheSize, 8, "Max orphan version to cache in memory")
-	cmd.Flags().Int(tmiavl.FlagIavlMaxCommittedHeightNum, 8, "Max committed version to cache in memory")
+	cmd.Flags().Int(tmiavl.FlagIavlMaxCommittedHeightNum, 30, "Max committed version to cache in memory")
 	cmd.Flags().Bool(tmiavl.FlagIavlEnableAsyncCommit, false, "Enable async commit")
-	cmd.Flags().Bool(tmiavl.FlagIavlEnablePruningHistoryState, false, "Enable pruning history state")
 	cmd.Flags().Int(tmdb.FlagLevelDBCacheSize, 128, "The amount of memory in megabytes to allocate to leveldb")
 	cmd.Flags().Int(tmdb.FlagLevelDBHandlersNum, 1024, "The number of files handles to allocate to the open database files")
 	// Don`t use cmd.Flags().*Var functions(such as cmd.Flags.IntVar) here, because it doesn't work with environment variables.
@@ -211,7 +210,6 @@ func startInProcess(ctx *Context, cdc *codec.Codec, appCreator AppCreator, appSt
 	cfg := ctx.Config
 	home := cfg.RootDir
 	//startInProcess hooker
-	ctx.Logger.Info("Enable Async Commit", tmiavl.FlagIavlEnableAsyncCommit, tmiavl.EnableAsyncCommit)
 	callHooker(FlagHookstartInProcess, ctx)
 
 	traceWriterFile := viper.GetString(flagTraceStore)
@@ -315,7 +313,6 @@ func setExternalPackageValue(cmd *cobra.Command) {
 	tmiavl.HeightOrphansCacheSize = viper.GetInt(tmiavl.FlagIavlHeightOrphansCacheSize)
 	tmiavl.MaxCommittedHeightNum = viper.GetInt(tmiavl.FlagIavlMaxCommittedHeightNum)
 	tmiavl.EnableAsyncCommit = viper.GetBool(tmiavl.FlagIavlEnableAsyncCommit)
-	tmiavl.EnablePruningHistoryState = viper.GetBool(tmiavl.FlagIavlEnablePruningHistoryState)
 	tmdb.LevelDBCacheSize = viper.GetInt(tmdb.FlagLevelDBCacheSize)
 	tmdb.LevelDBHandlersNum = viper.GetInt(tmdb.FlagLevelDBHandlersNum)
 }
