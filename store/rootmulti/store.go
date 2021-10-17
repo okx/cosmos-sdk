@@ -639,10 +639,19 @@ func (rs *Store) GetDBWriteCount() int {
 	return count
 }
 
+
 func (rs *Store) GetDBReadCount() int {
 	count := 0
 	for _, store := range rs.stores {
 		count += store.GetDBReadCount()
+	}
+	return count
+}
+
+func (rs *Store) GetNodeReadCount() int {
+	count := 0
+	for _, store := range rs.stores {
+		count += store.GetNodeReadCount()
 	}
 	return count
 }

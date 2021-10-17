@@ -106,6 +106,9 @@ func (ms multiStore) GetDBWriteCount() int {
 func (ms multiStore) GetDBReadCount() int {
 	return 0
 }
+func (ms multiStore) GetNodeReadCount() int {
+	return 0
+}
 
 func (ms multiStore) ResetCount() {
 }

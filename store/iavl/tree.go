@@ -25,6 +25,7 @@ type (
 		GetModuleName() string
 		GetDBWriteCount() int
 		GetDBReadCount() int
+		GetNodeReadCount() int
 		ResetCount()
 		DeleteVersion(version int64) error
 		DeleteVersions(versions ...int64) error
@@ -108,6 +109,9 @@ func (it *immutableTree) GetDBWriteCount() int {
 func (it *immutableTree) GetDBReadCount() int {
 	return 0
 }
+
+func (it *immutableTree) GetNodeReadCount() int {return 0}
+
 
 func (it *immutableTree) ResetCount() {
 

@@ -49,6 +49,9 @@ func (ts *Store) GetDBWriteCount() int {
 func (ts *Store) GetDBReadCount() int {
 	return 0
 }
+func (ts *Store) GetNodeReadCount() int {
+	return 0
+}
 
 func (ts *Store) ResetCount() {
 }

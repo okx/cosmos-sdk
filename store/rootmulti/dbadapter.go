@@ -35,5 +35,6 @@ func (cdsa commitDBStoreAdapter) SetPruning(_ types.PruningOptions) {}
 func (cdsa commitDBStoreAdapter) GetDBWriteCount() int { return 0 }
 
 func (cdsa commitDBStoreAdapter) GetDBReadCount() int { return 0 }
+func (cdsa commitDBStoreAdapter) GetNodeReadCount() int { return 0 }
 
 func (cdsa commitDBStoreAdapter) ResetCount() {}
