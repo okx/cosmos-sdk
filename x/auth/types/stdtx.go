@@ -181,6 +181,15 @@ func (tx StdTx) GetTxInfo(ctx sdk.Context) mempool.ExTxInfo {
 	return exInfo
 }
 
+// GetGasPrice return gas price
+func (tx StdTx) GetGasPrice() *big.Int {
+	gasPrices := tx.Fee.GasPrices()
+	if len(gasPrices) == 0 {
+		return big.NewInt(0)
+	}
+	return tx.Fee.GasPrices()[0].Amount.BigInt()
+}
+
 //__________________________________________________________
 
 // StdFee includes the amount of coins paid in fees and the maximum
