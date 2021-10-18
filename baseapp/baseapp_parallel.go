@@ -9,6 +9,33 @@ import (
 	"unsafe"
 )
 
+func (app *BaseApp) PrepareParallelTxs(cb abci.AsyncCallBack, txs [][]byte) {
+	app.parallelTxManage.workgroup.Cb = cb
+	app.parallelTxManage.isAsyncDeliverTx = true
+	evmIndex := uint32(0)
+	for k, v := range txs {
+		tx, err := app.txDecoder(v)
+		if err != nil {
+			panic(err)
+		}
+		t := &txStatus{
+			indexInBlock: uint32(k),
+		}
+		fee, isEvm := app.getTxFee(tx)
+		if isEvm {
+			t.evmIndex = evmIndex
+			t.isEvmTx = true
+			evmIndex++
+		}
+
+		app.parallelTxManage.SetFee(bytes2str(v), fee)
+		vString := bytes2str(v)
+
+		app.parallelTxManage.txStatus[vString] = t
+		app.parallelTxManage.indexMapBytes = append(app.parallelTxManage.indexMapBytes, vString)
+	}
+}
+
 func (app *BaseApp) EndParallelTxs() [][]byte {
 	txFeeInBlock := sdk.Coins{}
 	feeMap := app.parallelTxManage.GetFeeMap()
@@ -26,23 +53,16 @@ func (app *BaseApp) EndParallelTxs() [][]byte {
 	app.updateFeeCollectorAccHandler(ctx, txFeeInBlock)
 	cache.Write()
 
-	tmp := make([][]string, 0)
+	txExecStats := make([][]string, 0)
 	for _, v := range app.parallelTxManage.indexMapBytes {
 		errMsg := ""
 		if err := app.parallelTxManage.txStatus[v].anteErr; err != nil {
 			errMsg = err.Error()
 		}
-		tmp = append(tmp, []string{v, errMsg})
-	}
-
-	evmReceipts := app.logFix(tmp)
-	res := make([][]byte, 0)
-	txLen := len(app.parallelTxManage.txStatus)
-	for index := 0; index < txLen; index++ {
-		res = append(res, evmReceipts[index])
+		txExecStats = append(txExecStats, []string{v, errMsg})
 	}
 	app.parallelTxManage.Clear()
-	return res
+	return app.logFix(txExecStats)
 }
 
 //we reuse the nonce that changed by the last async call
@@ -71,39 +91,10 @@ func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx) abci.ExecuteRe
 		}
 	}
 
-	txx := bytes2str(req.Tx)
-
-	asyncExe := NewExecuteResult(resp, m, app.parallelTxManage.txStatus[txx].indexInBlock, app.parallelTxManage.txStatus[txx].evmIndex)
+	txStatus := app.parallelTxManage.txStatus[bytes2str(req.Tx)]
+	asyncExe := NewExecuteResult(resp, m, txStatus.indexInBlock, txStatus.evmIndex)
 	asyncExe.err = e
 	return asyncExe
-}
-
-func (app *BaseApp) PrepareForParallelTxs(cb abci.AsyncCallBack, txs [][]byte) {
-	app.parallelTxManage.workgroup.Cb = cb
-	app.parallelTxManage.isAsyncDeliverTx = true
-	evmIndex := uint32(0)
-	for k, v := range txs {
-		tx, err := app.txDecoder(v)
-		if err != nil {
-			panic(err)
-		}
-		t := &txStatus{
-			indexInBlock: uint32(k),
-		}
-		fee, isEvm := app.getTxFee(tx)
-		if isEvm {
-			t.evmIndex = evmIndex
-			t.isEvmTx = true
-			evmIndex++
-		}
-
-		app.parallelTxManage.SetFee(bytes2str(v), fee)
-		vString := bytes2str(v)
-
-		app.parallelTxManage.txStatus[vString] = t
-		app.parallelTxManage.indexMapBytes = append(app.parallelTxManage.indexMapBytes, vString)
-	}
-
 }
 
 type ExecuteResult struct {
@@ -136,7 +127,6 @@ func (e ExecuteResult) Conflict(cache abci.AsyncCacheInterface) bool {
 
 var (
 	whiteAccountList = map[string]bool{
-		//"676c6f62616c4163636f756e744e756d626572":     true, //globalAccountNumber
 		"01f1829676db577682e944fc3493d451b67ff3e29f": true, //fee
 	}
 )

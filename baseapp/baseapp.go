@@ -662,18 +662,6 @@ func (app *BaseApp) cacheTxContext(ctx sdk.Context, txBytes []byte) (sdk.Context
 	return ctx.WithMultiStore(msCache), msCache
 }
 
-func (app *BaseApp) cacheTxContextWithCache(ctx sdk.Context, txBytes []byte, msCache sdk.CacheMultiStore) (sdk.Context, sdk.CacheMultiStore) {
-	if msCache.TracingEnabled() {
-		msCache = msCache.SetTracingContext(
-			sdk.TraceContext(
-				map[string]interface{}{
-					"txHash": fmt.Sprintf("%X", tmhash.Sum(txBytes)),
-				},
-			),
-		).(sdk.CacheMultiStore)
-	}
-	return ctx.WithMultiStore(msCache), msCache
-}
 func (app *BaseApp) pin(tag string, start bool) {
 	if app.startLog != nil {
 		if start {
@@ -705,7 +693,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	var runMsgCtx sdk.Context
 	var msCache sdk.CacheMultiStore
 	var msCacheAnte sdk.CacheMultiStore
-	var runMsgEnd bool
+	var runMsgFinish bool
 	// simulate tx
 	startHeight := tmtypes.GetStartBlockHeight()
 	if mode == runTxModeSimulate && height > startHeight && height < app.LastBlockHeight() {
@@ -783,20 +771,20 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	}()
 
 	defer func() {
+		app.pin("refund", true)
+		defer app.pin("refund", false)
 		if (mode == runTxModeDeliver || mode == runTxModeDeliverInAsync) && app.GasRefundHandler != nil {
 			var GasRefundCtx sdk.Context
 			if mode == runTxModeDeliver {
 				GasRefundCtx, msCache = app.cacheTxContext(ctx, txBytes)
 			} else if mode == runTxModeDeliverInAsync {
 				GasRefundCtx = runMsgCtx
-				if msCache == nil || !runMsgEnd { // why
-					GasRefundCtx, msCache = app.cacheTxContextWithCache(ctx, txBytes, msCacheAnte.CacheMultiStore())
+				if msCache == nil || !runMsgFinish { // case: panic when runMsg
+					msCache = msCacheAnte.CacheMultiStore()
+					GasRefundCtx = ctx.WithMultiStore(msCache)
 				}
 			}
 			refundGas, err := app.GasRefundHandler(GasRefundCtx, tx)
-			app.pin("refund", true)
-			defer app.pin("refund", false)
-
 			if err != nil {
 				panic(err)
 			}
@@ -865,7 +853,8 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	// is doubly cached-wrapped.
 
 	if mode == runTxModeDeliverInAsync {
-		runMsgCtx, msCache = app.cacheTxContextWithCache(ctx, txBytes, msCacheAnte.CacheMultiStore())
+		msCache = msCacheAnte.CacheMultiStore()
+		runMsgCtx = ctx.WithMultiStore(msCache)
 	} else {
 		runMsgCtx, msCache = app.cacheTxContext(ctx, txBytes)
 	}
@@ -876,7 +865,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	app.pin("runMsgs", true)
 
 	result, err = app.runMsgs(runMsgCtx, msgs, mode)
-	runMsgEnd = true
+	runMsgFinish = true
 	if err == nil && (mode == runTxModeDeliver) {
 		msCache.Write()
 	}

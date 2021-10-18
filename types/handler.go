@@ -13,7 +13,7 @@ type AccHandler func(ctx Context, address AccAddress) (nonce uint64)
 
 type UpdateFeeCollectorAccHandler func(ctx Context, balance Coins)
 
-type LogFix func(isAnteFailed [][]string) (logs map[int][]byte)
+type LogFix func(isAnteFailed [][]string) (logs [][]byte)
 
 type GetTxFeeHandler func(tx Tx) (Coins, bool)
 
