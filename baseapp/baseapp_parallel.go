@@ -50,7 +50,9 @@ func (app *BaseApp) EndParallelTxs() [][]byte {
 		}
 	}
 	ctx, cache := app.cacheTxContext(app.getContextForTx(runTxModeDeliverInAsync, []byte{}), []byte{})
-	app.updateFeeCollectorAccHandler(ctx, txFeeInBlock)
+	if err := app.updateFeeCollectorAccHandler(ctx, txFeeInBlock); err != nil {
+		panic(err)
+	}
 	cache.Write()
 
 	txExecStats := make([][]string, 0)
