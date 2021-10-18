@@ -11,7 +11,7 @@ type GasRefundHandler func(ctx Context, tx Tx) (fee Coins, err error)
 
 type AccHandler func(ctx Context, address AccAddress) (nonce uint64)
 
-type FeeCollectorAccHandler func(ctx Context, updateValue bool, balance Coins) (balances Coins)
+type UpdateFeeCollectorAccHandler func(ctx Context, balance Coins)
 
 type LogFix func(isAnteFailed [][]string) (logs map[int][]byte)
 

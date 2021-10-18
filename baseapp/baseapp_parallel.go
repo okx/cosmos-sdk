@@ -23,7 +23,7 @@ func (app *BaseApp) EndParallelTxs() [][]byte {
 		}
 	}
 	ctx, cache := app.cacheTxContext(app.getContextForTx(runTxModeDeliverInAsync, []byte{}), []byte{})
-	app.feeCollectorAccHandler(ctx, true, txFeeInBlock.Add(app.initPoolCoins...))
+	app.updateFeeCollectorAccHandler(ctx, txFeeInBlock)
 	cache.Write()
 
 	tmp := make([][]string, 0)
@@ -81,8 +81,6 @@ func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx) abci.ExecuteRe
 func (app *BaseApp) PrepareForParallelTxs(cb abci.AsyncCallBack, txs [][]byte) {
 	app.parallelTxManage.workgroup.Cb = cb
 	app.parallelTxManage.isAsyncDeliverTx = true
-	app.initPoolCoins = app.feeCollectorAccHandler(app.getContextForTx(runTxModeDeliverInAsync, nil), false, sdk.Coins{})
-
 	evmIndex := uint32(0)
 	for k, v := range txs {
 		tx, err := app.txDecoder(v)
