@@ -107,10 +107,6 @@ func (app *BaseApp) FilterPeerByID(info string) abci.ResponseQuery {
 
 // BeginBlock implements the ABCI application interface.
 func (app *BaseApp) BeginBlock(req abci.RequestBeginBlock) (res abci.ResponseBeginBlock) {
-	defer func() {
-		app.workgroup.Reset()
-		app.feeManage.Clear()
-	}()
 	if app.cms.TracingEnabled() {
 		app.cms.SetTracingContext(sdk.TraceContext(
 			map[string]interface{}{"blockHeight": req.Header.Height},
@@ -203,77 +199,6 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 		Data:      result.Data,
 		Events:    result.Events.ToABCIEvents(),
 	}
-}
-
-func (app *BaseApp) FinalTx() [][]byte {
-	txFeeInBlock := sdk.Coins{}
-	feeMap := app.feeManage.GetFeeMap()
-	refundMap := app.feeManage.GetRefundFeeMap()
-	for tx, v := range feeMap {
-		if app.feeManage.txDetail[tx].AnteErr != nil {
-			continue
-		}
-		txFeeInBlock = txFeeInBlock.Add(v...)
-		if refundFee, ok := refundMap[tx]; ok {
-			txFeeInBlock = txFeeInBlock.Sub(refundFee)
-		}
-	}
-	ctx, cache := app.cacheTxContext(app.getContextForTx(runTxModeDeliverInAsync, []byte{}), []byte{})
-	app.feeCollectorAccHandler(ctx, true, txFeeInBlock.Add(app.initPoolCoins...))
-	cache.Write()
-
-	tmp := make([][]string, 0)
-	for _, v := range app.feeManage.indexMapBytes {
-		errMsg := ""
-		if err := app.feeManage.txDetail[v].AnteErr; err != nil {
-			errMsg = err.Error()
-		}
-		tmp = append(tmp, []string{v, errMsg})
-	}
-
-	evmReceipts := app.fixLog(tmp)
-	res := make([][]byte, 0)
-	txLen := len(app.feeManage.txDetail)
-	for index := 0; index < txLen; index++ {
-		res = append(res, evmReceipts[index])
-	}
-	return res
-}
-
-//we reuse the nonce that changed by the last async call
-//if last ante handler has been failed, we need rerun it ? or not?
-func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx, final bool, evmIdx uint32) abci.ExecuteRes {
-	if final {
-		panic("need delete")
-	}
-	tx, err := app.txDecoder(req.Tx)
-	if err != nil {
-		return nil
-	}
-	var (
-		gInfo sdk.GasInfo
-		resp  abci.ResponseDeliverTx
-		mode  runTxMode
-	)
-	mode = runTxModeDeliverInAsync
-	g, r, m, e := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight)
-	if e != nil {
-		resp = sdkerrors.ResponseDeliverTx(e, gInfo.GasWanted, gInfo.GasUsed, app.trace)
-	} else {
-		resp = abci.ResponseDeliverTx{
-			GasWanted: int64(g.GasWanted), // TODO: Should type accept unsigned ints?
-			GasUsed:   int64(g.GasUsed),   // TODO: Should type accept unsigned ints?
-			Log:       r.Log,
-			Data:      r.Data,
-			Events:    r.Events.ToABCIEvents(),
-		}
-	}
-
-	txx := bytes2str(req.Tx)
-
-	asyncExe := NewExecuteResult(resp, m, app.feeManage.txDetail[txx].IndexInBlock, app.feeManage.txDetail[txx].EvmIndex)
-	asyncExe.err = e
-	return asyncExe
 }
 
 // DeliverTx implements the ABCI interface and executes a tx in DeliverTx mode.

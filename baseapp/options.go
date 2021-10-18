@@ -120,34 +120,6 @@ func (app *BaseApp) SetAccHandler(ah sdk.AccHandler) {
 	app.AccHandler = ah
 }
 
-func (app *BaseApp) SetIsEvmTxHandler(ch sdk.IsEvmTx) {
-	if app.sealed {
-		panic("SetIsEvmTxHandler() on sealed BaseApp")
-	}
-	app.isEvmTx = ch
-}
-
-func (app *BaseApp) SetChangeBalanceHandler(ah sdk.FeeCollectorAccHandler) {
-	if app.sealed {
-		panic("SetChangeBalanceHandler() on sealed BaseApp")
-	}
-	app.feeCollectorAccHandler = ah
-}
-
-func (app *BaseApp) SetGetTxFeeHandler(gt sdk.GetTxFeeHandler) {
-	if app.sealed {
-		panic("SetGetTxFee() on sealed BaseApp")
-	}
-	app.getTxFee = gt
-}
-
-func (app *BaseApp) SetFixLog(fg sdk.LogFix) {
-	if app.sealed {
-		panic("SetFixLog() on sealed BaseApp")
-	}
-	app.fixLog = fg
-}
-
 func (app *BaseApp) SetAddrPeerFilter(pf sdk.PeerFilter) {
 	if app.sealed {
 		panic("SetAddrPeerFilter() on sealed BaseApp")
@@ -189,4 +161,14 @@ func (app *BaseApp) SetRouter(router sdk.Router) {
 		panic("SetRouter() on sealed BaseApp")
 	}
 	app.router = router
+}
+
+func (app *BaseApp) SetPallTxHandler(isEvmTx sdk.IsEvmTx, feeCollectt sdk.FeeCollectorAccHandler, txFee sdk.GetTxFeeHandler, fixLog sdk.LogFix) {
+	if app.sealed {
+		panic("SetPallTxHandler() on sealed BaseApp")
+	}
+	app.isEvmTx = isEvmTx
+	app.feeCollectorAccHandler = feeCollectt
+	app.getTxFee = txFee
+	app.fixLog = fixLog
 }

@@ -21,6 +21,3 @@ type EndBlocker func(ctx Context, req abci.RequestEndBlock) abci.ResponseEndBloc
 
 // PeerFilter responds to p2p filtering queries from Tendermint
 type PeerFilter func(info string) abci.ResponseQuery
-
-// IsEvmTx will return true if target tx is a type of evm transaction
-type IsEvmTx func(Tx) bool

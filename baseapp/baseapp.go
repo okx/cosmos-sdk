@@ -4,7 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/store"
+	"github.com/cosmos/cosmos-sdk/store/rootmulti"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/gogo/protobuf/proto"
+	"github.com/spf13/viper"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/crypto/tmhash"
@@ -18,15 +24,6 @@ import (
 	"reflect"
 	"runtime/debug"
 	"strings"
-	"sync"
-	"unsafe"
-
-	"github.com/cosmos/cosmos-sdk/store"
-	"github.com/cosmos/cosmos-sdk/store/rootmulti"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/spf13/viper"
 )
 
 const (
@@ -114,8 +111,7 @@ type BaseApp struct { // nolint: maligned
 	endBlocker     sdk.EndBlocker   // logic to run after all txs, and to determine valset changes
 	addrPeerFilter sdk.PeerFilter   // filter peers by address and port
 	idPeerFilter   sdk.PeerFilter   // filter peers by node ID
-
-	fauxMerkleMode bool // if true, IAVL MountStores uses MountStoresDB for simulation speed.
+	fauxMerkleMode bool             // if true, IAVL MountStores uses MountStoresDB for simulation speed.
 
 	isEvmTx                sdk.IsEvmTx
 	feeCollectorAccHandler sdk.FeeCollectorAccHandler
@@ -170,70 +166,6 @@ type BaseApp struct { // nolint: maligned
 	isAsyncDeliverTx bool
 	initPoolCoins    sdk.Coins
 	feeManage        *feeManager
-}
-
-type feeManager struct {
-	mu sync.RWMutex
-
-	fee       map[string]sdk.Coins
-	refundFee map[string]sdk.Coins
-
-	txDetail      map[string]*txIndex
-	indexMapBytes []string
-}
-
-type txIndex struct {
-	isEvmTx      bool
-	EvmIndex     uint32
-	IndexInBlock uint32
-	AnteErr      error
-}
-
-func bytes2str(b []byte) string {
-	return *(*string)(unsafe.Pointer(&b))
-}
-
-func NewFeeManager() *feeManager {
-	return &feeManager{
-		fee:       make(map[string]sdk.Coins),
-		refundFee: make(map[string]sdk.Coins),
-
-		txDetail:      make(map[string]*txIndex),
-		indexMapBytes: make([]string, 0),
-	}
-}
-
-func (f *feeManager) Clear() {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.fee = make(map[string]sdk.Coins)
-	f.refundFee = make(map[string]sdk.Coins)
-
-	f.txDetail = make(map[string]*txIndex)
-	f.indexMapBytes = make([]string, 0)
-
-}
-func (f *feeManager) SetFee(key string, value sdk.Coins) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.fee[key] = value
-}
-
-func (f *feeManager) GetFeeMap() map[string]sdk.Coins {
-	f.mu.RLock()
-	defer f.mu.RUnlock()
-	return f.fee
-}
-func (f *feeManager) SetRefundFee(key string, value sdk.Coins) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.refundFee[key] = value
-}
-
-func (f *feeManager) GetRefundFeeMap() map[string]sdk.Coins {
-	f.mu.RLock()
-	defer f.mu.RUnlock()
-	return f.refundFee
 }
 
 type recordHandle func(string)
@@ -597,36 +529,6 @@ func (app *BaseApp) validateHeight(req abci.RequestBeginBlock) error {
 	return nil
 }
 
-func (app *BaseApp) SetAsyncDeliverTxCb(cb abci.AsyncCallBack) {
-	app.workgroup.Cb = cb
-}
-
-func (app *BaseApp) SetAsyncConfig(sw bool, txs [][]byte) {
-	app.isAsyncDeliverTx = true
-	app.initPoolCoins = app.feeCollectorAccHandler(app.getContextForTx(runTxModeDeliverInAsync, nil), false, sdk.Coins{})
-
-	evmIndex := uint32(0)
-	for k, v := range txs {
-		tx, err := app.txDecoder(v)
-		if err != nil {
-			panic(err)
-		}
-		t := &txIndex{
-			IndexInBlock: uint32(k),
-		}
-		if app.isEvmTx(tx) {
-			t.EvmIndex = evmIndex
-			t.isEvmTx = true
-			evmIndex++
-		}
-		vString := bytes2str(v)
-
-		app.feeManage.txDetail[vString] = t
-		app.feeManage.indexMapBytes = append(app.feeManage.indexMapBytes, vString)
-	}
-
-}
-
 // validateBasicTxMsgs executes basic validator calls for messages.
 func validateBasicTxMsgs(msgs []sdk.Msg) error {
 	if len(msgs) == 0 {
@@ -906,11 +808,8 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 			if err != nil {
 				panic(err)
 			}
-			if mode == runTxModeDeliver {
-				msCache.Write()
-			}
+			msCache.Write()
 			if mode == runTxModeDeliverInAsync {
-				msCache.Write()
 				app.feeManage.SetRefundFee(bytes2str(txBytes), refundGas)
 			}
 		}
