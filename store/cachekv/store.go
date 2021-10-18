@@ -67,6 +67,21 @@ func (store *Store) Get(key []byte) (value []byte) {
 	return value
 }
 
+func (store *Store) IteratorCache(cb func(key, value []byte, isDirty bool) bool) {
+	if cb == nil || len(store.cache) <= 0 {
+		return
+	}
+	store.mtx.Lock()
+	defer store.mtx.Unlock()
+
+	for key, v := range store.cache {
+		if !cb([]byte(key), v.value, v.dirty) {
+			return
+		}
+	}
+	return
+}
+
 // Implements types.KVStore.
 func (store *Store) Set(key []byte, value []byte) {
 	store.mtx.Lock()

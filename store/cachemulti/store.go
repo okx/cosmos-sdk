@@ -115,6 +115,13 @@ func (cms Store) Write() {
 	}
 }
 
+func (cms Store) IteratorCache(cb func(key, value []byte, isDirty bool) bool) {
+	cms.db.IteratorCache(cb)
+	for _, store := range cms.stores {
+		store.IteratorCache(cb)
+	}
+}
+
 // Implements CacheWrapper.
 func (cms Store) CacheWrap() types.CacheWrap {
 	return cms.CacheMultiStore().(types.CacheWrap)
