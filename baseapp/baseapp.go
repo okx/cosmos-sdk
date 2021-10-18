@@ -4,6 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"reflect"
+	"runtime/debug"
+	"strings"
+	
 	"github.com/cosmos/cosmos-sdk/store"
 	"github.com/cosmos/cosmos-sdk/store/rootmulti"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
@@ -19,11 +25,6 @@ import (
 	tmhttp "github.com/tendermint/tendermint/rpc/client/http"
 	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
-	"io/ioutil"
-	"os"
-	"reflect"
-	"runtime/debug"
-	"strings"
 )
 
 const (
@@ -854,7 +855,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		gasWanted = ctx.GasMeter().Limit()
 
 		if mode == runTxModeDeliverInAsync {
-			app.feeManage.txDetail[bytes2str(txBytes)].AnteErr = err
+			app.feeManage.txStatus[bytes2str(txBytes)].anteErr = err
 		}
 
 		if err != nil {

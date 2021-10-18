@@ -240,8 +240,8 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 				}
 			}
 
-			txIndex := app.feeManage.txDetail[bytes2str(req.Tx)]
-			asyncExe := NewExecuteResult(resp, m, txIndex.IndexInBlock, txIndex.EvmIndex)
+			txIndex := app.feeManage.txStatus[bytes2str(req.Tx)]
+			asyncExe := NewExecuteResult(resp, m, txIndex.indexInBlock, txIndex.evmIndex)
 			asyncExe.err = e
 			app.workgroup.Push(asyncExe)
 		}()

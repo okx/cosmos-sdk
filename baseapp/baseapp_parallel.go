@@ -9,12 +9,12 @@ import (
 	"unsafe"
 )
 
-func (app *BaseApp) FinalTx() [][]byte {
+func (app *BaseApp) EndParallelTxs() [][]byte {
 	txFeeInBlock := sdk.Coins{}
 	feeMap := app.feeManage.GetFeeMap()
 	refundMap := app.feeManage.GetRefundFeeMap()
 	for tx, v := range feeMap {
-		if app.feeManage.txDetail[tx].AnteErr != nil {
+		if app.feeManage.txStatus[tx].anteErr != nil {
 			continue
 		}
 		txFeeInBlock = txFeeInBlock.Add(v...)
@@ -29,7 +29,7 @@ func (app *BaseApp) FinalTx() [][]byte {
 	tmp := make([][]string, 0)
 	for _, v := range app.feeManage.indexMapBytes {
 		errMsg := ""
-		if err := app.feeManage.txDetail[v].AnteErr; err != nil {
+		if err := app.feeManage.txStatus[v].anteErr; err != nil {
 			errMsg = err.Error()
 		}
 		tmp = append(tmp, []string{v, errMsg})
@@ -37,7 +37,7 @@ func (app *BaseApp) FinalTx() [][]byte {
 
 	evmReceipts := app.fixLog(tmp)
 	res := make([][]byte, 0)
-	txLen := len(app.feeManage.txDetail)
+	txLen := len(app.feeManage.txStatus)
 	for index := 0; index < txLen; index++ {
 		res = append(res, evmReceipts[index])
 	}
@@ -73,16 +73,13 @@ func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx) abci.ExecuteRe
 
 	txx := bytes2str(req.Tx)
 
-	asyncExe := NewExecuteResult(resp, m, app.feeManage.txDetail[txx].IndexInBlock, app.feeManage.txDetail[txx].EvmIndex)
+	asyncExe := NewExecuteResult(resp, m, app.feeManage.txStatus[txx].indexInBlock, app.feeManage.txStatus[txx].evmIndex)
 	asyncExe.err = e
 	return asyncExe
 }
 
-func (app *BaseApp) SetAsyncDeliverTxCb(cb abci.AsyncCallBack) {
+func (app *BaseApp) PrepareForParallelTxs(cb abci.AsyncCallBack, txs [][]byte) {
 	app.workgroup.Cb = cb
-}
-
-func (app *BaseApp) SetAsyncConfig(sw bool, txs [][]byte) {
 	app.isAsyncDeliverTx = true
 	app.initPoolCoins = app.feeCollectorAccHandler(app.getContextForTx(runTxModeDeliverInAsync, nil), false, sdk.Coins{})
 
@@ -92,12 +89,12 @@ func (app *BaseApp) SetAsyncConfig(sw bool, txs [][]byte) {
 		if err != nil {
 			panic(err)
 		}
-		t := &txIndex{
-			IndexInBlock: uint32(k),
+		t := &txStatus{
+			indexInBlock: uint32(k),
 		}
 		fee, isEvm := app.getTxFee(tx)
 		if isEvm {
-			t.EvmIndex = evmIndex
+			t.evmIndex = evmIndex
 			t.isEvmTx = true
 			evmIndex++
 		}
@@ -105,7 +102,7 @@ func (app *BaseApp) SetAsyncConfig(sw bool, txs [][]byte) {
 		app.feeManage.SetFee(bytes2str(v), fee)
 		vString := bytes2str(v)
 
-		app.feeManage.txDetail[vString] = t
+		app.feeManage.txStatus[vString] = t
 		app.feeManage.indexMapBytes = append(app.feeManage.indexMapBytes, vString)
 	}
 
@@ -159,10 +156,6 @@ func (e ExecuteResult) Collect(cache abci.AsyncCacheInterface) {
 	})
 }
 
-func (e ExecuteResult) Error() error {
-	return e.err
-}
-
 func (e ExecuteResult) GetCounter() uint32 {
 	return e.Counter
 }
@@ -172,10 +165,6 @@ func (e ExecuteResult) Commit() {
 		return
 	}
 	e.Ms.Write()
-}
-
-func (e ExecuteResult) GetEvmTxCounter() uint32 {
-	return e.evmCounter
 }
 
 func NewExecuteResult(r abci.ResponseDeliverTx, ms sdk.CacheMultiStore, counter uint32, evmCounter uint32) ExecuteResult {
@@ -222,15 +211,15 @@ type feeManager struct {
 	fee       map[string]sdk.Coins
 	refundFee map[string]sdk.Coins
 
-	txDetail      map[string]*txIndex
+	txStatus      map[string]*txStatus
 	indexMapBytes []string
 }
 
-type txIndex struct {
+type txStatus struct {
 	isEvmTx      bool
-	EvmIndex     uint32
-	IndexInBlock uint32
-	AnteErr      error
+	evmIndex     uint32
+	indexInBlock uint32
+	anteErr      error
 }
 
 func bytes2str(b []byte) string {
@@ -242,7 +231,7 @@ func NewFeeManager() *feeManager {
 		fee:       make(map[string]sdk.Coins),
 		refundFee: make(map[string]sdk.Coins),
 
-		txDetail:      make(map[string]*txIndex),
+		txStatus:      make(map[string]*txStatus),
 		indexMapBytes: make([]string, 0),
 	}
 }
@@ -253,7 +242,7 @@ func (f *feeManager) Clear() {
 	f.fee = make(map[string]sdk.Coins)
 	f.refundFee = make(map[string]sdk.Coins)
 
-	f.txDetail = make(map[string]*txIndex)
+	f.txStatus = make(map[string]*txStatus)
 	f.indexMapBytes = make([]string, 0)
 
 }
