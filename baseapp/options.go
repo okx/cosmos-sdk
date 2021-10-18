@@ -163,7 +163,8 @@ func (app *BaseApp) SetRouter(router sdk.Router) {
 	app.router = router
 }
 
-func (app *BaseApp) SetPallTxHandler(feeCollectt sdk.FeeCollectorAccHandler, txFee sdk.GetTxFeeHandler, fixLog sdk.LogFix) {
+// SetParallelTxHandler some resources for parallel txs
+func (app *BaseApp) SetParallelTxHandlers(feeCollectt sdk.FeeCollectorAccHandler, txFee sdk.GetTxFeeHandler, fixLog sdk.LogFix) {
 	if app.sealed {
 		panic("SetPallTxHandler() on sealed BaseApp")
 	}

@@ -990,8 +990,8 @@ func (app *BaseApp) GetTxInfo(ctx sdk.Context, tx sdk.Tx) mempool.ExTxInfo {
 	exTxInfo := tx.GetTxInfo(ctx)
 	if exTxInfo.Nonce == 0 && exTxInfo.Sender != "" && app.AccHandler != nil {
 		addr, _ := sdk.AccAddressFromBech32(exTxInfo.Sender)
-		nonce, _ := app.AccHandler(ctx, addr)
-		exTxInfo.Nonce = nonce
+		exTxInfo.Nonce = app.AccHandler(ctx, addr)
+
 		if app.anteHandler != nil && exTxInfo.Nonce > 0 {
 			exTxInfo.Nonce -= 1 // in ante handler logical, the nonce will incress one
 		}
