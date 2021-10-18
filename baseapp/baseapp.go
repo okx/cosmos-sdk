@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"runtime/debug"
 	"strings"
-	
+
 	"github.com/cosmos/cosmos-sdk/store"
 	"github.com/cosmos/cosmos-sdk/store/rootmulti"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
@@ -116,7 +116,7 @@ type BaseApp struct { // nolint: maligned
 
 	getTxFee               sdk.GetTxFeeHandler
 	feeCollectorAccHandler sdk.FeeCollectorAccHandler
-	fixLog                 sdk.LogFix
+	logFix                 sdk.LogFix
 
 	// volatile states:
 	//
@@ -160,12 +160,8 @@ type BaseApp struct { // nolint: maligned
 	// end record handle
 	endLog recordHandle
 
-	//AsyncWorkGroup
-	workgroup *AsyncWorkGroup
-
-	isAsyncDeliverTx bool
 	initPoolCoins    sdk.Coins
-	feeManage        *feeManager
+	parallelTxManage *parallelTxManager
 }
 
 type recordHandle func(string)
@@ -191,9 +187,7 @@ func NewBaseApp(
 		fauxMerkleMode: false,
 		trace:          false,
 
-		workgroup:        NewAsyncWorkGroup(),
-		isAsyncDeliverTx: false,
-		feeManage:        NewFeeManager(),
+		parallelTxManage: NewParallelTxManager(),
 	}
 	for _, option := range options {
 		option(app)
@@ -203,7 +197,7 @@ func NewBaseApp(
 		app.cms.SetInterBlockCache(app.interBlockCache)
 	}
 
-	app.workgroup.Start()
+	app.parallelTxManage.workgroup.Start()
 
 	return app
 }
@@ -568,7 +562,7 @@ func (app *BaseApp) getContextForTx(mode runTxMode, txBytes []byte) sdk.Context 
 	if mode == runTxModeSimulate {
 		ctx, _ = ctx.CacheContext()
 	}
-	if app.isAsyncDeliverTx {
+	if app.parallelTxManage.isAsyncDeliverTx {
 		ctx = ctx.WithAsync()
 	}
 
@@ -809,7 +803,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 			}
 			msCache.Write()
 			if mode == runTxModeDeliverInAsync {
-				app.feeManage.SetRefundFee(bytes2str(txBytes), refundGas)
+				app.parallelTxManage.SetRefundFee(bytes2str(txBytes), refundGas)
 			}
 		}
 
@@ -855,7 +849,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		gasWanted = ctx.GasMeter().Limit()
 
 		if mode == runTxModeDeliverInAsync {
-			app.feeManage.txStatus[bytes2str(txBytes)].anteErr = err
+			app.parallelTxManage.txStatus[bytes2str(txBytes)].anteErr = err
 		}
 
 		if err != nil {

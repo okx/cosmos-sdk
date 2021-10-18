@@ -11,10 +11,10 @@ import (
 
 func (app *BaseApp) EndParallelTxs() [][]byte {
 	txFeeInBlock := sdk.Coins{}
-	feeMap := app.feeManage.GetFeeMap()
-	refundMap := app.feeManage.GetRefundFeeMap()
+	feeMap := app.parallelTxManage.GetFeeMap()
+	refundMap := app.parallelTxManage.GetRefundFeeMap()
 	for tx, v := range feeMap {
-		if app.feeManage.txStatus[tx].anteErr != nil {
+		if app.parallelTxManage.txStatus[tx].anteErr != nil {
 			continue
 		}
 		txFeeInBlock = txFeeInBlock.Add(v...)
@@ -27,21 +27,21 @@ func (app *BaseApp) EndParallelTxs() [][]byte {
 	cache.Write()
 
 	tmp := make([][]string, 0)
-	for _, v := range app.feeManage.indexMapBytes {
+	for _, v := range app.parallelTxManage.indexMapBytes {
 		errMsg := ""
-		if err := app.feeManage.txStatus[v].anteErr; err != nil {
+		if err := app.parallelTxManage.txStatus[v].anteErr; err != nil {
 			errMsg = err.Error()
 		}
 		tmp = append(tmp, []string{v, errMsg})
 	}
 
-	evmReceipts := app.fixLog(tmp)
+	evmReceipts := app.logFix(tmp)
 	res := make([][]byte, 0)
-	txLen := len(app.feeManage.txStatus)
+	txLen := len(app.parallelTxManage.txStatus)
 	for index := 0; index < txLen; index++ {
 		res = append(res, evmReceipts[index])
 	}
-	app.feeManage.Clear()
+	app.parallelTxManage.Clear()
 	return res
 }
 
@@ -73,14 +73,14 @@ func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx) abci.ExecuteRe
 
 	txx := bytes2str(req.Tx)
 
-	asyncExe := NewExecuteResult(resp, m, app.feeManage.txStatus[txx].indexInBlock, app.feeManage.txStatus[txx].evmIndex)
+	asyncExe := NewExecuteResult(resp, m, app.parallelTxManage.txStatus[txx].indexInBlock, app.parallelTxManage.txStatus[txx].evmIndex)
 	asyncExe.err = e
 	return asyncExe
 }
 
 func (app *BaseApp) PrepareForParallelTxs(cb abci.AsyncCallBack, txs [][]byte) {
-	app.workgroup.Cb = cb
-	app.isAsyncDeliverTx = true
+	app.parallelTxManage.workgroup.Cb = cb
+	app.parallelTxManage.isAsyncDeliverTx = true
 	app.initPoolCoins = app.feeCollectorAccHandler(app.getContextForTx(runTxModeDeliverInAsync, nil), false, sdk.Coins{})
 
 	evmIndex := uint32(0)
@@ -99,11 +99,11 @@ func (app *BaseApp) PrepareForParallelTxs(cb abci.AsyncCallBack, txs [][]byte) {
 			evmIndex++
 		}
 
-		app.feeManage.SetFee(bytes2str(v), fee)
+		app.parallelTxManage.SetFee(bytes2str(v), fee)
 		vString := bytes2str(v)
 
-		app.feeManage.txStatus[vString] = t
-		app.feeManage.indexMapBytes = append(app.feeManage.indexMapBytes, vString)
+		app.parallelTxManage.txStatus[vString] = t
+		app.parallelTxManage.indexMapBytes = append(app.parallelTxManage.indexMapBytes, vString)
 	}
 
 }
@@ -205,8 +205,10 @@ func (a *AsyncWorkGroup) Start() {
 	}()
 }
 
-type feeManager struct {
-	mu sync.RWMutex
+type parallelTxManager struct {
+	mu               sync.RWMutex
+	isAsyncDeliverTx bool
+	workgroup        *AsyncWorkGroup
 
 	fee       map[string]sdk.Coins
 	refundFee map[string]sdk.Coins
@@ -226,17 +228,19 @@ func bytes2str(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
 }
 
-func NewFeeManager() *feeManager {
-	return &feeManager{
-		fee:       make(map[string]sdk.Coins),
-		refundFee: make(map[string]sdk.Coins),
+func NewParallelTxManager() *parallelTxManager {
+	return &parallelTxManager{
+		isAsyncDeliverTx: false,
+		workgroup:        NewAsyncWorkGroup(),
+		fee:              make(map[string]sdk.Coins),
+		refundFee:        make(map[string]sdk.Coins),
 
 		txStatus:      make(map[string]*txStatus),
 		indexMapBytes: make([]string, 0),
 	}
 }
 
-func (f *feeManager) Clear() {
+func (f *parallelTxManager) Clear() {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.fee = make(map[string]sdk.Coins)
@@ -246,24 +250,24 @@ func (f *feeManager) Clear() {
 	f.indexMapBytes = make([]string, 0)
 
 }
-func (f *feeManager) SetFee(key string, value sdk.Coins) {
+func (f *parallelTxManager) SetFee(key string, value sdk.Coins) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.fee[key] = value
 }
 
-func (f *feeManager) GetFeeMap() map[string]sdk.Coins {
+func (f *parallelTxManager) GetFeeMap() map[string]sdk.Coins {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 	return f.fee
 }
-func (f *feeManager) SetRefundFee(key string, value sdk.Coins) {
+func (f *parallelTxManager) SetRefundFee(key string, value sdk.Coins) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.refundFee[key] = value
 }
 
-func (f *feeManager) GetRefundFeeMap() map[string]sdk.Coins {
+func (f *parallelTxManager) GetRefundFeeMap() map[string]sdk.Coins {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 	return f.refundFee

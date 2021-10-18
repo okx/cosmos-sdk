@@ -222,14 +222,14 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 	)
 
 	//just for asynchronous deliver tx
-	if app.isAsyncDeliverTx {
-
+	if app.parallelTxManage.isAsyncDeliverTx {
+		
 		go func() {
 			var resp abci.ResponseDeliverTx
 
 			g, r, m, e := app.runTx(runTxModeDeliverInAsync, req.Tx, tx, LatestSimulateTxHeight)
 			if e != nil {
-				resp = sdkerrors.ResponseDeliverTx(e, gInfo.GasWanted, gInfo.GasUsed, app.trace)
+				resp = sdkerrors.ResponseDeliverTx(e, 0, 0, app.trace)
 			} else {
 				resp = abci.ResponseDeliverTx{
 					GasWanted: int64(g.GasWanted), // TODO: Should type accept unsigned ints?
@@ -240,18 +240,12 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 				}
 			}
 
-			txIndex := app.feeManage.txStatus[bytes2str(req.Tx)]
-			asyncExe := NewExecuteResult(resp, m, txIndex.indexInBlock, txIndex.evmIndex)
+			txStatus := app.parallelTxManage.txStatus[bytes2str(req.Tx)]
+			asyncExe := NewExecuteResult(resp, m, txStatus.indexInBlock, txStatus.evmIndex)
 			asyncExe.err = e
-			app.workgroup.Push(asyncExe)
+			app.parallelTxManage.workgroup.Push(asyncExe)
 		}()
-		return abci.ResponseDeliverTx{
-			GasWanted: int64(0), // TODO: Should type accept unsigned ints?
-			GasUsed:   int64(0), // TODO: Should type accept unsigned ints?
-			Log:       "",
-			Data:      nil,
-			Events:    nil,
-		}
+		return abci.ResponseDeliverTx{}
 	} else {
 		gInfo, result, _, err = app.runTx(runTxModeDeliver, req.Tx, tx, LatestSimulateTxHeight)
 	}

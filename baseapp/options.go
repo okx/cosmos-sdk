@@ -170,5 +170,5 @@ func (app *BaseApp) SetParallelTxHandlers(feeCollectt sdk.FeeCollectorAccHandler
 	}
 	app.feeCollectorAccHandler = feeCollectt
 	app.getTxFee = txFee
-	app.fixLog = fixLog
+	app.logFix = fixLog
 }
