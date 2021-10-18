@@ -13,12 +13,9 @@ type AccHandler func(ctx Context, address AccAddress) (nonce uint64, balances Co
 
 type FeeCollectorAccHandler func(ctx Context, updateValue bool, balance Coins) (balances Coins)
 
-// IsEvmTx will return true if target tx is a type of evm transaction
-type IsEvmTx func(Tx) bool
-
 type LogFix func(isAnteFailed [][]string) (logs map[int][]byte)
 
-type GetTxFeeHandler func(tx Tx) Coins
+type GetTxFeeHandler func(tx Tx) (Coins, bool)
 
 // AnteDecorator wraps the next AnteHandler to perform custom pre- and post-processing.
 type AnteDecorator interface {

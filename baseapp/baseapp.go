@@ -113,9 +113,8 @@ type BaseApp struct { // nolint: maligned
 	idPeerFilter   sdk.PeerFilter   // filter peers by node ID
 	fauxMerkleMode bool             // if true, IAVL MountStores uses MountStoresDB for simulation speed.
 
-	isEvmTx                sdk.IsEvmTx
-	feeCollectorAccHandler sdk.FeeCollectorAccHandler
 	getTxFee               sdk.GetTxFeeHandler
+	feeCollectorAccHandler sdk.FeeCollectorAccHandler
 	fixLog                 sdk.LogFix
 
 	// volatile states:
@@ -699,7 +698,6 @@ func (app *BaseApp) pin(tag string, start bool) {
 // returned if the tx does not run out of gas and if all the messages are valid
 // and execute successfully. An error is returned otherwise.
 func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int64) (gInfo sdk.GasInfo, result *sdk.Result, msCacheList sdk.CacheMultiStore, err error) {
-	app.feeManage.SetFee(bytes2str(txBytes), app.getTxFee(tx))
 	app.pin("BaseApp-run", true)
 	defer app.pin("BaseApp-run", false)
 

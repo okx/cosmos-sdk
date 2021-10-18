@@ -95,11 +95,14 @@ func (app *BaseApp) SetAsyncConfig(sw bool, txs [][]byte) {
 		t := &txIndex{
 			IndexInBlock: uint32(k),
 		}
-		if app.isEvmTx(tx) {
+		fee, isEvm := app.getTxFee(tx)
+		if isEvm {
 			t.EvmIndex = evmIndex
 			t.isEvmTx = true
 			evmIndex++
 		}
+
+		app.feeManage.SetFee(bytes2str(v), fee)
 		vString := bytes2str(v)
 
 		app.feeManage.txDetail[vString] = t
