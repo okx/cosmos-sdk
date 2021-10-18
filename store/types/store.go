@@ -28,6 +28,7 @@ type Committer interface {
 type Analyser interface {
 	GetDBWriteCount() int
 	GetDBReadCount() int
+	GetNodeReadCount() int
 	ResetCount()
 }
 

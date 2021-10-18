@@ -313,6 +313,10 @@ func (st *Store) GetDBReadCount() int {
 	return st.tree.GetDBReadCount()
 }
 
+func (st *Store) GetNodeReadCount() int {
+	return st.tree.GetNodeReadCount()
+}
+
 func (st *Store) ResetCount() {
 	st.tree.ResetCount()
 }
