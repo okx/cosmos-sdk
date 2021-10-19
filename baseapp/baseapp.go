@@ -4,12 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"reflect"
-	"runtime/debug"
-	"strings"
-
 	"github.com/cosmos/cosmos-sdk/store"
 	"github.com/cosmos/cosmos-sdk/store/rootmulti"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
@@ -25,6 +19,12 @@ import (
 	tmhttp "github.com/tendermint/tendermint/rpc/client/http"
 	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
+	"io/ioutil"
+	"os"
+	"reflect"
+	"runtime/debug"
+	"strings"
+	"time"
 )
 
 const (
@@ -864,8 +864,10 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	// Result if any single message fails or does not have a registered Handler.
 	app.pin("runMsgs", true)
 
+	ts := time.Now()
 	result, err = app.runMsgs(runMsgCtx, msgs, mode)
 	runMsgFinish = true
+	fmt.Println("RunMsg", app.parallelTxManage.txStatus[string(txBytes)].indexInBlock, err, time.Now().Sub(ts).Milliseconds())
 	if err == nil && (mode == runTxModeDeliver) {
 		msCache.Write()
 	}
