@@ -6,7 +6,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"sync"
-	"unsafe"
 )
 
 func (app *BaseApp) PrepareParallelTxs(cb abci.AsyncCallBack, txs [][]byte) {
@@ -28,8 +27,8 @@ func (app *BaseApp) PrepareParallelTxs(cb abci.AsyncCallBack, txs [][]byte) {
 			evmIndex++
 		}
 
-		app.parallelTxManage.SetFee(bytes2str(v), fee)
-		vString := bytes2str(v)
+		vString := string(v)
+		app.parallelTxManage.SetFee(vString, fee)
 
 		app.parallelTxManage.txStatus[vString] = t
 		app.parallelTxManage.indexMapBytes = append(app.parallelTxManage.indexMapBytes, vString)
@@ -93,7 +92,7 @@ func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx) abci.ExecuteRe
 		}
 	}
 
-	txStatus := app.parallelTxManage.txStatus[bytes2str(req.Tx)]
+	txStatus := app.parallelTxManage.txStatus[string(req.Tx)]
 	asyncExe := NewExecuteResult(resp, m, txStatus.indexInBlock, txStatus.evmIndex)
 	asyncExe.err = e
 	return asyncExe
@@ -212,10 +211,6 @@ type txStatus struct {
 	evmIndex     uint32
 	indexInBlock uint32
 	anteErr      error
-}
-
-func bytes2str(b []byte) string {
-	return *(*string)(unsafe.Pointer(&b))
 }
 
 func NewParallelTxManager() *parallelTxManager {

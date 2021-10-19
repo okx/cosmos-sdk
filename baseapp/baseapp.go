@@ -790,7 +790,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 			}
 			msCache.Write()
 			if mode == runTxModeDeliverInAsync {
-				app.parallelTxManage.SetRefundFee(bytes2str(txBytes), refundGas)
+				app.parallelTxManage.SetRefundFee(string(txBytes), refundGas)
 			}
 		}
 
@@ -836,7 +836,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		gasWanted = ctx.GasMeter().Limit()
 
 		if mode == runTxModeDeliverInAsync {
-			app.parallelTxManage.txStatus[bytes2str(txBytes)].anteErr = err
+			app.parallelTxManage.txStatus[string(txBytes)].anteErr = err
 		}
 
 		if err != nil {

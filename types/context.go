@@ -35,10 +35,9 @@ type Context struct {
 	minGasPrice   DecCoins
 	consParams    *abci.ConsensusParams
 	eventManager  *EventManager
-
-	isAsync      bool
-	accountNonce uint64
-	sigCache     SigCache
+	accountNonce  uint64
+	sigCache      SigCache
+	isAsync       bool
 }
 
 // Proposed rename, not done to avoid API breakage

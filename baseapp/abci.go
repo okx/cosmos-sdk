@@ -223,7 +223,7 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 
 	//just for asynchronous deliver tx
 	if app.parallelTxManage.isAsyncDeliverTx {
-		
+
 		go func() {
 			var resp abci.ResponseDeliverTx
 
@@ -240,7 +240,7 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 				}
 			}
 
-			txStatus := app.parallelTxManage.txStatus[bytes2str(req.Tx)]
+			txStatus := app.parallelTxManage.txStatus[string(req.Tx)]
 			asyncExe := NewExecuteResult(resp, m, txStatus.indexInBlock, txStatus.evmIndex)
 			asyncExe.err = e
 			app.parallelTxManage.workgroup.Push(asyncExe)
