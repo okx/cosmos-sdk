@@ -843,7 +843,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 			return gInfo, nil, nil, err
 		}
 
-		if mode == runTxModeDeliver {
+		if mode != runTxModeDeliverInAsync {
 			msCacheAnte.Write()
 		}
 	}
