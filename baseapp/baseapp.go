@@ -867,7 +867,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	ts := time.Now()
 	result, err = app.runMsgs(runMsgCtx, msgs, mode)
 	runMsgFinish = true
-	fmt.Println("RunMsg", app.parallelTxManage.txStatus[string(txBytes)].indexInBlock, err, time.Now().Sub(ts).Milliseconds())
+	fmt.Println("RunMsg", app.parallelTxManage.txStatus[string(txBytes)].indexInBlock, err, time.Now().Sub(ts).Microseconds())
 	if err == nil && (mode == runTxModeDeliver) {
 		msCache.Write()
 	}
