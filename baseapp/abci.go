@@ -207,15 +207,11 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 // Regardless of tx execution outcome, the ResponseDeliverTx will contain relevant
 // gas execution context.
 func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
-	if app.startLog != nil{
-		app.startLog("app-Decoder")
-		app.startLog("Deliver")
-	}
-	defer func() {
-		if app.endLog != nil{
-			app.endLog("Deliver")
-		}
-	}()
+
+	app.pin("DeliverTx", true)
+	defer app.pin("DeliverTx", false)
+
+	app.pin("txdecoder", true)
 
 	tx, err := app.txDecoder(req.Tx)
 	if err != nil {
@@ -224,6 +220,9 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 	if app.endLog != nil{
 		app.endLog("app-Decoder")
 	}
+
+	app.pin("txdecoder", false)
+
 
 	gInfo, result, err := app.runTx(runTxModeDeliver, req.Tx, tx, LatestSimulateTxHeight)
 	if err != nil {
@@ -255,7 +254,9 @@ func (app *BaseApp) Commit() (res abci.ResponseCommit) {
 	app.deliverState.ms.Write()
 	commitID := app.cms.Commit()
 
-	trace.GetElapsedInfo().AddInfo("DB", fmt.Sprintf("read<%d>, write<%d>", app.cms.GetDBReadCount(), app.cms.GetDBWriteCount()))
+	trace.GetElapsedInfo().AddInfo("Iavl", fmt.Sprintf("getnode<%d>, rdb<%d>, savenode<%d>",
+		app.cms.GetNodeReadCount(), app.cms.GetDBReadCount(), app.cms.GetDBWriteCount()))
+
 	app.cms.ResetCount()
 	app.logger.Debug("Commit synced", "commit", fmt.Sprintf("%X", commitID))
 
