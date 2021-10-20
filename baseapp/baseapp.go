@@ -898,7 +898,12 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		}
 		msCache = nil
 	}
-	fmt.Println("RunMsg", app.parallelTxManage.txStatus[string(txBytes)].indexInBlock, err, time.Now().Sub(ts).Microseconds())
+
+	if log.Display() {
+		first, second, three := log.GetfistAndSecond()
+		fmt.Println("scf-RunMsg", app.parallelTxManage.txStatus[string(txBytes)].indexInBlock, time.Now().Sub(ts).Microseconds(), first, second, three)
+	}
+
 	if mode == runTxModeDeliverInAsync {
 		if msCache != nil {
 			msCache.Write()
