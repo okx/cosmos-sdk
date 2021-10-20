@@ -870,11 +870,9 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	// Result if any single message fails or does not have a registered Handler.
 	app.pin("runMsgs", true)
 	result, err = app.runMsgs(runMsgCtx, msgs, mode)
-	if specialErr != nil && app.parallelTxManage.skipAnteErr == true {
+	if specialErr != nil && mode == runTxModeDeliverInAsync && app.parallelTxManage.skipAnteErr == true {
 		err = specialErr
-		if msCache != nil {
-			msCache.Write()
-		}
+		msCache = nil
 		return gInfo, result, msCacheAnte, err
 	}
 	runMsgFinish = true
