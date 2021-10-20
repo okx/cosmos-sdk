@@ -187,7 +187,7 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 		panic(fmt.Sprintf("unknown RequestCheckTx type: %s", req.Type))
 	}
 
-	gInfo, result, err := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight)
+	gInfo, result, _, err := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight)
 	if err != nil {
 		return sdkerrors.ResponseCheckTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
 	}
@@ -219,8 +219,38 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 
 	app.pin("txdecoder", false)
 
+	var (
+		gInfo  sdk.GasInfo
+		result *sdk.Result
+	)
 
-	gInfo, result, err := app.runTx(runTxModeDeliver, req.Tx, tx, LatestSimulateTxHeight)
+	//just for asynchronous deliver tx
+	if app.parallelTxManage.isAsyncDeliverTx {
+		go func() {
+			var resp abci.ResponseDeliverTx
+
+			g, r, m, e := app.runTx(runTxModeDeliverInAsync, req.Tx, tx, LatestSimulateTxHeight)
+			if e != nil {
+				resp = sdkerrors.ResponseDeliverTx(e, 0, 0, app.trace)
+			} else {
+				resp = abci.ResponseDeliverTx{
+					GasWanted: int64(g.GasWanted), // TODO: Should type accept unsigned ints?
+					GasUsed:   int64(g.GasUsed),   // TODO: Should type accept unsigned ints?
+					Log:       r.Log,
+					Data:      r.Data,
+					Events:    r.Events.ToABCIEvents(),
+				}
+			}
+
+			txStatus := app.parallelTxManage.txStatus[string(req.Tx)]
+			asyncExe := NewExecuteResult(resp, m, txStatus.indexInBlock, txStatus.evmIndex)
+			asyncExe.err = e
+			app.parallelTxManage.workgroup.Push(asyncExe)
+		}()
+		return abci.ResponseDeliverTx{}
+	}
+
+	gInfo, result, _, err = app.runTx(runTxModeDeliver, req.Tx, tx, LatestSimulateTxHeight)
 	if err != nil {
 		return sdkerrors.ResponseDeliverTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
 	}
