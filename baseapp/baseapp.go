@@ -865,12 +865,13 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	app.pin("runMsgs", true)
 
 	result, err = app.runMsgs(runMsgCtx, msgs, mode)
-	runMsgFinish = true
 	if err == nil && (mode == runTxModeDeliver) {
 		msCache.Write()
 	}
 	app.pin("runMsgs", false)
 
+	runMsgFinish = true
+	
 	if mode == runTxModeCheck {
 		exTxInfo := app.GetTxInfo(ctx, tx)
 		exTxInfo.SenderNonce = accountNonce

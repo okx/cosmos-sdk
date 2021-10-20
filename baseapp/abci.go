@@ -216,7 +216,9 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 	if err != nil {
 		return sdkerrors.ResponseDeliverTx(err, 0, 0, app.trace)
 	}
+
 	app.pin("txdecoder", false)
+
 	var (
 		gInfo  sdk.GasInfo
 		result *sdk.Result
