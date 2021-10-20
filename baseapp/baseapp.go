@@ -680,6 +680,8 @@ func (app *BaseApp) pin(tag string, start bool) {
 // returned if the tx does not run out of gas and if all the messages are valid
 // and execute successfully. An error is returned otherwise.
 func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int64) (gInfo sdk.GasInfo, result *sdk.Result, msCacheList sdk.CacheMultiStore, err error) {
+	var specialErr error
+	ts := time.Now()
 	app.pin("BaseApp-run", true)
 	defer app.pin("BaseApp-run", false)
 
@@ -840,7 +842,13 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		}
 
 		if err != nil {
-			return gInfo, nil, nil, err
+			if mode == runTxModeDeliverInAsync && app.parallelTxManage.skipAnteErr {
+				// TODO
+				specialErr = err
+			} else {
+				fmt.Println("anteErr", app.parallelTxManage.txStatus[string(txBytes)].indexInBlock, err)
+				return gInfo, nil, nil, err
+			}
 		}
 
 		if mode != runTxModeDeliverInAsync {
@@ -863,11 +871,13 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	// and we're in DeliverTx. Note, runMsgs will never return a reference to a
 	// Result if any single message fails or does not have a registered Handler.
 	app.pin("runMsgs", true)
-
-	ts := time.Now()
+	//fmt.Println("RunMsg", app.parallelTxManage.txStatus[string(txBytes)].indexInBlock, err, time.Now().Sub(ts).Microseconds())
 	result, err = app.runMsgs(runMsgCtx, msgs, mode)
+	if specialErr != nil && app.parallelTxManage.skipAnteErr == true {
+		err = specialErr
+	}
 	runMsgFinish = true
-	fmt.Println("RunMsg", app.parallelTxManage.txStatus[string(txBytes)].indexInBlock, err, time.Now().Sub(ts).Microseconds())
+	//fmt.Println("RunMsg", app.parallelTxManage.txStatus[string(txBytes)].indexInBlock, err, time.Now().Sub(ts).Microseconds())
 	if err == nil && (mode == runTxModeDeliver) {
 		msCache.Write()
 	}
@@ -890,7 +900,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		}
 		msCache = nil
 	}
-
+	fmt.Println("RunMsg", app.parallelTxManage.txStatus[string(txBytes)].indexInBlock, err, time.Now().Sub(ts).Microseconds())
 	if mode == runTxModeDeliverInAsync {
 		if msCache != nil {
 			msCache.Write()
