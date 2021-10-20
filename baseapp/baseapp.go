@@ -842,7 +842,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		}
 
 		if err != nil {
-			if mode == runTxModeDeliverInAsync && app.parallelTxManage.skipAnteErr {
+			if mode == runTxModeDeliverInAsync && app.parallelTxManage.ignoreAnteErr[int(app.parallelTxManage.txStatus[string(txBytes)].indexInBlock)] {
 				specialErr = err
 			} else {
 				return gInfo, nil, nil, err
@@ -870,7 +870,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	// Result if any single message fails or does not have a registered Handler.
 	app.pin("runMsgs", true)
 	result, err = app.runMsgs(runMsgCtx, msgs, mode)
-	if specialErr != nil && mode == runTxModeDeliverInAsync && app.parallelTxManage.skipAnteErr == true {
+	if specialErr != nil && mode == runTxModeDeliverInAsync && app.parallelTxManage.ignoreAnteErr[int(app.parallelTxManage.txStatus[string(txBytes)].indexInBlock)] {
 		err = specialErr
 		msCache = nil
 		return gInfo, result, msCacheAnte, err

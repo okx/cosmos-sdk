@@ -13,6 +13,7 @@ func (app *BaseApp) PrepareParallelTxs(cb abci.AsyncCallBack, txs [][]byte) {
 	app.parallelTxManage.isAsyncDeliverTx = true
 	evmIndex := uint32(0)
 	for k, v := range txs {
+		app.parallelTxManage.ignoreAnteErr = append(app.parallelTxManage.ignoreAnteErr, true)
 		tx, err := app.txDecoder(v)
 		if err != nil {
 			panic(err)
@@ -79,9 +80,7 @@ func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx) abci.ExecuteRe
 		mode  runTxMode
 	)
 	mode = runTxModeDeliverInAsync
-	app.parallelTxManage.skipAnteErr = true
 	g, r, m, e := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight)
-	app.parallelTxManage.skipAnteErr = false
 	if e != nil {
 		resp = sdkerrors.ResponseDeliverTx(e, gInfo.GasWanted, gInfo.GasUsed, app.trace)
 	} else {
@@ -197,7 +196,7 @@ func (a *AsyncWorkGroup) Start() {
 }
 
 type parallelTxManager struct {
-	skipAnteErr      bool
+	ignoreAnteErr    []bool
 	mu               sync.RWMutex
 	isAsyncDeliverTx bool
 	workgroup        *AsyncWorkGroup
@@ -218,7 +217,7 @@ type txStatus struct {
 
 func NewParallelTxManager() *parallelTxManager {
 	return &parallelTxManager{
-		skipAnteErr:      false,
+		ignoreAnteErr:    make([]bool, 0),
 		isAsyncDeliverTx: false,
 		workgroup:        NewAsyncWorkGroup(),
 		fee:              make(map[string]sdk.Coins),
@@ -232,7 +231,7 @@ func NewParallelTxManager() *parallelTxManager {
 func (f *parallelTxManager) Clear() {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.skipAnteErr = false
+	f.ignoreAnteErr = make([]bool, 0)
 	f.fee = make(map[string]sdk.Coins)
 	f.refundFee = make(map[string]sdk.Coins)
 

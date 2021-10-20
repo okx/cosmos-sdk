@@ -241,6 +241,7 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 			}
 
 			txStatus := app.parallelTxManage.txStatus[string(req.Tx)]
+			app.parallelTxManage.ignoreAnteErr[txStatus.indexInBlock] = false
 			asyncExe := NewExecuteResult(resp, m, txStatus.indexInBlock, txStatus.evmIndex)
 			asyncExe.err = e
 			app.parallelTxManage.workgroup.Push(asyncExe)
