@@ -2,10 +2,11 @@ package baseapp
 
 import (
 	"encoding/hex"
+	"sync"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"sync"
 )
 
 func (app *BaseApp) PrepareParallelTxs(cb abci.AsyncCallBack, txs [][]byte) {
@@ -213,7 +214,7 @@ type txStatus struct {
 	anteErr      error
 }
 
-func NewParallelTxManager() *parallelTxManager {
+func newParallelTxManager() *parallelTxManager {
 	return &parallelTxManager{
 		isAsyncDeliverTx: false,
 		workgroup:        NewAsyncWorkGroup(),

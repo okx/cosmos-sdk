@@ -186,7 +186,7 @@ func NewBaseApp(
 		fauxMerkleMode: false,
 		trace:          false,
 
-		parallelTxManage: NewParallelTxManager(),
+		parallelTxManage: newParallelTxManager(),
 	}
 	for _, option := range options {
 		option(app)
@@ -871,7 +871,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	app.pin("runMsgs", false)
 
 	runMsgFinish = true
-	
+
 	if mode == runTxModeCheck {
 		exTxInfo := app.GetTxInfo(ctx, tx)
 		exTxInfo.SenderNonce = accountNonce

@@ -68,7 +68,7 @@ func (store *Store) Get(key []byte) (value []byte) {
 }
 
 func (store *Store) IteratorCache(cb func(key, value []byte, isDirty bool) bool) {
-	if cb == nil || len(store.cache) <= 0 {
+	if cb == nil || len(store.cache) == 0 {
 		return
 	}
 	store.mtx.Lock()
