@@ -843,10 +843,8 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 
 		if err != nil {
 			if mode == runTxModeDeliverInAsync && app.parallelTxManage.skipAnteErr {
-				// TODO
 				specialErr = err
 			} else {
-				fmt.Println("anteErr", app.parallelTxManage.txStatus[string(txBytes)].indexInBlock, err)
 				return gInfo, nil, nil, err
 			}
 		}
@@ -871,13 +869,15 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	// and we're in DeliverTx. Note, runMsgs will never return a reference to a
 	// Result if any single message fails or does not have a registered Handler.
 	app.pin("runMsgs", true)
-	//fmt.Println("RunMsg", app.parallelTxManage.txStatus[string(txBytes)].indexInBlock, err, time.Now().Sub(ts).Microseconds())
 	result, err = app.runMsgs(runMsgCtx, msgs, mode)
 	if specialErr != nil && app.parallelTxManage.skipAnteErr == true {
 		err = specialErr
+		if msCache != nil {
+			msCache.Write()
+		}
+		return gInfo, result, msCacheAnte, err
 	}
 	runMsgFinish = true
-	//fmt.Println("RunMsg", app.parallelTxManage.txStatus[string(txBytes)].indexInBlock, err, time.Now().Sub(ts).Microseconds())
 	if err == nil && (mode == runTxModeDeliver) {
 		msCache.Write()
 	}
