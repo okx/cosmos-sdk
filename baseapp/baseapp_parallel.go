@@ -10,7 +10,7 @@ import (
 
 func (app *BaseApp) PrepareParallelTxs(cb abci.AsyncCallBack, txs [][]byte) {
 	app.parallelTxManage.workgroup.Cb = cb
-	app.parallelTxManage.isAsyncDeliverTx = true
+	//app.parallelTxManage.isAsyncDeliverTx = true
 	evmIndex := uint32(0)
 	for k, v := range txs {
 		tx, err := app.txDecoder(v)
