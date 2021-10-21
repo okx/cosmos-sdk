@@ -1,6 +1,7 @@
 package baseapp
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"sort"
@@ -187,6 +188,26 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 		panic(fmt.Sprintf("unknown RequestCheckTx type: %s", req.Type))
 	}
 
+	if abci.GetRemoveCheckTx() {
+		var ctx sdk.Context
+		ctx = app.getContextForTx(mode, req.Tx)
+		exTxInfo := app.GetTxInfo(ctx, tx)
+		data, _ := json.Marshal(exTxInfo)
+
+		//result := &sdk.Result{
+		//	Data:   data,
+		//	Log:    strings.TrimSpace(msgLogs.String()),
+		//	Events: events,
+		//}
+		return abci.ResponseCheckTx{
+			//GasWanted: int64(gInfo.GasWanted), // TODO: Should type accept unsigned ints?
+			//GasUsed:   int64(gInfo.GasUsed),   // TODO: Should type accept unsigned ints?
+			//Log:       result.Log,
+			Data: data,
+			//Events:    result.Events.ToABCIEvents(),
+		}
+	}
+
 	gInfo, result, err := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight)
 	if err != nil {
 		return sdkerrors.ResponseCheckTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
@@ -218,7 +239,6 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 	}
 
 	app.pin("txdecoder", false)
-
 
 	gInfo, result, err := app.runTx(runTxModeDeliver, req.Tx, tx, LatestSimulateTxHeight)
 	if err != nil {
