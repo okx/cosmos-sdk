@@ -2,10 +2,12 @@ package baseapp
 
 import (
 	"fmt"
+	"github.com/tendermint/tendermint/libs/log"
 	"os"
 	"sort"
 	"strings"
 	"syscall"
+	"time"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/trace"
@@ -207,6 +209,7 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 // Regardless of tx execution outcome, the ResponseDeliverTx will contain relevant
 // gas execution context.
 func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
+	ts := time.Now()
 	app.pin("DeliverTx", true)
 	defer app.pin("DeliverTx", false)
 
@@ -215,6 +218,9 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 	tx, err := app.txDecoder(req.Tx)
 	if err != nil {
 		return sdkerrors.ResponseDeliverTx(err, 0, 0, app.trace)
+	}
+	if log.Display() {
+		fmt.Println("tsDicode", time.Now().Sub(ts).Microseconds())
 	}
 	var (
 		gInfo  sdk.GasInfo
@@ -252,6 +258,9 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 	}
 	if err != nil {
 		return sdkerrors.ResponseDeliverTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
+	}
+	if log.Display() {
+		fmt.Println("ready to return", time.Now().Sub(ts).Microseconds())
 	}
 
 	return abci.ResponseDeliverTx{
