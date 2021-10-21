@@ -682,6 +682,7 @@ func (app *BaseApp) pin(tag string, start bool) {
 func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int64) (gInfo sdk.GasInfo, result *sdk.Result, msCacheList sdk.CacheMultiStore, err error) {
 	var specialErr error
 	ts := time.Now()
+	var taa int64
 	app.pin("BaseApp-run", true)
 	defer app.pin("BaseApp-run", false)
 
@@ -819,9 +820,10 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		anteCtx, msCacheAnte = app.cacheTxContext(ctx, txBytes)
 		anteCtx = anteCtx.WithEventManager(sdk.NewEventManager())
 		app.pin("anteHandler", true)
+		ta := time.Now()
 		newCtx, err := app.anteHandler(anteCtx, tx, mode == runTxModeSimulate)
 		app.pin("anteHandler", false)
-
+		taa = time.Now().Sub(ta).Microseconds()
 		accountNonce = newCtx.AccountNonce()
 		if !newCtx.IsZero() {
 			// At this point, newCtx.MultiStore() is cache-wrapped, or something else
@@ -902,7 +904,8 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 
 	if log.Display() {
 		first, second, three := log.GetfistAndSecond()
-		fmt.Println("scf-RunMsg", app.parallelTxManage.txStatus[string(txBytes)].indexInBlock, time.Now().Sub(ts).Microseconds(), tAnte, first, second, three)
+		fmt.Println("scf-RunMsg", app.parallelTxManage.txStatus[string(txBytes)].indexInBlock, "runTx", time.Now().Sub(ts).Microseconds(),
+			"anteEND", tAnte, "ante", taa, "call-end", first, "statedb query", second, "gasUsed", three)
 	}
 
 	if mode == runTxModeDeliverInAsync {
