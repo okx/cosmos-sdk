@@ -796,6 +796,9 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 				app.parallelTxManage.SetRefundFee(string(txBytes), refundGas)
 			}
 		}
+		if log.Display() {
+			fmt.Println("refund---", time.Now().Sub(ts).Microseconds())
+		}
 
 	}()
 	app.pin("valTxMsgs", true)
