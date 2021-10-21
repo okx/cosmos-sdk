@@ -227,9 +227,15 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 		result *sdk.Result
 	)
 
+	app.pin("txdecoder", false)
+
+	var (
+		gInfo  sdk.GasInfo
+		result *sdk.Result
+	)
+
 	//just for asynchronous deliver tx
 	if app.parallelTxManage.isAsyncDeliverTx {
-
 		go func() {
 			var resp abci.ResponseDeliverTx
 
@@ -253,9 +259,8 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 			app.parallelTxManage.workgroup.Push(asyncExe)
 		}()
 		return abci.ResponseDeliverTx{}
-	} else {
-		gInfo, result, _, err = app.runTx(runTxModeDeliver, req.Tx, tx, LatestSimulateTxHeight)
 	}
+	gInfo, result, _, err = app.runTx(runTxModeDeliver, req.Tx, tx, LatestSimulateTxHeight)
 	if err != nil {
 		return sdkerrors.ResponseDeliverTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
 	}

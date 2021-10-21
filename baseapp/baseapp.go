@@ -4,6 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	"io/ioutil"
+	"os"
+	"reflect"
+	"runtime/debug"
+	"strings"
+
 	"github.com/cosmos/cosmos-sdk/store"
 	"github.com/cosmos/cosmos-sdk/store/rootmulti"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
@@ -19,11 +26,6 @@ import (
 	tmhttp "github.com/tendermint/tendermint/rpc/client/http"
 	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
-	"io/ioutil"
-	"os"
-	"reflect"
-	"runtime/debug"
-	"strings"
 	"time"
 )
 
@@ -186,7 +188,7 @@ func NewBaseApp(
 		fauxMerkleMode: false,
 		trace:          false,
 
-		parallelTxManage: NewParallelTxManager(),
+		parallelTxManage: newParallelTxManager(),
 	}
 	for _, option := range options {
 		option(app)
@@ -886,6 +888,8 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		msCache.Write()
 	}
 	app.pin("runMsgs", false)
+
+	runMsgFinish = true
 
 	if mode == runTxModeCheck {
 		exTxInfo := app.GetTxInfo(ctx, tx)
