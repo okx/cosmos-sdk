@@ -869,6 +869,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	// and we're in DeliverTx. Note, runMsgs will never return a reference to a
 	// Result if any single message fails or does not have a registered Handler.
 	app.pin("runMsgs", true)
+	tAnte := time.Now().Sub(ts).Microseconds()
 	result, err = app.runMsgs(runMsgCtx, msgs, mode)
 	if specialErr != nil && mode == runTxModeDeliverInAsync && app.parallelTxManage.ignoreAnteErr[int(app.parallelTxManage.txStatus[string(txBytes)].indexInBlock)] {
 		err = specialErr
@@ -901,7 +902,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 
 	if log.Display() {
 		first, second, three := log.GetfistAndSecond()
-		fmt.Println("scf-RunMsg", app.parallelTxManage.txStatus[string(txBytes)].indexInBlock, time.Now().Sub(ts).Microseconds(), first, second, three)
+		fmt.Println("scf-RunMsg", app.parallelTxManage.txStatus[string(txBytes)].indexInBlock, time.Now().Sub(ts).Microseconds(), tAnte, first, second, three)
 	}
 
 	if mode == runTxModeDeliverInAsync {
