@@ -222,11 +222,6 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 	if log.Display() {
 		fmt.Println("tsDicode", time.Now().Sub(ts).Microseconds())
 	}
-	var (
-		gInfo  sdk.GasInfo
-		result *sdk.Result
-	)
-
 	app.pin("txdecoder", false)
 
 	var (
