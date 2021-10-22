@@ -22,6 +22,7 @@ func GetPruningOptionsFromFlags() (types.PruningOptions, error) {
 	case types.PruningOptionDefault, types.PruningOptionNothing, types.PruningOptionEverything:
 		if strategy == types.PruningOptionNothing {
 			tmiavl.EnablePruningHistoryState = false
+			tmiavl.CommitIntervalHeight = 1
 		}
 		return types.NewPruningOptionsFromString(strategy), nil
 
