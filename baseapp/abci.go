@@ -231,9 +231,15 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 
 	//just for asynchronous deliver tx
 	if app.parallelTxManage.isAsyncDeliverTx {
+		txStatus := app.parallelTxManage.txStatus[string(req.Tx)]
+		if !txStatus.isEvmTx {
+			asyncExe := NewExecuteResult(abci.ResponseDeliverTx{}, nil, txStatus.indexInBlock, txStatus.evmIndex)
+			app.parallelTxManage.workgroup.Push(asyncExe)
+			return abci.ResponseDeliverTx{}
+		}
+			
 		go func() {
 			var resp abci.ResponseDeliverTx
-
 			g, r, m, e := app.runTx(runTxModeDeliverInAsync, req.Tx, tx, LatestSimulateTxHeight)
 			if e != nil {
 				resp = sdkerrors.ResponseDeliverTx(e, 0, 0, app.trace)
