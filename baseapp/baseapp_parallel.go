@@ -24,14 +24,14 @@ func (app *BaseApp) deliverTxsWithParallel(group map[int][]int, nextTx map[int]i
 	deliverTxsResponse := make([]*abci.ResponseDeliverTx, len(txs), len(txs))
 	AsyncCb := func(execRes abci.ExecuteRes) {
 		txReps[execRes.GetCounter()] = execRes
-		fmt.Println("zhixingwanbi", execRes.GetCounter(), execRes.GetBase())
-		if nextTxIndex, ok := nextTx[int(execRes.GetCounter())]; ok {
-			go app.parallelTx(nextTxIndex)
-		}
+		//fmt.Println("zhixingwanbi", execRes.GetCounter(), execRes.GetBase())
 		for txReps[txIndex] != nil {
 			res := txReps[txIndex]
-			if res.Conflict(asCache) {
+			cc := res.Conflict(asCache)
+			//fmt.Println("tcInfr", txIndex, cc, res.GetCounter(), res.GetBase())
+			if cc {
 				rerunIdx++
+				txReps[txIndex] = nil
 				go app.parallelTx(txIndex)
 				//check proxy.err?
 				return
@@ -46,7 +46,12 @@ func (app *BaseApp) deliverTxsWithParallel(group map[int][]int, nextTx map[int]i
 				invalidTxs++
 			}
 
+			app.parallelTxManage.currMergeIndex = txIndex
+			if nextTxIndex, ok := nextTx[txIndex]; ok {
+				go app.parallelTx(nextTxIndex)
+			}
 			txIndex++
+			//fmt.Println("current", txIndex)
 			if txIndex == len(txsBytes) {
 				app.logger.Info(fmt.Sprintf("BlockHeight %d With Tx %d : Paralle run %d, Conflected tx %d",
 					app.LastBlockHeight(), len(txsBytes), len(deliverTxsResponse)-rerunIdx, rerunIdx))
@@ -76,8 +81,7 @@ func (app *BaseApp) deliverTxsWithParallel(group map[int][]int, nextTx map[int]i
 	return deliverTxsResponse
 }
 
-func (app *BaseApp) PrepareParallelTxs(cb abci.AsyncCallBack, txs [][]byte) {
-	//app.parallelTxManage.workgroup.Cb = cb
+func (app *BaseApp) PrepareParallelTxs(txs [][]byte) []*abci.ResponseDeliverTx {
 	app.parallelTxManage.isAsyncDeliverTx = true
 	sendAccs := make([]ethcmn.Address, 0)
 	toAccs := make([]*ethcmn.Address, 0)
@@ -110,14 +114,16 @@ func (app *BaseApp) PrepareParallelTxs(cb abci.AsyncCallBack, txs [][]byte) {
 	}
 
 	if !app.parallelTxManage.isAsyncDeliverTx {
-		return
+		return nil
+
 	}
 
-	fmt.Println("zhunbei fenzu")
+	//fmt.Println("zhunbei fenzu")
 	groupList, nextTxInGroup := grouping(sendAccs, toAccs)
-	fmt.Println("fenzu", len(groupList), groupList, nextTxInGroup)
+	//fmt.Println("fenzu", len(groupList), groupList, nextTxInGroup)
 	res := app.deliverTxsWithParallel(groupList, nextTxInGroup)
-	fmt.Println("RRRRRR", len(res))
+	//fmt.Println("RRRRRR", len(res))
+	return res
 }
 
 func (app *BaseApp) EndParallelTxs() [][]byte {
@@ -152,6 +158,15 @@ func (app *BaseApp) EndParallelTxs() [][]byte {
 }
 
 func (app *BaseApp) parallelTx(index int) {
+	if app.parallelTxManage.GetRunningStats(index) {
+		return
+	}
+	if index <= app.parallelTxManage.currMergeIndex {
+		return
+	}
+	defer app.parallelTxManage.SetRunningStats(index, false)
+	//fmt.Println("palllllll", index, app.parallelTxManage.currMergeIndex)
+
 	txBytes := app.parallelTxManage.txsByte[index]
 	txStd := app.parallelTxManage.txs[index]
 	mergedIndex := app.parallelTxManage.currMergeIndex
@@ -202,6 +217,9 @@ func (e ExecuteResult) GetResponse() abci.ResponseDeliverTx {
 }
 
 func (e ExecuteResult) Conflict(cache abci.AsyncCacheInterface) bool {
+	if e.base+1 == int(e.Counter) {
+		return false
+	}
 	rerun := false
 	if e.Ms == nil {
 		return true //TODO fix later
@@ -209,8 +227,9 @@ func (e ExecuteResult) Conflict(cache abci.AsyncCacheInterface) bool {
 
 	e.Ms.IteratorCache(func(key, value []byte, isDirty bool) bool {
 		//the key we have read was wrote by pre txs
-		if cache.Has(key) && !whiteAccountList[hex.EncodeToString(key)] {
+		if cache.Has(e.base, int(e.Counter), key) && !whiteAccountList[hex.EncodeToString(key)] {
 			rerun = true
+			return false
 		}
 		return true
 	})
@@ -230,7 +249,7 @@ func (e ExecuteResult) Collect(cache abci.AsyncCacheInterface) {
 	e.Ms.IteratorCache(func(key, value []byte, isDirty bool) bool {
 		if isDirty {
 			//push every data we have written in current tx
-			cache.Push(key, value)
+			cache.Push(int(e.Counter), key, value)
 		}
 		return true
 	})
@@ -305,6 +324,8 @@ type parallelTxManager struct {
 	txsByte        [][]byte
 	singerCaches   map[string]sdk.SigCache
 	currMergeIndex int
+
+	isRunning map[int]bool
 }
 
 type txStatus struct {
@@ -327,6 +348,7 @@ func newParallelTxManager() *parallelTxManager {
 		txsByte:        make([][]byte, 0),
 		singerCaches:   make(map[string]sdk.SigCache, 0),
 		currMergeIndex: -1,
+		isRunning:      make(map[int]bool),
 	}
 }
 
@@ -342,6 +364,7 @@ func (f *parallelTxManager) Clear() {
 	f.txsByte = make([][]byte, 0)
 	f.singerCaches = make(map[string]sdk.SigCache, 0)
 	f.currMergeIndex = -1
+	f.isRunning = make(map[int]bool, 0)
 
 }
 func (f *parallelTxManager) SetFee(key string, value sdk.Coins) {
@@ -365,4 +388,15 @@ func (f *parallelTxManager) GetRefundFeeMap() map[string]sdk.Coins {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 	return f.refundFee
+}
+
+func (f *parallelTxManager) SetRunningStats(txIndex int, status bool) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.isRunning[txIndex] = status
+}
+func (f *parallelTxManager) GetRunningStats(txIndex int) bool {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	return f.isRunning[txIndex]
 }

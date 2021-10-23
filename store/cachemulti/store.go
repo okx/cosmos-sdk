@@ -115,11 +115,14 @@ func (cms Store) Write() {
 	}
 }
 
-func (cms Store) IteratorCache(cb func(key, value []byte, isDirty bool) bool) {
+func (cms Store) IteratorCache(cb func(key, value []byte, isDirty bool) bool) bool {
 	cms.db.IteratorCache(cb)
 	for _, store := range cms.stores {
-		store.IteratorCache(cb)
+		if !store.IteratorCache(cb) {
+			return false
+		}
 	}
+	return true
 }
 
 // Implements CacheWrapper.

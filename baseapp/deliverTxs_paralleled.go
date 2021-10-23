@@ -65,18 +65,28 @@ func grouping(from []ethcmn.Address, to []*ethcmn.Address) (map[int][]int, map[i
 }
 
 type AsyncCache struct {
-	mem map[string][]byte
+	mem map[int]map[string][]byte
 }
 
 func NewAsyncCache() *AsyncCache {
-	return &AsyncCache{mem: make(map[string][]byte)}
+	return &AsyncCache{mem: make(map[int]map[string][]byte)}
 }
 
-func (a *AsyncCache) Push(key, value []byte) {
-	a.mem[string(key)] = value
+func (a *AsyncCache) Push(txIndex int, key, value []byte) {
+	if _, ok := a.mem[txIndex]; !ok {
+		a.mem[txIndex] = make(map[string][]byte)
+	}
+	a.mem[txIndex][string(key)] = value
 }
 
-func (a *AsyncCache) Has(key []byte) bool {
-	_, ok := a.mem[string(key)]
-	return ok
+func (a *AsyncCache) Has(base int, current int, key []byte) bool {
+	// TODO ??????
+	for index := base + 1; index <= current; index++ {
+		if data, ok := a.mem[index]; ok {
+			if _, has := data[string(key)]; has {
+				return true
+			}
+		}
+	}
+	return false
 }
