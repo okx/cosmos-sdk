@@ -8,6 +8,7 @@ import (
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"sync"
+	"time"
 )
 
 func (app *BaseApp) deliverTxsWithParallel(group map[int][]int, nextTx map[int]int) []*abci.ResponseDeliverTx {
@@ -20,6 +21,8 @@ func (app *BaseApp) deliverTxsWithParallel(group map[int][]int, nextTx map[int]i
 	asCache := NewAsyncCache()
 	signal := make(chan int, 1)
 	rerunIdx := 0
+
+	tsCommi := time.Duration(0)
 
 	deliverTxsResponse := make([]*abci.ResponseDeliverTx, len(txs), len(txs))
 	AsyncCb := func(execRes abci.ExecuteRes) {
@@ -38,8 +41,10 @@ func (app *BaseApp) deliverTxsWithParallel(group map[int][]int, nextTx map[int]i
 			}
 			txRs := res.GetResponse()
 			deliverTxsResponse[txIndex] = &txRs
+			tsQ := time.Now()
 			res.Collect(asCache)
 			res.Commit()
+			tsCommi += time.Now().Sub(tsQ)
 			if deliverTxsResponse[txIndex].Code == abci.CodeTypeOK {
 				validTxs++
 			} else {
@@ -53,8 +58,8 @@ func (app *BaseApp) deliverTxsWithParallel(group map[int][]int, nextTx map[int]i
 			txIndex++
 			//fmt.Println("current", txIndex)
 			if txIndex == len(txsBytes) {
-				app.logger.Info(fmt.Sprintf("BlockHeight %d With Tx %d : Paralle run %d, Conflected tx %d",
-					app.LastBlockHeight(), len(txsBytes), len(deliverTxsResponse)-rerunIdx, rerunIdx))
+				app.logger.Info(fmt.Sprintf("BlockHeight %d With Tx %d : Paralle run %d, Conflected tx %d CommitTs %d",
+					app.LastBlockHeight(), len(txsBytes), len(deliverTxsResponse)-rerunIdx, rerunIdx, tsCommi.Microseconds()))
 				signal <- 0
 				return
 			}
@@ -82,6 +87,7 @@ func (app *BaseApp) deliverTxsWithParallel(group map[int][]int, nextTx map[int]i
 }
 
 func (app *BaseApp) PrepareParallelTxs(txs [][]byte) []*abci.ResponseDeliverTx {
+	ts := time.Now()
 	app.parallelTxManage.isAsyncDeliverTx = true
 	sendAccs := make([]ethcmn.Address, 0)
 	toAccs := make([]*ethcmn.Address, 0)
@@ -120,8 +126,10 @@ func (app *BaseApp) PrepareParallelTxs(txs [][]byte) []*abci.ResponseDeliverTx {
 
 	//fmt.Println("zhunbei fenzu")
 	groupList, nextTxInGroup := grouping(sendAccs, toAccs)
+	fmt.Println("grouping", time.Now().Sub(ts).Microseconds())
 	//fmt.Println("fenzu", len(groupList), groupList, nextTxInGroup)
 	res := app.deliverTxsWithParallel(groupList, nextTxInGroup)
+	fmt.Println("run-end", time.Now().Sub(ts).Microseconds())
 	//fmt.Println("RRRRRR", len(res))
 	return res
 }
