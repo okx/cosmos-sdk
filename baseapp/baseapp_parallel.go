@@ -6,7 +6,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	"github.com/spf13/viper"
 	abci "github.com/tendermint/tendermint/abci/types"
+	sm "github.com/tendermint/tendermint/state"
 	"sync"
 	"time"
 )
@@ -88,7 +90,7 @@ func (app *BaseApp) deliverTxsWithParallel(group map[int][]int, nextTx map[int]i
 
 func (app *BaseApp) PrepareParallelTxs(txs [][]byte) []*abci.ResponseDeliverTx {
 	ts := time.Now()
-	app.parallelTxManage.isAsyncDeliverTx = true
+	//app.parallelTxManage.isAsyncDeliverTx = true
 	sendAccs := make([]ethcmn.Address, 0)
 	toAccs := make([]*ethcmn.Address, 0)
 	evmIndex := uint32(0)
@@ -119,7 +121,7 @@ func (app *BaseApp) PrepareParallelTxs(txs [][]byte) []*abci.ResponseDeliverTx {
 		app.parallelTxManage.indexMapBytes = append(app.parallelTxManage.indexMapBytes, vString)
 	}
 
-	if !app.parallelTxManage.isAsyncDeliverTx {
+	if !viper.GetBool(sm.FlagParalleledTx) {
 		return nil
 
 	}
