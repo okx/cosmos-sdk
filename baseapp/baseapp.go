@@ -660,8 +660,11 @@ func (app *BaseApp) cacheTxContext(ctx sdk.Context, txBytes []byte) (sdk.Context
 			),
 		).(sdk.CacheMultiStore)
 	}
-
-	return ctx.WithMultiStore(msCache), msCache
+	if singerCache, ok := app.parallelTxManage.singerCaches[string(txBytes)]; ok {
+		ctx = ctx.WithSigCache(singerCache)
+	}
+	ctx = ctx.WithMultiStore(msCache)
+	return ctx, msCache
 }
 
 func (app *BaseApp) pin(tag string, start bool) {
@@ -682,7 +685,6 @@ func (app *BaseApp) pin(tag string, start bool) {
 // returned if the tx does not run out of gas and if all the messages are valid
 // and execute successfully. An error is returned otherwise.
 func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int64) (gInfo sdk.GasInfo, result *sdk.Result, msCacheList sdk.CacheMultiStore, err error) {
-	var specialErr error
 	ts := time.Now()
 	var taa int64
 	app.pin("BaseApp-run", true)
@@ -849,11 +851,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 		}
 
 		if err != nil {
-			if mode == runTxModeDeliverInAsync && app.parallelTxManage.ignoreAnteErr[int(app.parallelTxManage.txStatus[string(txBytes)].indexInBlock)] {
-				specialErr = err
-			} else {
-				return gInfo, nil, nil, err
-			}
+			return gInfo, nil, nil, err
 		}
 
 		if mode != runTxModeDeliverInAsync {
@@ -878,11 +876,6 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx, height int6
 	app.pin("runMsgs", true)
 	tAnte := time.Now().Sub(ts).Microseconds()
 	result, err = app.runMsgs(runMsgCtx, msgs, mode)
-	if specialErr != nil && mode == runTxModeDeliverInAsync && app.parallelTxManage.ignoreAnteErr[int(app.parallelTxManage.txStatus[string(txBytes)].indexInBlock)] {
-		err = specialErr
-		msCache = nil
-		return gInfo, result, msCacheAnte, err
-	}
 	runMsgFinish = true
 	if err == nil && (mode == runTxModeDeliver) {
 		msCache.Write()

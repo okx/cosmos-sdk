@@ -2,16 +2,85 @@ package baseapp
 
 import (
 	"encoding/hex"
+	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	ethcmn "github.com/ethereum/go-ethereum/common"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"sync"
 )
 
+func (app *BaseApp) deliverTxsWithParallel(group map[int][]int, nextTx map[int]int) []*abci.ResponseDeliverTx {
+	txs := app.parallelTxManage.txs
+	txsBytes := app.parallelTxManage.txsByte
+
+	var validTxs, invalidTxs = 0, 0
+	txIndex := 0
+	txReps := make([]abci.ExecuteRes, len(app.parallelTxManage.txStatus))
+	asCache := NewAsyncCache()
+	signal := make(chan int, 1)
+	rerunIdx := 0
+
+	deliverTxsResponse := make([]*abci.ResponseDeliverTx, len(txs), len(txs))
+	AsyncCb := func(execRes abci.ExecuteRes) {
+		txReps[execRes.GetCounter()] = execRes
+		fmt.Println("zhixingwanbi", execRes.GetCounter(), execRes.GetBase())
+		if nextTxIndex, ok := nextTx[int(execRes.GetCounter())]; ok {
+			go app.parallelTx(nextTxIndex)
+		}
+		for txReps[txIndex] != nil {
+			res := txReps[txIndex]
+			if res.Conflict(asCache) {
+				rerunIdx++
+				go app.parallelTx(txIndex)
+				//check proxy.err?
+				return
+			}
+			txRs := res.GetResponse()
+			deliverTxsResponse[txIndex] = &txRs
+			res.Collect(asCache)
+			res.Commit()
+			if deliverTxsResponse[txIndex].Code == abci.CodeTypeOK {
+				validTxs++
+			} else {
+				invalidTxs++
+			}
+
+			txIndex++
+			if txIndex == len(txsBytes) {
+				app.logger.Info(fmt.Sprintf("BlockHeight %d With Tx %d : Paralle run %d, Conflected tx %d",
+					app.LastBlockHeight(), len(txsBytes), len(deliverTxsResponse)-rerunIdx, rerunIdx))
+				signal <- 0
+				return
+			}
+		}
+	}
+
+	app.parallelTxManage.workgroup.Cb = AsyncCb
+
+	for index := 0; index < len(group); index++ {
+		go app.parallelTx(group[index][0])
+	}
+
+	if len(txsBytes) > 0 {
+		//waiting for call back
+		<-signal
+		//CheckErr
+		receiptsLogs := app.EndParallelTxs()
+		for index, v := range receiptsLogs {
+			if len(v) != 0 { // only update evm tx result
+				deliverTxsResponse[index].Data = v
+			}
+		}
+	}
+	return deliverTxsResponse
+}
+
 func (app *BaseApp) PrepareParallelTxs(cb abci.AsyncCallBack, txs [][]byte) {
-	app.parallelTxManage.workgroup.Cb = cb
-	//app.parallelTxManage.isAsyncDeliverTx = true
-	app.parallelTxManage.ignoreAnteErr = append(app.parallelTxManage.ignoreAnteErr, false)
+	//app.parallelTxManage.workgroup.Cb = cb
+	app.parallelTxManage.isAsyncDeliverTx = true
+	sendAccs := make([]ethcmn.Address, 0)
+	toAccs := make([]*ethcmn.Address, 0)
 	evmIndex := uint32(0)
 	for k, v := range txs {
 		tx, err := app.txDecoder(v)
@@ -21,19 +90,34 @@ func (app *BaseApp) PrepareParallelTxs(cb abci.AsyncCallBack, txs [][]byte) {
 		t := &txStatus{
 			indexInBlock: uint32(k),
 		}
-		fee, isEvm := app.getTxFee(tx)
+		fee, isEvm, singerCache, from, to := app.getTxFee(app.getContextForTx(runTxModeDeliverInAsync, v), tx)
 		if isEvm {
 			t.evmIndex = evmIndex
 			t.isEvmTx = true
 			evmIndex++
 		}
+		sendAccs = append(sendAccs, from)
+		toAccs = append(toAccs, to)
+		app.parallelTxManage.singerCaches[string(v)] = singerCache
 
 		vString := string(v)
+		app.parallelTxManage.txs = append(app.parallelTxManage.txs, tx)
+		app.parallelTxManage.txsByte = append(app.parallelTxManage.txsByte, v)
 		app.parallelTxManage.SetFee(vString, fee)
 
 		app.parallelTxManage.txStatus[vString] = t
 		app.parallelTxManage.indexMapBytes = append(app.parallelTxManage.indexMapBytes, vString)
 	}
+
+	if !app.parallelTxManage.isAsyncDeliverTx {
+		return
+	}
+
+	fmt.Println("zhunbei fenzu")
+	groupList, nextTxInGroup := grouping(sendAccs, toAccs)
+	fmt.Println("fenzu", len(groupList), groupList, nextTxInGroup)
+	res := app.deliverTxsWithParallel(groupList, nextTxInGroup)
+	fmt.Println("RRRRRR", len(res))
 }
 
 func (app *BaseApp) EndParallelTxs() [][]byte {
@@ -67,36 +151,41 @@ func (app *BaseApp) EndParallelTxs() [][]byte {
 	return app.logFix(txExecStats)
 }
 
-//we reuse the nonce that changed by the last async call
-//if last ante handler has been failed, we need rerun it ? or not?
-func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx) abci.ExecuteRes {
-	tx, err := app.txDecoder(req.Tx)
-	if err != nil {
-		return nil
-	}
-	var (
-		gInfo sdk.GasInfo
-		resp  abci.ResponseDeliverTx
-		mode  runTxMode
-	)
-	mode = runTxModeDeliverInAsync
-	g, r, m, e := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight)
-	if e != nil {
-		resp = sdkerrors.ResponseDeliverTx(e, gInfo.GasWanted, gInfo.GasUsed, app.trace)
-	} else {
-		resp = abci.ResponseDeliverTx{
-			GasWanted: int64(g.GasWanted), // TODO: Should type accept unsigned ints?
-			GasUsed:   int64(g.GasUsed),   // TODO: Should type accept unsigned ints?
-			Log:       r.Log,
-			Data:      r.Data,
-			Events:    r.Events.ToABCIEvents(),
-		}
+func (app *BaseApp) parallelTx(index int) {
+	txBytes := app.parallelTxManage.txsByte[index]
+	txStd := app.parallelTxManage.txs[index]
+	mergedIndex := app.parallelTxManage.currMergeIndex
+	txStatus := app.parallelTxManage.txStatus[string(txBytes)]
+
+	if !txStatus.isEvmTx {
+		asyncExe := NewExecuteResult(abci.ResponseDeliverTx{}, nil, txStatus.indexInBlock, txStatus.evmIndex, mergedIndex)
+		app.parallelTxManage.workgroup.Push(asyncExe)
 	}
 
-	txStatus := app.parallelTxManage.txStatus[string(req.Tx)]
-	asyncExe := NewExecuteResult(resp, m, txStatus.indexInBlock, txStatus.evmIndex)
-	asyncExe.err = e
-	return asyncExe
+	go func() {
+		mergedIndex := mergedIndex
+		var resp abci.ResponseDeliverTx
+		g, r, m, e := app.runTx(runTxModeDeliverInAsync, txBytes, txStd, LatestSimulateTxHeight)
+		if e != nil {
+			resp = sdkerrors.ResponseDeliverTx(e, 0, 0, app.trace)
+		} else {
+			resp = abci.ResponseDeliverTx{
+				GasWanted: int64(g.GasWanted), // TODO: Should type accept unsigned ints?
+				GasUsed:   int64(g.GasUsed),   // TODO: Should type accept unsigned ints?
+				Log:       r.Log,
+				Data:      r.Data,
+				Events:    r.Events.ToABCIEvents(),
+			}
+		}
+
+		txStatus := app.parallelTxManage.txStatus[string(txBytes)]
+		asyncExe := NewExecuteResult(resp, m, txStatus.indexInBlock, txStatus.evmIndex, mergedIndex)
+		asyncExe.err = e
+		app.parallelTxManage.workgroup.Push(asyncExe)
+	}()
+}
+func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx) abci.ExecuteRes { //TODO delete return
+	panic("need delete")
 }
 
 type ExecuteResult struct {
@@ -105,6 +194,7 @@ type ExecuteResult struct {
 	Counter    uint32
 	err        error
 	evmCounter uint32
+	base       int
 }
 
 func (e ExecuteResult) GetResponse() abci.ResponseDeliverTx {
@@ -150,6 +240,10 @@ func (e ExecuteResult) GetCounter() uint32 {
 	return e.Counter
 }
 
+func (e ExecuteResult) GetBase() int {
+	return e.base
+}
+
 func (e ExecuteResult) Commit() {
 	if e.Ms == nil {
 		return
@@ -157,12 +251,13 @@ func (e ExecuteResult) Commit() {
 	e.Ms.Write()
 }
 
-func NewExecuteResult(r abci.ResponseDeliverTx, ms sdk.CacheMultiStore, counter uint32, evmCounter uint32) ExecuteResult {
+func NewExecuteResult(r abci.ResponseDeliverTx, ms sdk.CacheMultiStore, counter uint32, evmCounter uint32, base int) ExecuteResult {
 	return ExecuteResult{
 		Resp:       r,
 		Ms:         ms,
 		Counter:    counter,
 		evmCounter: evmCounter,
+		base:       base,
 	}
 }
 
@@ -196,7 +291,6 @@ func (a *AsyncWorkGroup) Start() {
 }
 
 type parallelTxManager struct {
-	ignoreAnteErr    []bool
 	mu               sync.RWMutex
 	isAsyncDeliverTx bool
 	workgroup        *AsyncWorkGroup
@@ -206,6 +300,11 @@ type parallelTxManager struct {
 
 	txStatus      map[string]*txStatus
 	indexMapBytes []string
+
+	txs            []sdk.Tx
+	txsByte        [][]byte
+	singerCaches   map[string]sdk.SigCache
+	currMergeIndex int
 }
 
 type txStatus struct {
@@ -222,20 +321,27 @@ func newParallelTxManager() *parallelTxManager {
 		fee:              make(map[string]sdk.Coins),
 		refundFee:        make(map[string]sdk.Coins),
 
-		txStatus:      make(map[string]*txStatus),
-		indexMapBytes: make([]string, 0),
+		txStatus:       make(map[string]*txStatus),
+		indexMapBytes:  make([]string, 0),
+		txs:            make([]sdk.Tx, 0),
+		txsByte:        make([][]byte, 0),
+		singerCaches:   make(map[string]sdk.SigCache, 0),
+		currMergeIndex: -1,
 	}
 }
 
 func (f *parallelTxManager) Clear() {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.ignoreAnteErr = make([]bool, 0)
 	f.fee = make(map[string]sdk.Coins)
 	f.refundFee = make(map[string]sdk.Coins)
 
 	f.txStatus = make(map[string]*txStatus)
 	f.indexMapBytes = make([]string, 0)
+	f.txs = make([]sdk.Tx, 0)
+	f.txsByte = make([][]byte, 0)
+	f.singerCaches = make(map[string]sdk.SigCache, 0)
+	f.currMergeIndex = -1
 
 }
 func (f *parallelTxManager) SetFee(key string, value sdk.Coins) {
