@@ -663,7 +663,7 @@ func (app *BaseApp) cacheTxContext(ctx sdk.Context, txBytes []byte) (sdk.Context
 }
 
 func (app *BaseApp) pin(tag string, start bool, mode ...runTxMode) {
-	if app.startLog != nil && len(mode) == 1 && mode[0] == runTxModeDeliver{
+	if app.startLog != nil && (len(mode) == 0 || (len(mode) == 1 && mode[0] == runTxModeDeliver)) {
 		if start {
 			app.startLog(tag)
 		} else {
