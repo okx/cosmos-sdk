@@ -662,8 +662,17 @@ func (app *BaseApp) cacheTxContext(ctx sdk.Context, txBytes []byte) (sdk.Context
 	return ctx.WithMultiStore(msCache), msCache
 }
 
-func (app *BaseApp) pin(tag string, start bool, mode ...runTxMode) {
-	if app.startLog != nil && (len(mode) == 0 || (len(mode) == 1 && mode[0] == runTxModeDeliver)) {
+func (app *BaseApp) pin(tag string, start bool, modes ...runTxMode) {
+	mode := runTxModeDeliver
+	if len(modes) == 1 {
+		mode = modes[0]
+	}
+
+	if mode != runTxModeDeliver {
+		return
+	}
+
+	if app.startLog != nil {
 		if start {
 			app.startLog(tag)
 		} else {
