@@ -14,6 +14,9 @@ import (
 )
 
 func (app *BaseApp) deliverTxsWithParallel(group map[int][]int, nextTx map[int]int) []*abci.ResponseDeliverTx {
+	ts := time.Now()
+
+	tsCallBack := time.Duration(0)
 	txs := app.parallelTxManage.txs
 	txsBytes := app.parallelTxManage.txsByte
 
@@ -28,6 +31,10 @@ func (app *BaseApp) deliverTxsWithParallel(group map[int][]int, nextTx map[int]i
 
 	deliverTxsResponse := make([]*abci.ResponseDeliverTx, len(txs), len(txs))
 	AsyncCb := func(execRes abci.ExecuteRes) {
+		ts := time.Now()
+		defer func() {
+			tsCallBack += time.Now().Sub(ts)
+		}()
 		txReps[execRes.GetCounter()] = execRes
 		//fmt.Println("zhixingwanbi", execRes.GetCounter(), execRes.GetBase())
 		for txReps[txIndex] != nil {
@@ -78,19 +85,22 @@ func (app *BaseApp) deliverTxsWithParallel(group map[int][]int, nextTx map[int]i
 		//waiting for call back
 		<-signal
 		//CheckErr
+		fmt.Println("get signal", time.Now().Sub(ts).Microseconds())
 		receiptsLogs := app.EndParallelTxs()
 		for index, v := range receiptsLogs {
 			if len(v) != 0 { // only update evm tx result
 				deliverTxsResponse[index].Data = v
 			}
 		}
+
+		fmt.Println("fix log", time.Now().Sub(ts).Microseconds())
 	}
 	return deliverTxsResponse
 }
 
 func (app *BaseApp) PrepareParallelTxs(txs [][]byte) []*abci.ResponseDeliverTx {
 	ts := time.Now()
-	//app.parallelTxManage.isAsyncDeliverTx = true
+	app.parallelTxManage.isAsyncDeliverTx = viper.GetBool(sm.FlagParalleledTx)
 	sendAccs := make([]ethcmn.Address, 0)
 	toAccs := make([]*ethcmn.Address, 0)
 	evmIndex := uint32(0)
@@ -121,7 +131,7 @@ func (app *BaseApp) PrepareParallelTxs(txs [][]byte) []*abci.ResponseDeliverTx {
 		app.parallelTxManage.indexMapBytes = append(app.parallelTxManage.indexMapBytes, vString)
 	}
 
-	if !viper.GetBool(sm.FlagParalleledTx) {
+	if !app.parallelTxManage.isAsyncDeliverTx {
 		return nil
 
 	}
@@ -168,6 +178,7 @@ func (app *BaseApp) EndParallelTxs() [][]byte {
 }
 
 func (app *BaseApp) parallelTx(index int) {
+	ts := time.Now()
 	if app.parallelTxManage.GetRunningStats(index) {
 		return
 	}
@@ -185,29 +196,28 @@ func (app *BaseApp) parallelTx(index int) {
 	if !txStatus.isEvmTx {
 		asyncExe := NewExecuteResult(abci.ResponseDeliverTx{}, nil, txStatus.indexInBlock, txStatus.evmIndex, mergedIndex)
 		app.parallelTxManage.workgroup.Push(asyncExe)
+		return
 	}
 
-	go func() {
-		mergedIndex := mergedIndex
-		var resp abci.ResponseDeliverTx
-		g, r, m, e := app.runTx(runTxModeDeliverInAsync, txBytes, txStd, LatestSimulateTxHeight)
-		if e != nil {
-			resp = sdkerrors.ResponseDeliverTx(e, 0, 0, app.trace)
-		} else {
-			resp = abci.ResponseDeliverTx{
-				GasWanted: int64(g.GasWanted), // TODO: Should type accept unsigned ints?
-				GasUsed:   int64(g.GasUsed),   // TODO: Should type accept unsigned ints?
-				Log:       r.Log,
-				Data:      r.Data,
-				Events:    r.Events.ToABCIEvents(),
-			}
+	var resp abci.ResponseDeliverTx
+	g, r, m, e := app.runTx(runTxModeDeliverInAsync, txBytes, txStd, LatestSimulateTxHeight)
+	if e != nil {
+		resp = sdkerrors.ResponseDeliverTx(e, 0, 0, app.trace)
+	} else {
+		resp = abci.ResponseDeliverTx{
+			GasWanted: int64(g.GasWanted), // TODO: Should type accept unsigned ints?
+			GasUsed:   int64(g.GasUsed),   // TODO: Should type accept unsigned ints?
+			Log:       r.Log,
+			Data:      r.Data,
+			Events:    r.Events.ToABCIEvents(),
 		}
+	}
 
-		txStatus := app.parallelTxManage.txStatus[string(txBytes)]
-		asyncExe := NewExecuteResult(resp, m, txStatus.indexInBlock, txStatus.evmIndex, mergedIndex)
-		asyncExe.err = e
-		app.parallelTxManage.workgroup.Push(asyncExe)
-	}()
+	txStatus = app.parallelTxManage.txStatus[string(txBytes)]
+	asyncExe := NewExecuteResult(resp, m, txStatus.indexInBlock, txStatus.evmIndex, mergedIndex)
+	asyncExe.err = e
+	app.parallelTxManage.workgroup.Push(asyncExe)
+	fmt.Println("ts--end", time.Now().Sub(ts).Microseconds(), "index", asyncExe.Counter, "base", asyncExe.base)
 }
 func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx) abci.ExecuteRes { //TODO delete return
 	panic("need delete")
