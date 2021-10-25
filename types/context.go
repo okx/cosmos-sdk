@@ -36,6 +36,8 @@ type Context struct {
 	consParams    *abci.ConsensusParams
 	eventManager  *EventManager
 	accountNonce  uint64
+	sigCache      SigCache
+	isAsync       bool
 }
 
 // Proposed rename, not done to avoid API breakage
@@ -56,7 +58,9 @@ func (c Context) IsCheckTx() bool             { return c.checkTx }
 func (c Context) IsReCheckTx() bool           { return c.recheckTx }
 func (c Context) MinGasPrices() DecCoins      { return c.minGasPrice }
 func (c Context) EventManager() *EventManager { return c.eventManager }
+func (c Context) IsAsync() bool               { return c.isAsync }
 func (c Context) AccountNonce() uint64        { return c.accountNonce }
+func (c Context) SigCache() SigCache          { return c.sigCache }
 
 // clone the header before returning
 func (c Context) BlockHeader() abci.Header {
@@ -92,6 +96,11 @@ func (c Context) WithContext(ctx context.Context) Context {
 
 func (c Context) WithMultiStore(ms MultiStore) Context {
 	c.ms = ms
+	return c
+}
+
+func (c Context) WithAsync() Context {
+	c.isAsync = true
 	return c
 }
 
@@ -231,4 +240,16 @@ func (c Context) CacheContext() (cc Context, writeCache func()) {
 	cms := c.MultiStore().CacheMultiStore()
 	cc = c.WithMultiStore(cms).WithEventManager(NewEventManager())
 	return cc, cms.Write
+}
+
+// WithSigCache set sigCache.
+func (c Context) WithSigCache(cache SigCache) Context {
+	c.sigCache = cache
+	return c
+}
+
+// An emptyCtx  has no values. It is a
+// struct{}.
+func EmptyContext() Context {
+	return Context{}
 }
