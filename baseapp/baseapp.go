@@ -662,11 +662,7 @@ func (app *BaseApp) cacheTxContext(ctx sdk.Context, txBytes []byte) (sdk.Context
 	return ctx.WithMultiStore(msCache), msCache
 }
 
-func (app *BaseApp) pin(tag string, start bool, modes ...runTxMode) {
-	mode := runTxModeDeliver
-	if len(modes) == 1 {
-		mode = modes[0]
-	}
+func (app *BaseApp) pin(tag string, start bool, mode runTxMode) {
 
 	if mode != runTxModeDeliver {
 		return
