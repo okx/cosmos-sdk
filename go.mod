@@ -10,7 +10,7 @@ require (
 	github.com/cosmos/go-bip39 v0.0.0-20180819234021-555e2067c45d
 	github.com/cosmos/ledger-cosmos-go v0.11.1
 	github.com/ethereum/go-ethereum v1.9.25
-	github.com/gogo/protobuf v1.3.2
+	github.com/gogo/protobuf v1.3.1
 	github.com/golang/mock v1.3.1
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
