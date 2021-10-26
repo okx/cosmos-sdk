@@ -20,6 +20,7 @@ import (
 	"github.com/spf13/viper"
 	tmiavl "github.com/tendermint/iavl"
 	"github.com/tendermint/tendermint/abci/server"
+	abci "github.com/tendermint/tendermint/abci/types"
 	tcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/mempool"
@@ -135,7 +136,7 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().String(FlagEvmImportPath, "", "Evm contract & storage db or files used for InitGenesis")
 	cmd.Flags().Uint64(FlagGoroutineNum, 0, "Limit on the number of goroutines used to import evm data(ignored if evm-import-mode is 'default')")
 	cmd.Flags().Int(iavl.FlagIavlCacheSize, 1000000, "Max size of iavl cache")
-	cmd.Flags().StringToInt(tmiavl.FlagOutputModules, map[string]int{"evm": 1, "acc": 1},"decide which module in iavl to be printed")
+	cmd.Flags().StringToInt(tmiavl.FlagOutputModules, map[string]int{"evm": 1, "acc": 1}, "decide which module in iavl to be printed")
 	cmd.Flags().Int64(tmiavl.FlagIavlCommitIntervalHeight, 100, "Max interval to commit node cache into leveldb")
 	cmd.Flags().Int64(tmiavl.FlagIavlMinCommitItemCount, 500000, "Min nodes num to triggle node cache commit")
 	cmd.Flags().Int(tmiavl.FlagIavlHeightOrphansCacheSize, 8, "Max orphan version to cache in memory")
@@ -143,6 +144,9 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().Bool(tmiavl.FlagIavlEnableAsyncCommit, false, "Enable async commit")
 	cmd.Flags().Int(tmdb.FlagLevelDBCacheSize, 128, "The amount of memory in megabytes to allocate to leveldb")
 	cmd.Flags().Int(tmdb.FlagLevelDBHandlersNum, 1024, "The number of files handles to allocate to the open database files")
+	cmd.Flags().Bool(abci.FlagCloseMutex, false, "Close local client query mutex for better concurrency")
+	cmd.Flags().Bool(abci.FlagCloseCheckTxMutex, false, "Close local client checkTx mutex for better concurrency")
+	cmd.Flags().Bool(abci.FlagRemoveCheckTx, false, "Remove checkTx for test")
 	// Don`t use cmd.Flags().*Var functions(such as cmd.Flags.IntVar) here, because it doesn't work with environment variables.
 	// Use setExternalPackageValue function instead.
 	viper.BindPFlag(FlagTrace, cmd.Flags().Lookup(FlagTrace))
@@ -315,4 +319,8 @@ func setExternalPackageValue(cmd *cobra.Command) {
 	tmiavl.EnableAsyncCommit = viper.GetBool(tmiavl.FlagIavlEnableAsyncCommit)
 	tmdb.LevelDBCacheSize = viper.GetInt(tmdb.FlagLevelDBCacheSize)
 	tmdb.LevelDBHandlersNum = viper.GetInt(tmdb.FlagLevelDBHandlersNum)
+
+	abci.SetCloseMutex(viper.GetBool(abci.FlagCloseMutex))
+	abci.SetCloseCheckTxMutex(viper.GetBool(abci.FlagCloseCheckTxMutex))
+	abci.SetRemoveCheckTx(viper.GetBool(abci.FlagRemoveCheckTx))
 }
