@@ -2,12 +2,14 @@ package baseapp
 
 import (
 	"fmt"
+	"github.com/spf13/viper"
 	"os"
 	"sort"
 	"strings"
 	"syscall"
 
 	abci "github.com/tendermint/tendermint/abci/types"
+	sm "github.com/tendermint/tendermint/state"
 	"github.com/tendermint/tendermint/trace"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -232,7 +234,7 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 			app.parallelTxManage.workgroup.Push(asyncExe)
 			return abci.ResponseDeliverTx{}
 		}
-			
+
 		go func() {
 			var resp abci.ResponseDeliverTx
 			g, r, m, e := app.runTx(runTxModeDeliverInAsync, req.Tx, tx, LatestSimulateTxHeight)
@@ -251,6 +253,9 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 			txStatus := app.parallelTxManage.txStatus[string(req.Tx)]
 			asyncExe := NewExecuteResult(resp, m, txStatus.indexInBlock, txStatus.evmIndex)
 			asyncExe.err = e
+			if e != nil && viper.GetBool(sm.FlagParalleledTx) {
+				app.Logger().Error(sm.FlagParalleledTx, "err", e, "index", txStatus.indexInBlock, "ms==nil", asyncExe.Ms == nil, "code", asyncExe.Resp.Code)
+			}
 			app.parallelTxManage.workgroup.Push(asyncExe)
 		}()
 		return abci.ResponseDeliverTx{}

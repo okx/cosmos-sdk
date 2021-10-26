@@ -2,6 +2,8 @@ package baseapp
 
 import (
 	"encoding/hex"
+	"github.com/spf13/viper"
+	sm "github.com/tendermint/tendermint/state"
 	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -96,6 +98,9 @@ func (app *BaseApp) DeliverTxWithCache(req abci.RequestDeliverTx) abci.ExecuteRe
 	txStatus := app.parallelTxManage.txStatus[string(req.Tx)]
 	asyncExe := NewExecuteResult(resp, m, txStatus.indexInBlock, txStatus.evmIndex)
 	asyncExe.err = e
+	if e != nil && viper.GetBool(sm.FlagParalleledTx) {
+		app.Logger().Error(sm.FlagParalleledTx, "err-withCache", e, "index", txStatus.indexInBlock, "ms==nil", asyncExe.Ms == nil, "code", asyncExe.Resp.Code)
+	}
 	return asyncExe
 }
 
