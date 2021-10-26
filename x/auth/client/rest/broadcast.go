@@ -42,7 +42,7 @@ func BroadcastTxRequest(cliCtx context.CLIContext) http.HandlerFunc {
 
 		cliCtx = cliCtx.WithBroadcastMode(req.Mode)
 
-		res, err := cliCtx.BroadcastTx(txBytes)
+		res, err := cliCtx.BroadcastTx(txBytes, req.Tx.GetGas())
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return

@@ -59,7 +59,7 @@ func TestBroadcastError(t *testing.T) {
 	for _, mode := range modes {
 		for err, code := range errors {
 			ctx := CreateContextWithErrorAndMode(err, mode)
-			resp, returnedErr := ctx.BroadcastTx(txBytes)
+			resp, returnedErr := ctx.BroadcastTx(txBytes, 1000)
 			require.NoError(t, returnedErr)
 			require.Equal(t, code, resp.Code)
 			require.Equal(t, txHash, resp.TxHash)
