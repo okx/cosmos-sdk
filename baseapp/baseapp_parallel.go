@@ -36,15 +36,13 @@ func (app *BaseApp) deliverTxsWithParallel(group map[int][]int, nextTx map[int]i
 			tsCallBack += time.Now().Sub(ts)
 		}()
 		txReps[execRes.GetCounter()] = execRes
-		//fmt.Println("zhixingwanbi", execRes.GetCounter(), execRes.GetBase())
 		for txReps[txIndex] != nil {
 			res := txReps[txIndex]
 			cc := res.Conflict(asCache)
-			//fmt.Println("tcInfr", txIndex, cc, res.GetCounter(), res.GetBase())
-			if cc {
+			if cc && !res.Final() {
 				rerunIdx++
 				txReps[txIndex] = nil
-				go app.parallelTx(txIndex)
+				go app.parallelTx(txIndex, true)
 				//check proxy.err?
 				return
 			}
@@ -62,10 +60,9 @@ func (app *BaseApp) deliverTxsWithParallel(group map[int][]int, nextTx map[int]i
 
 			app.parallelTxManage.currMergeIndex = txIndex
 			if nextTxIndex, ok := nextTx[txIndex]; ok {
-				go app.parallelTx(nextTxIndex)
+				go app.parallelTx(nextTxIndex, false)
 			}
 			txIndex++
-			//fmt.Println("current", txIndex)
 			if txIndex == len(txsBytes) {
 				app.logger.Info(fmt.Sprintf("BlockHeight %d With Tx %d : Paralle run %d, Conflected tx %d CommitTs %d",
 					app.LastBlockHeight(), len(txsBytes), len(deliverTxsResponse)-rerunIdx, rerunIdx, tsCommi.Microseconds()))
@@ -78,7 +75,7 @@ func (app *BaseApp) deliverTxsWithParallel(group map[int][]int, nextTx map[int]i
 	app.parallelTxManage.workgroup.Cb = AsyncCb
 
 	for index := 0; index < len(group); index++ {
-		go app.parallelTx(group[index][0])
+		go app.parallelTx(group[index][0], false)
 	}
 
 	if len(txsBytes) > 0 {
@@ -137,7 +134,7 @@ func (app *BaseApp) PrepareParallelTxs(txs [][]byte) []*abci.ResponseDeliverTx {
 	//fmt.Println("zhunbei fenzu")
 	groupList, nextTxInGroup := grouping(sendAccs, toAccs)
 	fmt.Println("grouping", time.Now().Sub(ts).Microseconds())
-	//fmt.Println("fenzu", len(groupList), groupList, nextTxInGroup)
+	fmt.Println("fenzu", len(groupList), groupList, nextTxInGroup)
 	res := app.deliverTxsWithParallel(groupList, nextTxInGroup)
 	fmt.Println("run-end", time.Now().Sub(ts).Microseconds())
 	//fmt.Println("RRRRRR", len(res))
@@ -175,7 +172,7 @@ func (app *BaseApp) EndParallelTxs() [][]byte {
 	return app.logFix(txExecStats)
 }
 
-func (app *BaseApp) parallelTx(index int) {
+func (app *BaseApp) parallelTx(index int, final bool) {
 	ts := time.Now()
 	if app.parallelTxManage.GetRunningStats(index) {
 		return
@@ -191,9 +188,10 @@ func (app *BaseApp) parallelTx(index int) {
 	mergedIndex := app.parallelTxManage.currMergeIndex
 	txStatus := app.parallelTxManage.txStatus[string(txBytes)]
 
-	if !txStatus.isEvmTx {
-		asyncExe := NewExecuteResult(abci.ResponseDeliverTx{}, nil, txStatus.indexInBlock, txStatus.evmIndex, mergedIndex)
+	if !final && !txStatus.isEvmTx {
+		asyncExe := NewExecuteResult(abci.ResponseDeliverTx{}, nil, txStatus.indexInBlock, txStatus.evmIndex, mergedIndex, final)
 		app.parallelTxManage.workgroup.Push(asyncExe)
+		fmt.Println("Return", txStatus.indexInBlock)
 		return
 	}
 
@@ -212,7 +210,7 @@ func (app *BaseApp) parallelTx(index int) {
 	}
 
 	txStatus = app.parallelTxManage.txStatus[string(txBytes)]
-	asyncExe := NewExecuteResult(resp, m, txStatus.indexInBlock, txStatus.evmIndex, mergedIndex)
+	asyncExe := NewExecuteResult(resp, m, txStatus.indexInBlock, txStatus.evmIndex, mergedIndex, final)
 	asyncExe.err = e
 	app.parallelTxManage.workgroup.Push(asyncExe)
 	fmt.Println("ts--end", time.Now().Sub(ts).Microseconds(), "index", asyncExe.Counter, "base", asyncExe.base)
@@ -228,6 +226,7 @@ type ExecuteResult struct {
 	err        error
 	evmCounter uint32
 	base       int
+	final      bool
 }
 
 func (e ExecuteResult) GetResponse() abci.ResponseDeliverTx {
@@ -235,12 +234,12 @@ func (e ExecuteResult) GetResponse() abci.ResponseDeliverTx {
 }
 
 func (e ExecuteResult) Conflict(cache abci.AsyncCacheInterface) bool {
-	if e.base+1 == int(e.Counter) {
-		return false
-	}
 	rerun := false
 	if e.Ms == nil {
 		return true //TODO fix later
+	}
+	if e.base+1 == int(e.Counter) {
+		return false
 	}
 
 	e.Ms.IteratorCache(func(key, value []byte, isDirty bool) bool {
@@ -288,13 +287,17 @@ func (e ExecuteResult) Commit() {
 	e.Ms.Write()
 }
 
-func NewExecuteResult(r abci.ResponseDeliverTx, ms sdk.CacheMultiStore, counter uint32, evmCounter uint32, base int) ExecuteResult {
+func (e ExecuteResult) Final() bool {
+	return e.final
+}
+func NewExecuteResult(r abci.ResponseDeliverTx, ms sdk.CacheMultiStore, counter uint32, evmCounter uint32, base int, final bool) ExecuteResult {
 	return ExecuteResult{
 		Resp:       r,
 		Ms:         ms,
 		Counter:    counter,
 		evmCounter: evmCounter,
 		base:       base,
+		final:      final,
 	}
 }
 
