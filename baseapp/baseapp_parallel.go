@@ -82,10 +82,8 @@ func (app *BaseApp) deliverTxsWithParallel(group map[int][]int, nextTx map[int]i
 	}
 
 	if len(txsBytes) > 0 {
-		//waiting for call back
 		<-signal
-		//CheckErr
-		fmt.Println("get signal", time.Now().Sub(ts).Microseconds())
+		fmt.Println("get signal", time.Now().Sub(ts).Microseconds(), validTxs, invalidTxs)
 		receiptsLogs := app.EndParallelTxs()
 		for index, v := range receiptsLogs {
 			if len(v) != 0 { // only update evm tx result
