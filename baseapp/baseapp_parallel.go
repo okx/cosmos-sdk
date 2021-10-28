@@ -2,35 +2,75 @@ package baseapp
 
 import (
 	"encoding/hex"
+	"github.com/spf13/viper"
 	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
+	smState "github.com/tendermint/tendermint/state"
 )
 
-func (app *BaseApp) PrepareParallelTxs(cb abci.AsyncCallBack, txs [][]byte) {
-	app.parallelTxManage.workgroup.Cb = cb
-	app.parallelTxManage.isAsyncDeliverTx = true
-	evmIndex := uint32(0)
-	for k, v := range txs {
-		tx, err := app.txDecoder(v)
+type prepareDataByTx struct {
+	coin      sdk.Coins
+	isEvm     bool
+	signCache sdk.SigCache
+}
+
+func (app *BaseApp) getPrepareData(txs [][]byte) []*prepareDataByTx {
+	res := make([]*prepareDataByTx, len(txs), len(txs))
+	var wg sync.WaitGroup
+	for index, txBytes := range txs {
+		wg.Add(1)
+		index := index
+		txBytes := txBytes
+		tx, err := app.txDecoder(txBytes)
 		if err != nil {
 			panic(err)
 		}
+		go func() {
+			coin, isEvm, s := app.getTxFee(app.getContextForTx(runTxModeDeliverInAsync, txBytes), tx)
+			res[index] = &prepareDataByTx{
+				coin:      coin,
+				isEvm:     isEvm,
+				signCache: s,
+			}
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+	return res
+}
+
+func (app *BaseApp) PrepareParallelTxs(cb abci.AsyncCallBack, txs [][]byte) {
+	res := app.getPrepareData(txs)
+	for k, v := range txs {
+		if res[k] != nil {
+			app.parallelTxManage.signCache[string(v)] = res[k].signCache
+		}
+	}
+	app.parallelTxManage.isAsyncDeliverTx = viper.GetBool(smState.FlagParalleledTx)
+	if !app.parallelTxManage.isAsyncDeliverTx {
+		return
+	}
+
+	app.parallelTxManage.workgroup.Cb = cb
+
+	evmIndex := uint32(0)
+
+	for k, v := range txs {
 		t := &txStatus{
 			indexInBlock: uint32(k),
 		}
-		fee, isEvm := app.getTxFee(tx)
-		if isEvm {
+
+		if res[k].isEvm {
 			t.evmIndex = evmIndex
 			t.isEvmTx = true
 			evmIndex++
 		}
 
 		vString := string(v)
-		app.parallelTxManage.SetFee(vString, fee)
-
+		app.parallelTxManage.SetFee(vString, res[k].coin)
 		app.parallelTxManage.txStatus[vString] = t
 		app.parallelTxManage.indexMapBytes = append(app.parallelTxManage.indexMapBytes, vString)
 	}
@@ -205,6 +245,7 @@ type parallelTxManager struct {
 
 	txStatus      map[string]*txStatus
 	indexMapBytes []string
+	signCache     map[string]sdk.SigCache
 }
 
 type txStatus struct {
@@ -223,6 +264,7 @@ func newParallelTxManager() *parallelTxManager {
 
 		txStatus:      make(map[string]*txStatus),
 		indexMapBytes: make([]string, 0),
+		signCache:     make(map[string]sdk.SigCache, 0),
 	}
 }
 
@@ -234,6 +276,7 @@ func (f *parallelTxManager) Clear() {
 
 	f.txStatus = make(map[string]*txStatus)
 	f.indexMapBytes = make([]string, 0)
+	f.signCache = make(map[string]sdk.SigCache, 0)
 
 }
 func (f *parallelTxManager) SetFee(key string, value sdk.Coins) {
