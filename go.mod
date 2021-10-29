@@ -41,4 +41,5 @@ replace (
 	github.com/tendermint/iavl => github.com/okex/iavl v0.14.4-0.20211017125710-ea90b217eb85
 	github.com/tendermint/tendermint => github.com/okex/tendermint v0.33.9-okexchain6.0.20211022041125-711c3dae1170
 	github.com/tendermint/tm-db => github.com/okex/tm-db v0.5.2-exchain1
+	github.com/tendermint/go-amino => github.com/cwbhhjl/go-amino v0.15.2-0.20211028115616-3fb4d127e6a3
 )
