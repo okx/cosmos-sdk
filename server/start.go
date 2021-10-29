@@ -20,6 +20,7 @@ import (
 	"github.com/spf13/viper"
 	tmiavl "github.com/tendermint/iavl"
 	"github.com/tendermint/tendermint/abci/server"
+	abci "github.com/tendermint/tendermint/abci/types"
 	tcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/mempool"
@@ -144,6 +145,12 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().Bool(tmiavl.FlagIavlEnableAsyncCommit, false, "Enable async commit")
 	cmd.Flags().Int(tmdb.FlagLevelDBCacheSize, 128, "The amount of memory in megabytes to allocate to leveldb")
 	cmd.Flags().Int(tmdb.FlagLevelDBHandlersNum, 1024, "The number of files handles to allocate to the open database files")
+	cmd.Flags().Bool(abci.FlagDisableQueryMutex, false, "Disable local client query mutex for better concurrency")
+	cmd.Flags().Bool(abci.FlagDisableCheckTxMutex, false, "Disable local client checkTx mutex for better concurrency")
+	cmd.Flags().Bool(abci.FlagDisableCheckTx, false, "Disable checkTx for test")
+	cmd.Flags().MarkHidden(abci.FlagDisableCheckTx)
+	cmd.Flags().Bool(abci.FlagCloseMutex, false, fmt.Sprintf("Deprecated in v0.19.13 version, use --%s instead.", abci.FlagDisableQueryMutex))
+	cmd.Flags().MarkHidden(abci.FlagCloseMutex)
 	// Don`t use cmd.Flags().*Var functions(such as cmd.Flags.IntVar) here, because it doesn't work with environment variables.
 	// Use setExternalPackageValue function instead.
 	viper.BindPFlag(FlagTrace, cmd.Flags().Lookup(FlagTrace))
@@ -318,4 +325,8 @@ func setExternalPackageValue(cmd *cobra.Command) {
 	tmiavl.EnableAsyncCommit = viper.GetBool(tmiavl.FlagIavlEnableAsyncCommit)
 	tmdb.LevelDBCacheSize = viper.GetInt(tmdb.FlagLevelDBCacheSize)
 	tmdb.LevelDBHandlersNum = viper.GetInt(tmdb.FlagLevelDBHandlersNum)
+
+	abci.SetDisableQueryMutex(viper.GetBool(abci.FlagDisableQueryMutex))
+	abci.SetDisableCheckTxMutex(viper.GetBool(abci.FlagDisableCheckTxMutex))
+	abci.SetDisableCheckTx(viper.GetBool(abci.FlagDisableCheckTx))
 }
