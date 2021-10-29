@@ -9,6 +9,7 @@ import (
 
 	"github.com/tendermint/iavl"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/trace"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -189,7 +190,7 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 		panic(fmt.Sprintf("unknown RequestCheckTx type: %s", req.Type))
 	}
 
-	gInfo, result, err := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight)
+	gInfo, result, _, err := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight)
 	if err != nil {
 		return sdkerrors.ResponseCheckTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
 	}
@@ -209,12 +210,56 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 // Regardless of tx execution outcome, the ResponseDeliverTx will contain relevant
 // gas execution context.
 func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
+	app.pin("DeliverTx", true, runTxModeDeliver)
+	defer app.pin("DeliverTx", false, runTxModeDeliver)
+
+	app.pin("txdecoder", true, runTxModeDeliver)
+
 	tx, err := app.txDecoder(req.Tx)
 	if err != nil {
 		return sdkerrors.ResponseDeliverTx(err, 0, 0, app.trace)
 	}
 
-	gInfo, result, err := app.runTx(runTxModeDeliver, req.Tx, tx, LatestSimulateTxHeight)
+	app.pin("txdecoder", false, runTxModeDeliver)
+
+	var (
+		gInfo  sdk.GasInfo
+		result *sdk.Result
+	)
+
+	//just for asynchronous deliver tx
+	if app.parallelTxManage.isAsyncDeliverTx {
+		txStatus := app.parallelTxManage.txStatus[string(req.Tx)]
+		if !txStatus.isEvmTx {
+			asyncExe := NewExecuteResult(abci.ResponseDeliverTx{}, nil, txStatus.indexInBlock, txStatus.evmIndex)
+			app.parallelTxManage.workgroup.Push(asyncExe)
+			return abci.ResponseDeliverTx{}
+		}
+			
+		go func() {
+			var resp abci.ResponseDeliverTx
+			g, r, m, e := app.runTx(runTxModeDeliverInAsync, req.Tx, tx, LatestSimulateTxHeight)
+			if e != nil {
+				resp = sdkerrors.ResponseDeliverTx(e, 0, 0, app.trace)
+			} else {
+				resp = abci.ResponseDeliverTx{
+					GasWanted: int64(g.GasWanted), // TODO: Should type accept unsigned ints?
+					GasUsed:   int64(g.GasUsed),   // TODO: Should type accept unsigned ints?
+					Log:       r.Log,
+					Data:      r.Data,
+					Events:    r.Events.ToABCIEvents(),
+				}
+			}
+
+			txStatus := app.parallelTxManage.txStatus[string(req.Tx)]
+			asyncExe := NewExecuteResult(resp, m, txStatus.indexInBlock, txStatus.evmIndex)
+			asyncExe.err = e
+			app.parallelTxManage.workgroup.Push(asyncExe)
+		}()
+		return abci.ResponseDeliverTx{}
+	}
+
+	gInfo, result, _, err = app.runTx(runTxModeDeliver, req.Tx, tx, LatestSimulateTxHeight)
 	if err != nil {
 		return sdkerrors.ResponseDeliverTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
 	}
@@ -246,6 +291,12 @@ func (app *BaseApp) Commit(req abci.RequestCommit) abci.ResponseCommit {
 	// MultiStore (app.cms) so when Commit() is called is persists those values.
 	app.deliverState.ms.Write()
 	commitID, _, deltas := app.cms.Commit(&iavl.TreeDelta{}, req.Deltas.DeltasByte)
+
+	trace.GetElapsedInfo().AddInfo("Iavl", fmt.Sprintf("getnode<%d>, rdb<%d>, savenode<%d>",
+		app.cms.GetNodeReadCount(), app.cms.GetDBReadCount(), app.cms.GetDBWriteCount()))
+
+	app.cms.ResetCount()
+
 	app.logger.Debug("Commit synced", "commit", fmt.Sprintf("%X", commitID))
 
 	// Reset the Check state to the latest committed.
@@ -341,7 +392,10 @@ func handleQueryApp(app *BaseApp, path []string, req abci.RequestQuery) abci.Res
 			}
 
 			gInfo, res, err := app.Simulate(txBytes, tx, req.Height)
-			if err != nil {
+			// if path contains mempool, it means to enable MaxGasUsedPerBlock
+			// return the actual gasUsed even though simulate tx failed
+			isMempoolSim := len(path) >= 3 && path[2] == "mempool"
+			if err != nil && !isMempoolSim {
 				return sdkerrors.QueryResult(sdkerrors.Wrap(err, "failed to simulate tx"))
 			}
 

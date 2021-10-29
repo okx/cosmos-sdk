@@ -8,6 +8,8 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/store"
 	"github.com/cosmos/cosmos-sdk/store/types"
+	tmiavl "github.com/tendermint/iavl"
+
 )
 
 // GetPruningOptionsFromFlags parses command flags and returns the correct
@@ -18,6 +20,10 @@ func GetPruningOptionsFromFlags() (types.PruningOptions, error) {
 
 	switch strategy {
 	case types.PruningOptionDefault, types.PruningOptionNothing, types.PruningOptionEverything:
+		if strategy == types.PruningOptionNothing {
+			tmiavl.EnablePruningHistoryState = false
+			tmiavl.CommitIntervalHeight = 1
+		}
 		return types.NewPruningOptionsFromString(strategy), nil
 
 	case types.PruningOptionCustom:

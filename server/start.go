@@ -7,17 +7,16 @@ import (
 	"os"
 	"runtime/pprof"
 
-	"github.com/cosmos/cosmos-sdk/client/context"
-	"github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/tendermint/tendermint/rpc/client/local"
-
 	"github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store/iavl"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	tmiavl "github.com/tendermint/iavl"
 	"github.com/tendermint/tendermint/abci/server"
 	tcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
 	tmos "github.com/tendermint/tendermint/libs/os"
@@ -26,6 +25,8 @@ import (
 	"github.com/tendermint/tendermint/p2p"
 	pvm "github.com/tendermint/tendermint/privval"
 	"github.com/tendermint/tendermint/proxy"
+	"github.com/tendermint/tendermint/rpc/client/local"
+	"github.com/tendermint/tendermint/state"
 	tmtypes "github.com/tendermint/tendermint/types"
 	tmdb "github.com/tendermint/tm-db"
 )
@@ -59,7 +60,7 @@ const (
 // StartCmd runs the service passed in, either stand-alone or in-process with
 // Tendermint.
 func StartCmd(ctx *Context,
-	cdc *codec.Codec, appCreator AppCreator,
+	cdc *codec.Codec, appCreator AppCreator, appStop AppStop,
 	registerRoutesFn func(restServer *lcd.RestServer),
 	registerAppFlagFn func(cmd *cobra.Command)) *cobra.Command {
 	cmd := &cobra.Command{
@@ -88,6 +89,7 @@ For profiling and benchmarking purposes, CPU profiling can be enabled via the '-
 which accepts a path for the resulting pprof file.
 `,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
+			setExternalPackageValue(cmd)
 			_, err := GetPruningOptionsFromFlags()
 			return err
 		},
@@ -100,7 +102,7 @@ which accepts a path for the resulting pprof file.
 			ctx.Logger.Info("starting ABCI with Tendermint")
 
 			setPID(ctx)
-			_, err := startInProcess(ctx, cdc, appCreator, registerRoutesFn)
+			_, err := startInProcess(ctx, cdc, appCreator, appStop, registerRoutesFn)
 			if err != nil {
 				tmos.Exit(err.Error())
 			}
@@ -133,12 +135,25 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().String(FlagEvmImportMode, "default", "Select import mode for evm state (default|files|db)")
 	cmd.Flags().String(FlagEvmImportPath, "", "Evm contract & storage db or files used for InitGenesis")
 	cmd.Flags().Uint64(FlagGoroutineNum, 0, "Limit on the number of goroutines used to import evm data(ignored if evm-import-mode is 'default')")
+
 	cmd.Flags().String(tmtypes.FlagStateDelta, tmtypes.NoDelta, "sync through state delta")
 	cmd.Flags().Bool(tmtypes.FlagDataCenter, false, "Use data-center-mode or not")
 	cmd.Flags().String(tmtypes.DataCenterUrl, "http://127.0.0.1:7002/", "data-center-url")
 	cmd.Flags().IntVar(&iavl.IavlCacheSize, iavl.FlagIavlCacheSize, 1000000, "Max size of iavl cache")
 	cmd.Flags().IntVar(&tmdb.LevelDBCacheSize, tmdb.FlagLevelDBCacheSize, 128, "The amount of memory in megabytes to allocate to leveldb")
 	cmd.Flags().IntVar(&tmdb.LevelDBHandlersNum, tmdb.FlagLevelDBHandlersNum, 1024, "The number of files handles to allocate to the open database files")
+
+	cmd.Flags().Int(iavl.FlagIavlCacheSize, 1000000, "Max size of iavl cache")
+	cmd.Flags().StringToInt(tmiavl.FlagOutputModules, map[string]int{"evm": 1, "acc": 1}, "decide which module in iavl to be printed")
+	cmd.Flags().Int64(tmiavl.FlagIavlCommitIntervalHeight, 100, "Max interval to commit node cache into leveldb")
+	cmd.Flags().Int64(tmiavl.FlagIavlMinCommitItemCount, 500000, "Min nodes num to triggle node cache commit")
+	cmd.Flags().Int(tmiavl.FlagIavlHeightOrphansCacheSize, 8, "Max orphan version to cache in memory")
+	cmd.Flags().Int(tmiavl.FlagIavlMaxCommittedHeightNum, 30, "Max committed version to cache in memory")
+	cmd.Flags().Bool(tmiavl.FlagIavlEnableAsyncCommit, false, "Enable async commit")
+	cmd.Flags().Int(tmdb.FlagLevelDBCacheSize, 128, "The amount of memory in megabytes to allocate to leveldb")
+	cmd.Flags().Int(tmdb.FlagLevelDBHandlersNum, 1024, "The number of files handles to allocate to the open database files")
+	// Don`t use cmd.Flags().*Var functions(such as cmd.Flags.IntVar) here, because it doesn't work with environment variables.
+	// Use setExternalPackageValue function instead.
 
 	viper.BindPFlag(FlagTrace, cmd.Flags().Lookup(FlagTrace))
 	viper.BindPFlag(FlagPruning, cmd.Flags().Lookup(FlagPruning))
@@ -152,6 +167,7 @@ which accepts a path for the resulting pprof file.
 	viper.BindPFlag(FlagEvmImportPath, cmd.Flags().Lookup(FlagEvmImportPath))
 	viper.BindPFlag(FlagGoroutineNum, cmd.Flags().Lookup(FlagGoroutineNum))
 
+	cmd.Flags().Bool(state.FlagParalleledTx, false, "Enable Parallel Tx")
 	registerRestServerFlags(cmd)
 	registerAppFlagFn(cmd)
 	registerExChainPluginFlags(cmd)
@@ -200,13 +216,12 @@ func startStandAlone(ctx *Context, appCreator AppCreator) error {
 	select {}
 }
 
-func startInProcess(ctx *Context, cdc *codec.Codec, appCreator AppCreator,
+func startInProcess(ctx *Context, cdc *codec.Codec, appCreator AppCreator, appStop AppStop,
 	registerRoutesFn func(restServer *lcd.RestServer)) (*node.Node, error) {
 
 	cfg := ctx.Config
 	home := cfg.RootDir
 	//startInProcess hooker
-
 	callHooker(FlagHookstartInProcess, ctx)
 
 	traceWriterFile := viper.GetString(flagTraceStore)
@@ -270,6 +285,7 @@ func startInProcess(ctx *Context, cdc *codec.Codec, appCreator AppCreator,
 		if tmNode.IsRunning() {
 			_ = tmNode.Stop()
 		}
+		appStop(app)
 
 		if cpuProfileCleanup != nil {
 			cpuProfileCleanup()
@@ -298,4 +314,17 @@ func startInProcess(ctx *Context, cdc *codec.Codec, appCreator AppCreator,
 
 	// run forever (the node will not be returned)
 	select {}
+}
+
+// Use setExternalPackageValue to set external package config value.
+func setExternalPackageValue(cmd *cobra.Command) {
+	iavl.IavlCacheSize = viper.GetInt(iavl.FlagIavlCacheSize)
+	tmiavl.OutputModules, _ = cmd.Flags().GetStringToInt(tmiavl.FlagOutputModules)
+	tmiavl.CommitIntervalHeight = viper.GetInt64(tmiavl.FlagIavlCommitIntervalHeight)
+	tmiavl.MinCommitItemCount = viper.GetInt64(tmiavl.FlagIavlMinCommitItemCount)
+	tmiavl.HeightOrphansCacheSize = viper.GetInt(tmiavl.FlagIavlHeightOrphansCacheSize)
+	tmiavl.MaxCommittedHeightNum = viper.GetInt(tmiavl.FlagIavlMaxCommittedHeightNum)
+	tmiavl.EnableAsyncCommit = viper.GetBool(tmiavl.FlagIavlEnableAsyncCommit)
+	tmdb.LevelDBCacheSize = viper.GetInt(tmdb.FlagLevelDBCacheSize)
+	tmdb.LevelDBHandlersNum = viper.GetInt(tmdb.FlagLevelDBHandlersNum)
 }

@@ -49,7 +49,7 @@ func NewContext(config *cfg.Config, logger log.Logger) *Context {
 // PersistentPreRunEFn returns a PersistentPreRunE function for cobra
 // that initailizes the passed in context with a properly configured
 // logger and config object.
-func PersistentPreRunEFn(context *Context, registerDynamicConfigFn func()) func(*cobra.Command, []string) error {
+func PersistentPreRunEFn(context *Context, registerDynamicConfigFn func(*Context)) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		if cmd.Name() == version.Cmd.Name() {
 			return nil
@@ -79,7 +79,7 @@ func PersistentPreRunEFn(context *Context, registerDynamicConfigFn func()) func(
 		context.Config = config
 		context.Logger = logger
 
-		registerDynamicConfigFn()
+		registerDynamicConfigFn(context)
 		return nil
 	}
 }
@@ -132,7 +132,7 @@ func interceptLoadConfig() (conf *cfg.Config, err error) {
 func AddCommands(
 	ctx *Context, cdc *codec.Codec,
 	rootCmd *cobra.Command,
-	appCreator AppCreator, appExport AppExporter,
+	appCreator AppCreator, appStop AppStop, appExport AppExporter,
 	registerRouters func(rs *lcd.RestServer),
 	registerAppFlagFn func(cmd *cobra.Command)) {
 
@@ -153,7 +153,7 @@ func AddCommands(
 	)
 
 	rootCmd.AddCommand(
-		StartCmd(ctx, cdc, appCreator, registerRouters, registerAppFlagFn),
+		StartCmd(ctx, cdc, appCreator, appStop, registerRouters, registerAppFlagFn),
 		StopCmd(ctx),
 		UnsafeResetAllCmd(ctx),
 		flags.LineBreak,

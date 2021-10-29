@@ -100,6 +100,20 @@ func (ms multiStore) SetInterBlockCache(_ sdk.MultiStorePersistentCache) {
 	panic("not implemented")
 }
 
+func (ms multiStore) GetDBWriteCount() int {
+	return 0
+}
+
+func (ms multiStore) GetDBReadCount() int {
+	return 0
+}
+func (ms multiStore) GetNodeReadCount() int {
+	return 0
+}
+
+func (ms multiStore) ResetCount() {
+}
+
 var _ sdk.KVStore = kvStore{}
 
 type kvStore struct {
@@ -165,4 +179,8 @@ func (kv kvStore) ReverseSubspaceIterator(prefix []byte) sdk.Iterator {
 
 func NewCommitMultiStore() sdk.CommitMultiStore {
 	return multiStore{kv: make(map[sdk.StoreKey]kvStore)}
+}
+
+func (ms multiStore) StopStore() {
+	panic("not implemented")
 }

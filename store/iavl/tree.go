@@ -22,6 +22,11 @@ type (
 		Set(key, value []byte) bool
 		Remove(key []byte) ([]byte, bool)
 		SaveVersion(bool) ([]byte, int64, iavl.TreeDelta, error)
+		GetModuleName() string
+		GetDBWriteCount() int
+		GetDBReadCount() int
+		GetNodeReadCount() int
+		ResetCount()
 		DeleteVersion(version int64) error
 		DeleteVersions(versions ...int64) error
 		Version() int64
@@ -96,4 +101,23 @@ func (it *immutableTree) SetInitialVersion(_ uint64) {
 
 func (it *immutableTree) SetDelta(delta *iavl.TreeDelta) {
 	panic("cannot call 'SetDelta' on an immutable IAVL tree")
+}
+
+func (it *immutableTree) GetModuleName() string {
+	return ""
+}
+
+func (it *immutableTree) GetDBWriteCount() int {
+	return 0
+}
+
+func (it *immutableTree) GetDBReadCount() int {
+	return 0
+}
+
+func (it *immutableTree) GetNodeReadCount() int {return 0}
+
+
+func (it *immutableTree) ResetCount() {
+
 }
