@@ -7,19 +7,18 @@ import (
 	"os"
 	"runtime/pprof"
 
-	"github.com/cosmos/cosmos-sdk/client/context"
-	"github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/tendermint/tendermint/rpc/client/local"
-
 	"github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store/iavl"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	tmiavl "github.com/tendermint/iavl"
 	"github.com/tendermint/tendermint/abci/server"
+	abci "github.com/tendermint/tendermint/abci/types"
 	tcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/mempool"
@@ -27,7 +26,9 @@ import (
 	"github.com/tendermint/tendermint/p2p"
 	pvm "github.com/tendermint/tendermint/privval"
 	"github.com/tendermint/tendermint/proxy"
+	"github.com/tendermint/tendermint/rpc/client/local"
 	"github.com/tendermint/tendermint/state"
+	tmtypes "github.com/tendermint/tendermint/types"
 	tmdb "github.com/tendermint/tm-db"
 )
 
@@ -135,6 +136,11 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().String(FlagEvmImportMode, "default", "Select import mode for evm state (default|files|db)")
 	cmd.Flags().String(FlagEvmImportPath, "", "Evm contract & storage db or files used for InitGenesis")
 	cmd.Flags().Uint64(FlagGoroutineNum, 0, "Limit on the number of goroutines used to import evm data(ignored if evm-import-mode is 'default')")
+
+	cmd.Flags().String(tmtypes.FlagStateDelta, tmtypes.NoDelta, "sync through state delta")
+	cmd.Flags().Bool(tmtypes.FlagDataCenter, false, "Use data-center-mode or not")
+	cmd.Flags().String(tmtypes.DataCenterUrl, "http://127.0.0.1:7002/", "data-center-url")
+
 	cmd.Flags().Int(iavl.FlagIavlCacheSize, 1000000, "Max size of iavl cache")
 	cmd.Flags().StringToInt(tmiavl.FlagOutputModules, map[string]int{"evm": 1, "acc": 1}, "decide which module in iavl to be printed")
 	cmd.Flags().Int64(tmiavl.FlagIavlCommitIntervalHeight, 100, "Max interval to commit node cache into leveldb")
@@ -144,6 +150,12 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().Bool(tmiavl.FlagIavlEnableAsyncCommit, false, "Enable async commit")
 	cmd.Flags().Int(tmdb.FlagLevelDBCacheSize, 128, "The amount of memory in megabytes to allocate to leveldb")
 	cmd.Flags().Int(tmdb.FlagLevelDBHandlersNum, 1024, "The number of files handles to allocate to the open database files")
+	cmd.Flags().Bool(abci.FlagDisableQueryMutex, false, "Disable local client query mutex for better concurrency")
+	cmd.Flags().Bool(abci.FlagDisableCheckTxMutex, false, "Disable local client checkTx mutex for better concurrency")
+	cmd.Flags().Bool(abci.FlagDisableCheckTx, false, "Disable checkTx for test")
+	cmd.Flags().MarkHidden(abci.FlagDisableCheckTx)
+	cmd.Flags().Bool(abci.FlagCloseMutex, false, fmt.Sprintf("Deprecated in v0.19.13 version, use --%s instead.", abci.FlagDisableQueryMutex))
+	cmd.Flags().MarkHidden(abci.FlagCloseMutex)
 	// Don`t use cmd.Flags().*Var functions(such as cmd.Flags.IntVar) here, because it doesn't work with environment variables.
 	// Use setExternalPackageValue function instead.
 	viper.BindPFlag(FlagTrace, cmd.Flags().Lookup(FlagTrace))
@@ -318,4 +330,8 @@ func setExternalPackageValue(cmd *cobra.Command) {
 	tmiavl.EnableAsyncCommit = viper.GetBool(tmiavl.FlagIavlEnableAsyncCommit)
 	tmdb.LevelDBCacheSize = viper.GetInt(tmdb.FlagLevelDBCacheSize)
 	tmdb.LevelDBHandlersNum = viper.GetInt(tmdb.FlagLevelDBHandlersNum)
+
+	abci.SetDisableQueryMutex(viper.GetBool(abci.FlagDisableQueryMutex))
+	abci.SetDisableCheckTxMutex(viper.GetBool(abci.FlagDisableCheckTxMutex))
+	abci.SetDisableCheckTx(viper.GetBool(abci.FlagDisableCheckTx))
 }

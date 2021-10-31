@@ -1,12 +1,14 @@
 package baseapp
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"sort"
 	"strings"
 	"syscall"
 
+	"github.com/tendermint/iavl"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/trace"
 
@@ -140,8 +142,10 @@ func (app *BaseApp) BeginBlock(req abci.RequestBeginBlock) (res abci.ResponseBeg
 
 	app.deliverState.ctx = app.deliverState.ctx.WithBlockGasMeter(gasMeter)
 
-	if app.beginBlocker != nil {
-		res = app.beginBlocker(app.deliverState.ctx, req)
+	if !req.UseDeltas {
+		if app.beginBlocker != nil {
+			res = app.beginBlocker(app.deliverState.ctx, req)
+		}
 	}
 
 	// set the signed validators for addition to context in deliverTx
@@ -187,6 +191,17 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 		panic(fmt.Sprintf("unknown RequestCheckTx type: %s", req.Type))
 	}
 
+	if abci.GetDisableCheckTx() {
+		var ctx sdk.Context
+		ctx = app.getContextForTx(mode, req.Tx)
+		exTxInfo := app.GetTxInfo(ctx, tx)
+		data, _ := json.Marshal(exTxInfo)
+
+		return abci.ResponseCheckTx{
+			Data: data,
+		}
+	}
+
 	gInfo, result, _, err := app.runTx(mode, req.Tx, tx, LatestSimulateTxHeight)
 	if err != nil {
 		return sdkerrors.ResponseCheckTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
@@ -226,14 +241,14 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 
 	//just for asynchronous deliver tx
 	if app.parallelTxManage.isAsyncDeliverTx {
-		txStatus := app.parallelTxManage.txStatus[string(req.Tx)]
-		if !txStatus.isEvmTx {
-			asyncExe := NewExecuteResult(abci.ResponseDeliverTx{}, nil, txStatus.indexInBlock, txStatus.evmIndex)
-			app.parallelTxManage.workgroup.Push(asyncExe)
-			return abci.ResponseDeliverTx{}
-		}
-			
 		go func() {
+			txStatus := app.parallelTxManage.txStatus[string(req.Tx)]
+			if !txStatus.isEvmTx {
+				asyncExe := NewExecuteResult(abci.ResponseDeliverTx{}, nil, txStatus.indexInBlock, txStatus.evmIndex)
+				app.parallelTxManage.workgroup.Push(asyncExe)
+				return
+			}
+
 			var resp abci.ResponseDeliverTx
 			g, r, m, e := app.runTx(runTxModeDeliverInAsync, req.Tx, tx, LatestSimulateTxHeight)
 			if e != nil {
@@ -248,7 +263,6 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 				}
 			}
 
-			txStatus := app.parallelTxManage.txStatus[string(req.Tx)]
 			asyncExe := NewExecuteResult(resp, m, txStatus.indexInBlock, txStatus.evmIndex)
 			asyncExe.err = e
 			app.parallelTxManage.workgroup.Push(asyncExe)
@@ -277,19 +291,23 @@ func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 // defined in config, Commit will execute a deferred function call to check
 // against that height and gracefully halt if it matches the latest committed
 // height.
-func (app *BaseApp) Commit() (res abci.ResponseCommit) {
+func (app *BaseApp) Commit(req abci.RequestCommit) abci.ResponseCommit {
+	if req.Deltas == nil {
+		req.Deltas = &abci.Deltas{}
+	}
 	header := app.deliverState.ctx.BlockHeader()
 
 	// Write the DeliverTx state which is cache-wrapped and commit the MultiStore.
 	// The write to the DeliverTx state writes all state transitions to the root
 	// MultiStore (app.cms) so when Commit() is called is persists those values.
 	app.deliverState.ms.Write()
-	commitID := app.cms.Commit()
+	commitID, _, deltas := app.cms.Commit(&iavl.TreeDelta{}, req.Deltas.DeltasByte)
 
 	trace.GetElapsedInfo().AddInfo("Iavl", fmt.Sprintf("getnode<%d>, rdb<%d>, savenode<%d>",
 		app.cms.GetNodeReadCount(), app.cms.GetDBReadCount(), app.cms.GetDBWriteCount()))
 
 	app.cms.ResetCount()
+
 	app.logger.Debug("Commit synced", "commit", fmt.Sprintf("%X", commitID))
 
 	// Reset the Check state to the latest committed.
@@ -321,6 +339,7 @@ func (app *BaseApp) Commit() (res abci.ResponseCommit) {
 
 	return abci.ResponseCommit{
 		Data: commitID.Hash,
+		Deltas: &abci.Deltas{DeltasByte: deltas},
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/tendermint/iavl"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmkv "github.com/tendermint/tendermint/libs/kv"
 	tmstrings "github.com/tendermint/tendermint/libs/strings"
@@ -17,7 +18,7 @@ type Store interface { //nolint
 
 // something that can persist to disk
 type Committer interface {
-	Commit() CommitID
+	Commit(*iavl.TreeDelta, []byte) (CommitID, iavl.TreeDelta, []byte)
 	LastCommitID() CommitID
 
 	// TODO: Deprecate after 0.38.5

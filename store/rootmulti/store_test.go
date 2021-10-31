@@ -13,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/store/iavl"
 	"github.com/cosmos/cosmos-sdk/store/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	tmiavl "github.com/tendermint/iavl"
 )
 
 func TestStoreType(t *testing.T) {
@@ -67,7 +68,7 @@ func TestCacheMultiStoreWithVersion(t *testing.T) {
 	store1 := ms.getStoreByName("store1").(types.KVStore)
 	store1.Set(k, v)
 
-	cID := ms.Commit()
+	cID, _ := ms.Commit(&tmiavl.TreeDelta{})
 	require.Equal(t, int64(1), cID.Version)
 
 	// require no failure when given an invalid or pruned version
@@ -104,12 +105,12 @@ func TestHashStableWithEmptyCommit(t *testing.T) {
 	store1 := ms.getStoreByName("store1").(types.KVStore)
 	store1.Set(k, v)
 
-	cID := ms.Commit()
+	cID, _ := ms.Commit(&tmiavl.TreeDelta{})
 	require.Equal(t, int64(1), cID.Version)
 	hash := cID.Hash
 
 	// make an empty commit, it should update version, but not affect hash
-	cID = ms.Commit()
+	cID, _ = ms.Commit(&tmiavl.TreeDelta{})
 	require.Equal(t, int64(2), cID.Version)
 	require.Equal(t, hash, cID.Hash)
 }
@@ -135,7 +136,7 @@ func TestMultistoreCommitLoad(t *testing.T) {
 	// Make a few commits and check them.
 	nCommits := int64(3)
 	for i := int64(0); i < nCommits; i++ {
-		commitID = store.Commit()
+		commitID, _ = store.Commit(&tmiavl.TreeDelta{})
 		expectedCommitID := getExpectedCommitID(store, i+1)
 		checkStore(t, store, expectedCommitID, commitID)
 	}
@@ -148,7 +149,7 @@ func TestMultistoreCommitLoad(t *testing.T) {
 	checkStore(t, store, commitID, commitID)
 
 	// Commit and check version.
-	commitID = store.Commit()
+	commitID, _ = store.Commit(&tmiavl.TreeDelta{})
 	expectedCommitID := getExpectedCommitID(store, nCommits+1)
 	checkStore(t, store, expectedCommitID, commitID)
 
@@ -161,7 +162,7 @@ func TestMultistoreCommitLoad(t *testing.T) {
 	checkStore(t, store, commitID, commitID)
 
 	// XXX: commit this older version
-	commitID = store.Commit()
+	commitID, _ = store.Commit(&tmiavl.TreeDelta{})
 	expectedCommitID = getExpectedCommitID(store, ver+1)
 	checkStore(t, store, expectedCommitID, commitID)
 
@@ -200,7 +201,7 @@ func TestMultistoreLoadWithUpgrade(t *testing.T) {
 	require.Nil(t, s4)
 
 	// do one commit
-	commitID := store.Commit()
+	commitID, _ := store.Commit(&tmiavl.TreeDelta{})
 	expectedCommitID := getExpectedCommitID(store, 1)
 	checkStore(t, store, expectedCommitID, commitID)
 
@@ -264,7 +265,7 @@ func TestMultistoreLoadWithUpgrade(t *testing.T) {
 	require.Equal(t, v2, rs2.Get(k2))
 
 	// store this migrated data, and load it again without migrations
-	migratedID := restore.Commit()
+	migratedID, _ := restore.Commit(&tmiavl.TreeDelta{})
 	require.Equal(t, migratedID.Version, int64(2))
 
 	reload, _ := newMultiStoreWithModifiedMounts(db, types.PruneNothing)
@@ -344,7 +345,7 @@ func TestMultiStoreRestart(t *testing.T) {
 		store3 := multi.getStoreByName("store3").(types.KVStore)
 		store3.Set([]byte(k3), []byte(fmt.Sprintf("%s:%d", v3, i)))
 
-		multi.Commit()
+		multi.Commit(&tmiavl.TreeDelta{})
 
 		cinfo, err := getCommitInfo(multi.db, int64(i))
 		require.NoError(t, err)
@@ -359,7 +360,7 @@ func TestMultiStoreRestart(t *testing.T) {
 	store2 := multi.getStoreByName("store2").(types.KVStore)
 	store2.Set([]byte(k2), []byte(fmt.Sprintf("%s:%d", v2, 3)))
 
-	multi.Commit()
+	multi.Commit(&tmiavl.TreeDelta{})
 
 	flushedCinfo, err := getCommitInfo(multi.db, 3)
 	require.Nil(t, err)
@@ -369,7 +370,7 @@ func TestMultiStoreRestart(t *testing.T) {
 	store3 := multi.getStoreByName("store3").(types.KVStore)
 	store3.Set([]byte(k3), []byte(fmt.Sprintf("%s:%d", v3, 3)))
 
-	multi.Commit()
+	multi.Commit(&tmiavl.TreeDelta{})
 
 	postFlushCinfo, err := getCommitInfo(multi.db, 4)
 	require.NoError(t, err)
@@ -407,7 +408,7 @@ func TestMultiStoreQuery(t *testing.T) {
 	k2, v2 := []byte("water"), []byte("flows")
 	// v3 := []byte("is cold")
 
-	cid := multi.Commit()
+	cid, _ := multi.Commit(&tmiavl.TreeDelta{})
 
 	// Make sure we can get by name.
 	garbage := multi.getStoreByName("bad-name")
@@ -422,7 +423,7 @@ func TestMultiStoreQuery(t *testing.T) {
 	store2.Set(k2, v2)
 
 	// Commit the multistore.
-	cid = multi.Commit()
+	cid, _ = multi.Commit(&tmiavl.TreeDelta{})
 	ver := cid.Version
 
 	// Reload multistore from database
@@ -477,6 +478,9 @@ func TestMultiStore_Pruning(t *testing.T) {
 	}{
 		{"prune nothing", 10, types.PruneNothing, nil, []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}},
 		{"prune everything", 10, types.PruneEverything, []int64{1, 2, 3, 4, 5, 6, 7, 8, 9}, []int64{10}},
+		{"prune some; no batch", 10, types.NewPruningOptions(2, 3, 1, 1<<64-1), []int64{1, 2, 4, 5, 7}, []int64{3, 6, 8, 9, 10}},
+		{"prune some; small batch", 10, types.NewPruningOptions(2, 3, 3, 1<<64-1), []int64{1, 2, 4, 5}, []int64{3, 6, 7, 8, 9, 10}},
+		{"prune some; large batch", 10, types.NewPruningOptions(2, 3, 11, 1<<64-1), nil, []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}},
 		{"prune some; no batch", 10, types.NewPruningOptions(2, 3, 1, math.MaxInt64), []int64{1, 2, 4, 5, 7}, []int64{3, 6, 8, 9, 10}},
 		{"prune some; small batch", 10, types.NewPruningOptions(2, 3, 3, math.MaxInt64), []int64{1, 2, 4, 5}, []int64{3, 6, 7, 8, 9, 10}},
 		{"prune some; large batch", 10, types.NewPruningOptions(2, 3, 11, math.MaxInt64), nil, []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}},
@@ -491,7 +495,7 @@ func TestMultiStore_Pruning(t *testing.T) {
 			require.NoError(t, ms.LoadLatestVersion())
 
 			for i := int64(0); i < tc.numVersions; i++ {
-				ms.Commit()
+				ms.Commit(&tmiavl.TreeDelta{})
 			}
 
 			for _, v := range tc.saved {
@@ -515,7 +519,7 @@ func TestMultiStore_PruningRestart(t *testing.T) {
 	// Commit enough to build up heights to prune, where on the next block we should
 	// batch delete.
 	for i := int64(0); i < 10; i++ {
-		ms.Commit()
+		ms.Commit(&tmiavl.TreeDelta{})
 	}
 
 	pruneHeights := []int64{1, 2, 4, 5, 7}
@@ -532,7 +536,7 @@ func TestMultiStore_PruningRestart(t *testing.T) {
 	require.Equal(t, pruneHeights, ms.pruneHeights)
 
 	// commit one more block and ensure the heights have been pruned
-	ms.Commit()
+	ms.Commit(&tmiavl.TreeDelta{})
 	require.Empty(t, ms.pruneHeights)
 
 	for _, v := range pruneHeights {

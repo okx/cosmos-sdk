@@ -3,10 +3,12 @@ package iavl
 import (
 	"errors"
 	"fmt"
+	"github.com/spf13/viper"
 	"io"
 	"sync"
 
 	"github.com/tendermint/iavl"
+	tmtypes "github.com/tendermint/tendermint/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/merkle"
 	tmkv "github.com/tendermint/tendermint/libs/kv"
@@ -21,7 +23,7 @@ import (
 var (
 	FlagIavlCacheSize = "iavl-cache-size"
 
-	IavlCacheSize     = 1000000
+	IavlCacheSize = 1000000
 )
 
 var (
@@ -92,7 +94,7 @@ func UnsafeNewStore(tree *iavl.MutableTree) *Store {
 func (st *Store) GetImmutable(version int64) (*Store, error) {
 	var iTree *iavl.ImmutableTree
 	var err error
-	if !abci.GetCloseMutex() {
+	if !abci.GetDisableQueryMutex() {
 		if !st.VersionExists(version) {
 			return &Store{tree: &immutableTree{&iavl.ImmutableTree{}}}, nil
 		}
@@ -114,8 +116,13 @@ func (st *Store) GetImmutable(version int64) (*Store, error) {
 
 // Commit commits the current store state and returns a CommitID with the new
 // version and hash.
-func (st *Store) Commit() types.CommitID {
-	hash, version, err := st.tree.SaveVersion()
+func (st *Store) Commit(inDelta *iavl.TreeDelta, deltas []byte) (types.CommitID, iavl.TreeDelta, []byte) {
+	flag := false
+	if viper.GetString(tmtypes.FlagStateDelta) == tmtypes.ConsumeDelta && len(deltas) != 0 {
+		flag = true
+		st.tree.SetDelta(inDelta)
+	}
+	hash, version, delta, err := st.tree.SaveVersion(flag)
 	if err != nil {
 		panic(err)
 	}
@@ -123,7 +130,7 @@ func (st *Store) Commit() types.CommitID {
 	return types.CommitID{
 		Version: version,
 		Hash:    hash,
-	}
+	}, delta, nil
 }
 
 // Implements Committer.

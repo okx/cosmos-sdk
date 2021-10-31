@@ -3,6 +3,7 @@ package rootmulti
 import (
 	"github.com/cosmos/cosmos-sdk/store/dbadapter"
 	"github.com/cosmos/cosmos-sdk/store/types"
+	"github.com/tendermint/iavl"
 )
 
 var commithash = []byte("FAKE_HASH")
@@ -16,11 +17,11 @@ type commitDBStoreAdapter struct {
 	dbadapter.Store
 }
 
-func (cdsa commitDBStoreAdapter) Commit() types.CommitID {
+func (cdsa commitDBStoreAdapter) Commit(*iavl.TreeDelta, []byte) (types.CommitID, iavl.TreeDelta, []byte) {
 	return types.CommitID{
 		Version: -1,
 		Hash:    commithash,
-	}
+	}, iavl.TreeDelta{}, nil
 }
 
 func (cdsa commitDBStoreAdapter) LastCommitID() types.CommitID {

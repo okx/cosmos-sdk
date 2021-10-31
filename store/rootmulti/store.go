@@ -2,18 +2,20 @@ package rootmulti
 
 import (
 	"fmt"
-	"io"
-	"log"
-	"sort"
-	"strings"
-
+	"github.com/json-iterator/go"
 	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 	iavltree "github.com/tendermint/iavl"
+	tmiavl "github.com/tendermint/iavl"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/merkle"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
+	"io"
+	"log"
+	"sort"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/store/cachemulti"
 	"github.com/cosmos/cosmos-sdk/store/dbadapter"
@@ -23,6 +25,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/store/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
+
+var itjs = jsoniter.ConfigCompatibleWithStandardLibrary
 
 const (
 	latestVersionKey = "s/latest"
@@ -327,10 +331,10 @@ func (rs *Store) LastCommitID() types.CommitID {
 }
 
 // Implements Committer/CommitStore.
-func (rs *Store) Commit() types.CommitID {
+func (rs *Store) Commit(_ *tmiavl.TreeDelta, deltas []byte) (types.CommitID, tmiavl.TreeDelta, []byte) {
 	previousHeight := rs.lastCommitInfo.Version
 	version := previousHeight + 1
-	rs.lastCommitInfo = commitStores(version, rs.stores)
+	rs.lastCommitInfo, deltas = commitStores(version, rs.stores, deltas)
 
 	// Determine if pruneHeight height needs to be added to the list of heights to
 	// be pruned, where pruneHeight = (commitHeight - 1) - KeepRecent.
@@ -371,7 +375,7 @@ func (rs *Store) Commit() types.CommitID {
 	return types.CommitID{
 		Version: version,
 		Hash:    rs.lastCommitInfo.Hash(),
-	}
+	}, tmiavl.TreeDelta{}, deltas
 }
 
 // pruneStores will batch delete a list of heights from each mounted sub-store.
@@ -757,11 +761,24 @@ func getLatestVersion(db dbm.DB) int64 {
 }
 
 // Commits each store and returns a new commitInfo.
-func commitStores(version int64, storeMap map[types.StoreKey]types.CommitKVStore) commitInfo {
-	storeInfos := make([]storeInfo, 0, len(storeMap))
+func commitStores(version int64, storeMap map[types.StoreKey]types.CommitKVStore, deltas []byte) (commitInfo, []byte) {
+//	storeInfos := make([]storeInfo, 0, len(storeMap))
+	var storeInfos []storeInfo
+	appliedDeltas := map[string]*tmiavl.TreeDelta{}
+	returnedDeltas := map[string]tmiavl.TreeDelta{}
+
+	var err error
+	deltaMode := viper.GetString(tmtypes.FlagStateDelta)
+
+	if deltaMode == tmtypes.ConsumeDelta && len(deltas) != 0 {
+		err = itjs.Unmarshal(deltas, &appliedDeltas)
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	for key, store := range storeMap {
-		commitID := store.Commit()
+		commitID, reDelta, _ := store.Commit(appliedDeltas[key.Name()], deltas)
 
 		if store.GetStoreType() == types.StoreTypeTransient {
 			continue
@@ -771,12 +788,20 @@ func commitStores(version int64, storeMap map[types.StoreKey]types.CommitKVStore
 		si.Name = key.Name()
 		si.Core.CommitID = commitID
 		storeInfos = append(storeInfos, si)
+		returnedDeltas[key.Name()] = reDelta
+	}
+
+	if deltaMode != tmtypes.NoDelta {
+		deltas, err = itjs.Marshal(returnedDeltas)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	return commitInfo{
 		Version:    version,
 		StoreInfos: storeInfos,
-	}
+	}, deltas
 }
 
 // Gets commitInfo from disk.
